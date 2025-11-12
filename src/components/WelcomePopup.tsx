@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -207,11 +207,11 @@ const WelcomePopup: React.FC<WelcomePopupProps> = ({
           <div className="relative p-6 flex flex-col items-center justify-center text-center gap-6">
             {/* العنوان والرموز */}
             <div className="w-full flex flex-col items-center justify-center gap-3">
-              <h2 className="text-3xl font-black text-primary leading-relaxed text-center">
-                أهلاً وسهلاً في عالم إشرو السحري! 🎉
+              <h2 className="flex items-center justify-center text-2xl font-black text-primary leading-relaxed text-center">
+                 مرحبا في عالم إشرو السحري!🎉
               </h2>
-              <p className="text-lg text-purple-600 font-semibold leading-relaxed text-center">
-                ✨ استعد لتجربة تسوق لا تُنسى مع عروض خرافية ومكافآت مذهلة! ✨
+              <p className="flex items-center justify-center text-lg text-purple-600 font-semibold leading-relaxed text-center">
+                ✨تجربة لا تُنسى مع عروض ومكافآت مذهلة ✨
               </p>
             </div>
 
@@ -269,17 +269,14 @@ const WelcomePopup: React.FC<WelcomePopupProps> = ({
             <div className="absolute inset-x-0 top-0 h-16 bg-gradient-to-r from-pink-400/30 via-amber-300/30 to-purple-400/30 blur-3xl" />
 
             <div className="relative text-center space-y-4">
-              <div className="mx-auto w-20 h-20 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center shadow-xl gift-swing">
+              <div className="mx-auto w-20 h-20 bg-gradient-to-br from-yellow-300 to-orange-400 rounded-full flex items-center justify-center shadow-xl gift-swing">
                 <Gift className="h-10 w-10 text-white" />
               </div>
-              <h2 className="text-2xl font-extrabold text-purple-700">
-                مبروك! لقد فزت بعضوية إشرو الذهبية!
+              <h2 className="flex items-center justify-center text-2xl font-bold text-purple-700">
+                مبروك ! لقد فزت بعضويةإشرو !
               </h2>
-              <p className="text-lg font-semibold text-pink-600">
-                ألوان احتفالية مبهرة • مفرقعات وأجواء عيد ميلاد • تأثيرات بصرية وصوتية احتفالية
-              </p>
-              <h3 className="text-xl font-bold text-orange-500">
-                🎁 مكافآتك الحصرية والمذهلة: 💸
+              <h3 className="flex items-center justify-center text-xl font-bold text-orange-500">
+                🎁 مكافأت وهدايا حصرية💸
               </h3>
             </div>
 
@@ -287,13 +284,13 @@ const WelcomePopup: React.FC<WelcomePopupProps> = ({
               <h4 className="text-xl font-extrabold text-primary">
                 🔥 كوبون خصم خرافي 50% 🔥
               </h4>
-              <p className="text-sm text-gray-700">
-                صالح لمدة 24 ساعة على جميع المنتجات + الشحن والتوصيل مجاني!
+              <p className="flex items-center justify-center text-sm text-gray-700">
+                صالح لمدة 24 ساعة لجميع المنتجات مع التوصيل المجاني!
               </p>
               <div className="bg-gradient-to-r from-primary/10 to-green-100 rounded-xl p-4 w-full">
-                <p className="text-sm font-bold text-gray-700 mb-2">الكود:</p>
+                <p className="flex items-center justify-center text-sm font-bold text-gray-700 mb-2">الكود:</p>
                 <div className="bg-white rounded-lg p-3 mb-3 border border-primary/40">
-                  <code className="text-xl font-bold text-primary tracking-wider block break-words">
+                  <code className="flex items-center justify-center text-sm font-bold text-primary tracking-wider block break-words">
                     {couponCode}
                   </code>
                 </div>
@@ -313,11 +310,6 @@ const WelcomePopup: React.FC<WelcomePopupProps> = ({
                     </>
                   )}
                 </Button>
-              </div>
-              <div className="flex items-center justify-center gap-4 text-2xl">
-                <span role="img" aria-label="fireworks">🎇</span>
-                <span role="img" aria-label="party">🎉</span>
-                <span role="img" aria-label="clapping">👏</span>
               </div>
             </div>
 

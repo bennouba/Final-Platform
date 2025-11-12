@@ -3,23 +3,19 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import {
   AlertCircle,
   ArrowLeft,
   Calendar,
-  CheckCircle,
   Chrome,
   Eye,
   EyeOff,
   Headphones,
   Infinity as InfinityIcon,
-  Lock,
   Mail,
   Phone,
   Store,
   User,
-  UserPlus,
   Users,
   X
 } from 'lucide-react';
@@ -64,7 +60,6 @@ const ShopLoginPage: React.FC<ShopLoginPageProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
-  const [showMerchantRegister, setShowMerchantRegister] = useState(false);
   const [userType, setUserType] = useState<'merchant' | 'user' | 'admin'>('merchant');
   const [showForgotPasswordModal, setShowForgotPasswordModal] = useState(false);
   const [forgotPasswordStep, setForgotPasswordStep] = useState<'method' | 'email' | 'phone'>('method');
@@ -339,20 +334,6 @@ const ShopLoginPage: React.FC<ShopLoginPageProps> = ({
     setIsGoogleLoading(false);
   };
 
-  const simulateGoogleSignIn = () => {
-    // محاكاة تجربة Google Sign-In للاختبار
-    const mockResponse = {
-      access_token: 'mock_access_token',
-      user: {
-        name: 'مستخدم تجريبي',
-        email: 'test@example.com',
-        picture: 'أ'
-      }
-    };
-
-    handleGoogleAuthSuccess(mockResponse);
-  };
-
   const showGoogleSetupInstructions = () => {
     const setupInstructions = `
 🔧 إعداد Google OAuth مطلوب
@@ -396,9 +377,14 @@ const ShopLoginPage: React.FC<ShopLoginPageProps> = ({
     setIsGoogleLoading(false);
   };
 
-  const handleForgotPassword = () => {
-    setShowForgotPasswordModal(true);
+  const resetForgotPasswordState = () => {
     setForgotPasswordStep('method');
+    setForgotPasswordData({ email: '', phone: '' });
+  };
+
+  const handleForgotPassword = () => {
+    resetForgotPasswordState();
+    setShowForgotPasswordModal(true);
   };
 
   const stats = [
@@ -460,8 +446,8 @@ const ShopLoginPage: React.FC<ShopLoginPageProps> = ({
         <Card className="w-full max-w-md shadow-xl border-0">
           <CardHeader className="text-center pb-4">
             <div className="space-y-2">
-              <h2 className="text-xl font-bold text-slate-800">تسجيل الدخول</h2>
-              <p className="text-sm text-slate-600">
+              <h2 className="flex items-center justify-center text-2xl font-bold text-slate-800">تسجيل الدخول</h2>
+              <p className="flex items-center justify-center text-sm text-slate-600">
                 {userType === 'admin'
                   ? 'أدخل بيانات مسؤول النظام'
                   : userType === 'merchant'
@@ -469,23 +455,14 @@ const ShopLoginPage: React.FC<ShopLoginPageProps> = ({
                   : 'أدخل بياناتك للوصول إلى حسابك'
                 }
               </p>
-
-              {/* تلميح خاص بمسؤول النظام */}
-              {userType === 'admin' && (
-                <div className="mt-3 p-3 bg-purple-50 border border-purple-200 rounded-lg">
-                  <p className="text-xs text-purple-700 text-center">
-                    <strong>بيانات مسؤول النظام التجريبية:</strong><br />
-                    admin@eshro.ly / admin123
-                  </p>
-                </div>
-              )}
+              
             </div>
           </CardHeader>
           
           <CardContent className="space-y-4">
             {/* اختيار نوع المستخدم */}
             <div className="space-y-3">
-              <Label className="text-base font-medium">نوع الحساب</Label>
+              <Label className="flex items-center justify-center text-base font-medium">نوع الحساب</Label>
               <div className="grid grid-cols-3 gap-2">
                 <Button
                   type="button"
@@ -509,7 +486,9 @@ const ShopLoginPage: React.FC<ShopLoginPageProps> = ({
                   type="button"
                   variant={userType === 'admin' ? 'default' : 'outline'}
                   onClick={() => setUserType('admin')}
-                  className="flex items-center gap-1 justify-center text-sm bg-purple-600 hover:bg-purple-700 text-white"
+                  className={`flex items-center gap-1 justify-center text-sm ${
+                    userType === 'admin' ? 'bg-purple-600 hover:bg-purple-700 text-white' : ''
+                  }`}
                 >
                   <Users className="h-4 w-4" />
                   مسؤول
@@ -576,11 +555,11 @@ const ShopLoginPage: React.FC<ShopLoginPageProps> = ({
               )}
 
               {/* رابط نسيت كلمة المرور */}
-              <div className="text-center">
+              <div className="flex items-center justify-center text-center">
                 <button
                   type="button"
                   onClick={handleForgotPassword}
-                  className="text-sm text-cyan-600 hover:text-cyan-800 hover:underline font-medium"
+                  className="flex items-center justify-center text-sm text-cyan-600 hover:text-cyan-800 hover:underline font-medium"
                 >
                   هل نسيت كلمة المرور او اسم المستخدم ؟
                 </button>
@@ -625,12 +604,12 @@ const ShopLoginPage: React.FC<ShopLoginPageProps> = ({
 
             {/* رابط إنشاء حساب جديد */}
             <div className="text-center pt-4 border-t">
-              <p className="text-sm text-gray-600 mb-2">
+              <p className="flex items-center justify-center text-sm text-gray-600 mb-2">
                 ليس لديك حساب في الموقع؟
               </p>
               <button
                 onClick={onNavigateToAccountTypeSelection || onNavigateToRegister}
-                className="text-sm font-medium text-green-600 hover:text-green-800 hover:underline"
+                className="text-sm font-medium text-green-400 hover:text-green-400 hover:underline"
               >
                 قم بإنشاء حساب جديد معنا
               </button>
@@ -659,7 +638,10 @@ const ShopLoginPage: React.FC<ShopLoginPageProps> = ({
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl relative">
             <button
-              onClick={() => setShowForgotPasswordModal(false)}
+              onClick={() => {
+                setShowForgotPasswordModal(false);
+                resetForgotPasswordState();
+              }}
               title="إغلاق"
               className="absolute top-4 left-4 w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300 transition-colors z-10"
             >
@@ -739,13 +721,13 @@ const ShopLoginPage: React.FC<ShopLoginPageProps> = ({
 
                         if (userExists || storeExists) {
                           alert(`سيتم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني (${forgotPasswordData.email}) قريباً 📧\n\nملاحظة: في النسخة التجريبية، يمكنك تسجيل الدخول بالبيانات الأصلية.`);
-                        } else {
-                          alert('البريد الإلكتروني غير موجود في سجلاتنا');
+                          resetForgotPasswordState();
+                          setShowForgotPasswordModal(false);
                           return;
                         }
 
-                        setShowForgotPasswordModal(false);
-                        setForgotPasswordData({ email: '', phone: '' });
+                        alert('البريد الإلكتروني غير موجود في سجلاتنا');
+                        return;
                       }}
                       className="flex-1 bg-green-500 hover:bg-green-600"
                     >
@@ -799,13 +781,13 @@ const ShopLoginPage: React.FC<ShopLoginPageProps> = ({
 
                         if (userExists || storeExists) {
                           alert(`سيتم إرسال رمز OTP إلى رقم هاتفك (${forgotPasswordData.phone}) قريباً 📱\n\nملاحظة: في النسخة التجريبية، يمكنك تسجيل الدخول بالبيانات الأصلية.`);
-                        } else {
-                          alert('رقم الهاتف غير موجود في سجلاتنا');
+                          resetForgotPasswordState();
+                          setShowForgotPasswordModal(false);
                           return;
                         }
 
-                        setShowForgotPasswordModal(false);
-                        setForgotPasswordData({ email: '', phone: '' });
+                        alert('رقم الهاتف غير موجود في سجلاتنا');
+                        return;
                       }}
                       className="flex-1 bg-green-500 hover:bg-green-600"
                     >

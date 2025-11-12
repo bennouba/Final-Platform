@@ -304,6 +304,7 @@ export const SubscriptionCheckoutModal: React.FC<SubscriptionCheckoutModalProps>
 
           <button
             onClick={onClose}
+            aria-label="إغلاق"
             className="absolute top-4 right-4 z-10 w-10 h-10 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center text-white hover:bg-white/20 transition-all duration-300"
           >
             <X className="h-5 w-5" />

@@ -23,6 +23,7 @@ import MerchantFinance from "@/pages/MerchantFinance";
 import MerchantSettings from "@/pages/MerchantSettings";
 import AdminPortal from "@/pages/AdminPortal";
 import CustomerDashboard, { CreateOrderPayload, OrderRecord } from "@/pages/CustomerDashboard";
+import { merchants as merchantProfiles } from "@/components/admin/merchantConfig";
 import AddToCartPopup from "@/components/AddToCartPopup";
 import AddToCartSuccessModal from "@/components/AddToCartSuccessModal";
 import OrderSuccessModal from "@/components/OrderSuccessModal";
@@ -59,6 +60,14 @@ const dashboardShippingConfig: Record<string, { type: "normal" | "express"; cost
   "normal-outside": { type: "normal", cost: 120, estimatedTime: "24-96 ساعة" },
   "express-tripoli": { type: "express", cost: 70, estimatedTime: "5-12 ساعة" },
   "express-outside": { type: "express", cost: 160, estimatedTime: "5-12 ساعة" }
+};
+
+const MERCHANT_LOGIN_CREDENTIALS: Record<string, { email: string; password: string; phone: string }> = {
+  nawaem: { email: "mounir@gmail.com", password: "mounir123", phone: "218910000001" },
+  sherine: { email: "salem@gmail.com", password: "salem123", phone: "218910000002" },
+  delta: { email: "majed@gmail.com", password: "majed123", phone: "218910000003" },
+  pretty: { email: "kamel@gmail.com", password: "kamel123", phone: "218910000004" },
+  magna: { email: "hasan@gmail.com", password: "hasan123", phone: "218910000005" }
 };
 
 // FloatingCubes component: Renders animated floating cubes for background decoration
@@ -890,6 +899,10 @@ export default function Home() {
 
   // استرداد البيانات المحفوظة عند تحميل التطبيق
   useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
     const savedOrders = localStorage.getItem('eshro_orders');
     const savedCartItems = localStorage.getItem('eshro_cart');
     const savedFavorites = localStorage.getItem('eshro_favorites');
@@ -975,8 +988,6 @@ export default function Home() {
     const savedIsLoggedInAsVisitor = localStorage.getItem('eshro_logged_in_as_visitor');
     if (savedIsLoggedInAsVisitor === 'true') {
       setIsLoggedInAsVisitor(true);
-
-      // استرجاع بيانات الزائر إذا كان مسجل دخول
       const savedVisitorData = localStorage.getItem('eshro_visitor_user');
       if (savedVisitorData) {
         try {
@@ -1005,7 +1016,173 @@ export default function Home() {
       }
     }
 
-    // الاستماع لتغييرات localStorage من المكونات الأخرى
+    const seedMerchantStores = () => {
+      const seeds = merchantProfiles
+        .map((profile) => {
+          const credentials = MERCHANT_LOGIN_CREDENTIALS[profile.id];
+          if (!credentials) {
+            return null;
+          }
+          return {
+            id: profile.id,
+            nameAr: profile.name,
+            nameEn: profile.name,
+            email: credentials.email,
+            password: credentials.password,
+            phone: credentials.phone,
+            subdomain: profile.id,
+            owner: profile.owner,
+            plan: profile.plan,
+            tier: profile.tier,
+            color: profile.color,
+            stats: profile.stats,
+            disabled: profile.disabled ?? []
+          };
+        })
+        .filter(Boolean) as any[];
+
+      let existingList: any[] = [];
+      try {
+        const raw = localStorage.getItem('eshro_stores');
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed)) {
+            existingList = parsed;
+          }
+        }
+      } catch {
+        existingList = [];
+      }
+
+      const mergedList = [...existingList];
+      const seen = new Set<string>();
+      mergedList.forEach((store) => {
+        if (store?.email && typeof store.email === 'string') {
+          seen.add(store.email.toLowerCase());
+        }
+        if (store?.subdomain && typeof store.subdomain === 'string') {
+          seen.add(store.subdomain);
+        }
+        if (store?.id && typeof store.id === 'string') {
+          seen.add(store.id);
+        }
+      });
+
+      seeds.forEach((store) => {
+        const storeKey = `store_${store.subdomain}`;
+        let normalizedStore = store;
+        const existingRaw = localStorage.getItem(storeKey);
+        if (existingRaw) {
+          try {
+            const existing = JSON.parse(existingRaw);
+            normalizedStore = {
+              ...existing,
+              ...store,
+              disabled: Array.isArray(existing?.disabled) ? existing.disabled : store.disabled ?? []
+            };
+          } catch {
+            normalizedStore = store;
+          }
+        }
+        localStorage.setItem(storeKey, JSON.stringify(normalizedStore));
+
+        const variants = [
+          typeof normalizedStore.email === 'string' ? normalizedStore.email.toLowerCase() : '',
+          typeof normalizedStore.subdomain === 'string' ? normalizedStore.subdomain : '',
+          typeof normalizedStore.id === 'string' ? normalizedStore.id : ''
+        ].filter(Boolean);
+
+        const existingIndex = mergedList.findIndex((entry) => {
+          if (!entry) {
+            return false;
+          }
+          const entryVariants = [
+            typeof entry.email === 'string' ? entry.email.toLowerCase() : '',
+            typeof entry.subdomain === 'string' ? entry.subdomain : '',
+            typeof entry.id === 'string' ? entry.id : ''
+          ].filter(Boolean);
+          return entryVariants.some((key) => variants.includes(key));
+        });
+
+        if (existingIndex >= 0) {
+          mergedList[existingIndex] = { ...mergedList[existingIndex], ...normalizedStore };
+        } else {
+          mergedList.push(normalizedStore);
+        }
+
+        variants.forEach((key) => {
+          if (key) {
+            seen.add(key);
+          }
+        });
+      });
+
+      localStorage.setItem('eshro_stores', JSON.stringify(mergedList));
+      return mergedList;
+    };
+
+    const seededStores = seedMerchantStores();
+
+    const loadAllStores = () => {
+      const stores: any[] = [];
+      const seen = new Set<string>();
+      const pushStore = (store: any) => {
+        if (!store) {
+          return;
+        }
+        const variants = [
+          typeof store.email === 'string' ? store.email.toLowerCase() : '',
+          typeof store.subdomain === 'string' ? store.subdomain : '',
+          typeof store.id === 'string' ? store.id : ''
+        ].filter(Boolean);
+        const exists = variants.some((key) => seen.has(key));
+        if (!exists) {
+          stores.push(store);
+        }
+        variants.forEach((key) => {
+          if (key) {
+            seen.add(key);
+          }
+        });
+      };
+
+      if (Array.isArray(seededStores)) {
+        seededStores.forEach(pushStore);
+      }
+
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('store_')) {
+          try {
+            const raw = localStorage.getItem(key);
+            if (!raw) {
+              continue;
+            }
+            const parsed = JSON.parse(raw);
+            pushStore(parsed);
+          } catch (error) {
+            console.error('Failed to parse store data:', error);
+          }
+        }
+      }
+
+      try {
+        const rawList = localStorage.getItem('eshro_stores');
+        if (rawList) {
+          const parsedList = JSON.parse(rawList);
+          if (Array.isArray(parsedList)) {
+            parsedList.forEach(pushStore);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to parse store list:', error);
+      }
+
+      setAllStores(stores);
+    };
+
+    loadAllStores();
+
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'eshro_unavailable' && e.newValue) {
         try {
@@ -1014,29 +1191,16 @@ export default function Home() {
           console.error('Failed to parse updated unavailable items:', error);
         }
       }
+      if (!e.key) {
+        return;
+      }
+      if (e.key === 'eshro_stores' || e.key.startsWith('store_')) {
+        loadAllStores();
+      }
     };
 
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
-
-    // تحميل جميع المتاجر المحفوظة
-    const loadAllStores = () => {
-      const stores: any[] = [];
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key && key.startsWith('store_')) {
-          try {
-            const storeData = JSON.parse(localStorage.getItem(key) || '{}');
-            stores.push(storeData);
-          } catch (error) {
-            console.error('Failed to parse store data:', error);
-          }
-        }
-      }
-      setAllStores(stores);
-    };
-
-    loadAllStores();
   }, []);
 
   // حفظ البيانات في localStorage عند تغييرها
@@ -1478,10 +1642,80 @@ export default function Home() {
       const storeInfo = allStores.map(s => ({ email: s.email, subdomain: s.subdomain, name: s.nameAr || s.name }));
       console.log('🔍 Searching for merchant in allStores:', storeInfo);
 
-      const matchingStore = allStores.find(store =>
+      let matchingStore = allStores.find(store =>
         (store.email === username || store.subdomain === username || store.phone === username) &&
         store.password === password
       );
+
+      if (!matchingStore) {
+        const normalizedUsername = username.toLowerCase();
+        const credentialEntry = Object.entries(MERCHANT_LOGIN_CREDENTIALS).find(([merchantId, creds]) => {
+          if (!creds) {
+            return false;
+          }
+          const emailMatch = creds.email.toLowerCase() === normalizedUsername;
+          const phoneMatch = creds.phone === username;
+          const aliasMatch = normalizedUsername === creds.email.split('@')[0];
+          const subdomainMatch = merchantId === normalizedUsername;
+          return emailMatch || phoneMatch || aliasMatch || subdomainMatch;
+        });
+        if (credentialEntry) {
+          const [merchantId, creds] = credentialEntry;
+          if (creds.password === password) {
+            const profile = merchantProfiles.find((merchant) => merchant.id === merchantId);
+            if (profile) {
+              matchingStore = {
+                id: profile.id,
+                nameAr: profile.name,
+                nameEn: profile.name,
+                email: creds.email,
+                password: creds.password,
+                phone: creds.phone,
+                subdomain: profile.id,
+                owner: profile.owner,
+                plan: profile.plan,
+                tier: profile.tier,
+                color: profile.color,
+                stats: profile.stats,
+                disabled: profile.disabled ?? []
+              } as any;
+              const storeKey = `store_${profile.id}`;
+              localStorage.setItem(storeKey, JSON.stringify(matchingStore));
+              let storedList: any[] = [];
+              try {
+                const rawList = localStorage.getItem('eshro_stores');
+                if (rawList) {
+                  const parsed = JSON.parse(rawList);
+                  if (Array.isArray(parsed)) {
+                    storedList = parsed;
+                  }
+                }
+              } catch {
+                storedList = [];
+              }
+              const existsInList = storedList.some((store) =>
+                store &&
+                (store.email === matchingStore?.email || store.subdomain === matchingStore?.subdomain || store.id === matchingStore?.id)
+              );
+              if (!existsInList) {
+                storedList.push(matchingStore);
+                localStorage.setItem('eshro_stores', JSON.stringify(storedList));
+              }
+              setAllStores((previous) => {
+                const existsInState = previous.some(
+                  (store) =>
+                    store &&
+                    (store.email === matchingStore?.email || store.subdomain === matchingStore?.subdomain || store.id === matchingStore?.id)
+                );
+                if (existsInState) {
+                  return previous;
+                }
+                return [...previous, matchingStore];
+              });
+            }
+          }
+        }
+      }
 
       if (matchingStore) {
         console.log('✅ Merchant login successful:', matchingStore);
@@ -1497,7 +1731,6 @@ export default function Home() {
         console.log('- Store emails:', allStores.map(s => s.email));
         console.log('- Store subdomains:', allStores.map(s => s.subdomain));
 
-        // البحث عن المستخدم بدون كلمة مرور صحيحة لإعطاء رسالة أفضل
         const storeWithEmail = allStores.find(store => store.email === username || store.subdomain === username || store.phone === username);
         if (storeWithEmail) {
           console.log('⚠️ Store found but password incorrect');
@@ -1536,7 +1769,11 @@ export default function Home() {
   // عرض بوابة الإدارة (Admin Portal)
   if (currentPage === 'admin') {
     return (
-      <AdminPortal />
+      <AdminPortal
+        onLogout={() => {
+          setCurrentPage('login');
+        }}
+      />
     );
   }
 
@@ -1550,6 +1787,7 @@ export default function Home() {
 
     return (
       <EnhancedMerchantDashboard
+        currentMerchant={currentMerchant}
         onLogout={() => {
           console.log('🔓 Enhanced Merchant Dashboard logout clicked');
           setCurrentMerchant(null);
