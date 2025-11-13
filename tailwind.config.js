@@ -3,7 +3,24 @@ export default {
   content: [
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
-    "tailwindCSS.experimental.configFile",
+    "./src/pages/**/*.{js,ts,jsx,tsx}",
+    "./src/components/**/*.{js,ts,jsx,tsx}",
+    "./src/App.tsx",
+  ],
+  safelist: [
+    "w-full",
+    "h-full",
+    "mx-auto",
+    "px-4",
+    "max-w-7xl",
+    "overflow-x-hidden",
+    "flex",
+    "flex-col",
+    "items-center",
+    "justify-center",
+    "min-h-screen",
+    "bg-background",
+    "text-foreground",
   ],
   theme: {
     extend: {
