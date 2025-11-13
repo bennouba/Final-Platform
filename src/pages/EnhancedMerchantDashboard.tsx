@@ -616,18 +616,18 @@ const EnhancedMerchantDashboard: React.FC<{ currentMerchant?: any; onLogout?: ()
   }, []);
 
   const [shippingCompanies, setShippingCompanies] = useState([
-    { name: 'هدهد', phone: '+218 91 000 0001', email: 'info@hudhud.ly', location: 'طرابلس، ليبيا', icon: 'hudhud.jpeg' },
-    { name: 'دي اتش ال', phone: '+218 91 000 0002', email: 'info@dhl.ly', location: 'طرابلس، ليبيا', icon: 'dhl.png' },
-    { name: 'ارامكس', phone: '+218 91 000 0003', email: 'info@aramex.ly', location: 'طرابلس، ليبيا', icon: 'aramex.webp' },
-    { name: 'برستو', phone: '+218 91 000 0004', email: 'info@presto.ly', location: 'طرابلس، ليبيا', icon: 'presto.jpg' },
-    { name: 'فانيكس', phone: '+218 91 000 0005', email: 'info@vanex.ly', location: 'طرابلس، ليبيا', icon: 'vanex.png' },
-    { name: 'زام', phone: '+218 91 000 0006', email: 'info@zam.ly', location: 'طرابلس، ليبيا', icon: 'ZAM.png' },
-    { name: 'ديبو فاست', phone: '+218 91 000 0007', email: 'info@bebo_fast.ly', location: 'طرابلس، ليبيا', icon: 'bebo_fast.webp' },
-    { name: 'درب السيل', phone: '+218 91 000 0008', email: 'info@darbsail.ly', location: 'طرابلس، ليبيا', icon: 'darbsail.png' },
-    { name: 'سونيك اكسبريس', phone: '+218 91 000 0009', email: 'info@sonicexpress.ly', location: 'طرابلس، ليبيا', icon: 'sonicexpress.webp' },
-    { name: 'جو دليفيري', phone: '+218 91 000 0010', email: 'info@go-delivery.ly', location: 'طرابلس، ليبيا', icon: 'go-delivery.webp' },
-    { name: 'وينغيس', phone: '+218 91 000 0011', email: 'info@wings.ly', location: 'طرابلس، ليبيا', icon: 'wings.webp' },
-    { name: 'دراجات نارية', phone: '+218 91 000 0012', email: 'info@motorcycles.ly', location: 'طرابلس، ليبيا', icon: 'other_delivery.png' }
+    { name: 'هدهد', phone: '+218 91 000 0001', email: 'info@hudhud.ly', location: 'طرابلس، ليبيا', src: '/assets/partners/transport/hudhud.jpeg' },
+    { name: 'دي اتش ال', phone: '+218 91 000 0002', email: 'info@dhl.ly', location: 'طرابلس، ليبيا', src: '/assets/partners/transport/dhl.png' },
+    { name: 'ارامكس', phone: '+218 91 000 0003', email: 'info@aramex.ly', location: 'طرابلس، ليبيا', src: '/assets/partners/transport/aramex.webp' },
+    { name: 'برستو', phone: '+218 91 000 0004', email: 'info@presto.ly', location: 'طرابلس، ليبيا', src: '/assets/partners/transport/presto.jpg' },
+    { name: 'فانيكس', phone: '+218 91 000 0005', email: 'info@vanex.ly', location: 'طرابلس، ليبيا', src: '/assets/partners/transport/vanex.png' },
+    { name: 'زام', phone: '+218 91 000 0006', email: 'info@zam.ly', location: 'طرابلس، ليبيا', src: '/assets/partners/transport/ZAM.png', large: true },
+    { name: 'ديبو فاست', phone: '+218 91 000 0007', email: 'info@bebo_fast.ly', location: 'طرابلس، ليبيا', src: '/assets/partners/transport/bebo_fast.webp', large: true },
+    { name: 'درب السيل', phone: '+218 91 000 0008', email: 'info@darbsail.ly', location: 'طرابلس، ليبيا', src: '/assets/partners/transport/darbsail.png', large: true },
+    { name: 'سونيك اكسبريس', phone: '+218 91 000 0009', email: 'info@sonicexpress.ly', location: 'طرابلس، ليبيا', src: '/assets/partners/transport/sonicexpress.webp' },
+    { name: 'جو دليفيري', phone: '+218 91 000 0010', email: 'info@go-delivery.ly', location: 'طرابلس، ليبيا', src: '/assets/partners/transport/go-delivery.webp' },
+    { name: 'وينغيس', phone: '+218 91 000 0011', email: 'info@wings.ly', location: 'طرابلس، ليبيا', src: '/assets/partners/transport/wingsly.webp' },
+    { name: 'دراجات نارية', phone: '+218 91 000 0012', email: 'info@motorcycles.ly', location: 'طرابلس، ليبيا', src: '/assets/partners/transport/other_delivery.png' }
   ]);
 
   const merchantId = useMemo(() => {
@@ -2096,7 +2096,7 @@ const EnhancedMerchantDashboard: React.FC<{ currentMerchant?: any; onLogout?: ()
       phone: logisticsForm.phone,
       email: logisticsForm.email,
       location: logisticsForm.address,
-      icon: 'default.png'
+      src: '/assets/partners/transport/other_delivery.png'
     };
 
     setShippingCompanies(prev => [...prev, newCompany]);
@@ -11480,16 +11480,9 @@ const EnhancedMerchantDashboard: React.FC<{ currentMerchant?: any; onLogout?: ()
                           <div className="flex items-center justify-between mb-4">
                             <div className="w-32 h-32 bg-transparent flex items-center justify-center mx-auto mb-4">
                               <img
-                                src={`/data/transport/${company.icon}`}
+                                src={company.src}
                                 alt={company.name}
-                                className={`${
-                                  company.icon === 'ZAM.png' || company.icon === 'darbsail.png'
-                                    ? 'w-40 h-40'
-                                    : 'w-32 h-32'
-                                } object-contain`}
-                                style={{
-                                  backgroundColor: (company.icon === 'hudhud.jpeg' || company.icon === 'presto.jpg' || company.icon === 'wings.webp') ? 'transparent' : 'transparent'
-                                }}
+                                className={`${company.large ? 'w-40 h-40' : 'w-32 h-32'} object-contain`}
                               />
                             </div>
 
@@ -12037,20 +12030,21 @@ const EnhancedMerchantDashboard: React.FC<{ currentMerchant?: any; onLogout?: ()
                         <p className="text-sm text-gray-600 mb-4">إدارة وسائل الدفع المتاحة</p>
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                           {[
-                            { name: '1 باي', file: '1Pay.png' },
-                            { name: 'أنيس', file: 'anis.png' },
-                            { name: 'سداد', file: 'sadad.png' },
-                            { name: 'تداول', file: 'tadawul.png' },
-                            { name: 'بطاقات ائتمانية', file: 'debit.png' },
-                            { name: 'معاملات', file: 'moamalat.png' },
-                            { name: 'بكم', file: 'Becom.png' },
-                            { name: 'إدفعلي', file: 'edfali.png' },
-                            { name: 'موبي كاش', file: 'mobicash.png' },
-                            { name: 'بلو لاين', file: 'BlueLine.png' },
-                            { name: 'الدفع لاحقاً من خلال قصتلي', file: 'qasatli.png' }
+                            { name: '1 باي', src: '/assets/partners/payment/1Pay.png' },
+                            { name: 'أنيس', src: '/assets/partners/payment/anis.png' },
+                            { name: 'سداد', src: '/assets/partners/payment/sadad.png' },
+                            { name: 'تداول', src: '/assets/partners/payment/tadawul.png' },
+                            { name: 'بطاقات ائتمانية', src: '/assets/partners/payment/debit.png' },
+                            { name: 'معاملات', src: '/assets/partners/payment/moamalat.png' },
+                            { name: 'بكم', src: '/assets/partners/payment/Becom.png' },
+                            { name: 'إدفعلي', src: '/assets/partners/payment/edfali.png' },
+                            { name: 'موبي كاش', src: '/assets/partners/payment/mobicash.png' },
+                            { name: 'بلو لاين', src: '/assets/partners/payment/BlueLine.png' },
+                            { name: 'قصتلي', src: '/assets/partners/payment/qasatli.png' },
+                            { name: 'الدفع نقداً', src: '/assets/shipping/cash.png' }
                           ].map((method, index) => (
                             <div key={index} className="bg-transparent rounded-lg p-4 text-center border hover:shadow-lg transition-shadow">
-                              <img src={`/data/payment/${method.file}`} alt={method.name} className="w-24 h-24 object-contain mx-auto" />
+                              <img src={method.src} alt={method.name} className="w-24 h-24 object-contain mx-auto" />
                               
                             </div>
                           ))}
@@ -12856,20 +12850,20 @@ const EnhancedMerchantDashboard: React.FC<{ currentMerchant?: any; onLogout?: ()
                             {/* Payment Methods Grid */}
                             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-6">
                               {[
-                                { name: '1 باي', file: '1Pay.png' },
-                                { name: 'أنيس', file: 'anis.png' },
-                                { name: 'سداد', file: 'sadad.png' },
-                                { name: 'تداول', file: 'tadawul.png' },
-                                { name: 'بطاقات ائتمانية', file: 'debit.png' },
-                                { name: 'معاملات', file: 'moamalat.png' },
-                                { name: 'بكم', file: 'Becom.png' },
-                                { name: 'إدفعلي', file: 'edfali.png' },
-                                { name: 'موبي كاش', file: 'mobicash.png' },
-                                { name: 'بلو لاين', file: 'BlueLine.png' },
-                                { name: 'الدفع نقداً', file: 'cash.png' }
+                                { name: '1 باي', src: '/assets/partners/payment/1Pay.png' },
+                                { name: 'أنيس', src: '/assets/partners/payment/anis.png' },
+                                { name: 'سداد', src: '/assets/partners/payment/sadad.png' },
+                                { name: 'تداول', src: '/assets/partners/payment/tadawul.png' },
+                                { name: 'بطاقات ائتمانية', src: '/assets/partners/payment/debit.png' },
+                                { name: 'معاملات', src: '/assets/partners/payment/moamalat.png' },
+                                { name: 'بكم', src: '/assets/partners/payment/Becom.png' },
+                                { name: 'إدفعلي', src: '/assets/partners/payment/edfali.png' },
+                                { name: 'موبي كاش', src: '/assets/partners/payment/mobicash.png' },
+                                { name: 'بلو لاين', src: '/assets/partners/payment/BlueLine.png' },
+                                { name: 'الدفع نقداً', src: '/assets/shipping/cash.png' }
                               ].map((method, index) => (
                                 <div key={index} className="bg-white rounded-lg p-4 text-center border hover:shadow-lg transition-shadow cursor-pointer">
-                                  <img src={`/payment/${method.file}`} alt={method.name} className="w-20 h-20 object-contain mx-auto" />
+                                  <img src={method.src} alt={method.name} className="w-20 h-20 object-contain mx-auto" />
                                 </div>
                               ))}
                             </div>

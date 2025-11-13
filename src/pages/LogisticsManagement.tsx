@@ -61,6 +61,8 @@ const libyanCities = [
   'صبراتة', 'الخمس', 'غريان', 'سرت', 'سبها', 'درنة'
 ];
 
+const LOGISTICS_FALLBACK_ICON = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTI4IiBoZWlnaHQ9IjgwIiB2aWV3Qm94PSIwIDAgMTI4IDgwIiBmaWxsPSJub25lIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxwYXRoIGQ9Ik0xMiAyMGMwLTQuNDI5IDIuNjUxLTguNDQzIDYuNzEzLTEwLjMzTDU5LjA4NCAyLjYzOUM2MS43OTYgMS4zNzIgNjQuNzQ4IDAgNjcuOTk5IDBoNTguMDAyQzEyNy4zOTcgMCAxMzIgNC42MDMgMTMyIDEwLjI1NHY1OS40OTJDMTEzLjMzMiA3NS4zMzUgOTQuMzg3IDgwIDc1LjUwMiA4MEg1Mi41Yy02LjAyOCAwLTEyLjA0LTIuMTc3LTE2LjczNC02LjA4OEwxNC4wNTIgNjMuNzA0QzExLjQxMiA2MS42NzQgMTAuMDAyIDU4LjY1OCAxMCA1NS40NTJWMjB6IiBmaWxsPSIjZjNmNGY5Ii8+PHRleHQgeD0iNjQiIHk9IjUwIiBmb250LXNpemU9IjI0IiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtd2VpZ2h0PSI3MDAiIGZpbGw9IiM1NjU2NTYiIHRleHQtYW5jaG9yPSJtaWRkbGUiPk5PIElDT048L3RleHQ+PC9zdmc+';
+
 export default function LogisticsManagement() {
   // حالة الشركات
   const [shippingCompanies, setShippingCompanies] = useState<ShippingCompany[]>([
@@ -73,7 +75,7 @@ export default function LogisticsManagement() {
       address: 'طرابلس، ليبيا',
       lat: 32.8872, 
       lng: 13.1913,
-      logo: '/data/transport/hudhud.jpeg'
+      logo: '/assets/partners/transport/hudhud.jpeg'
     },
     { 
       id: 2, 
@@ -84,7 +86,7 @@ export default function LogisticsManagement() {
       address: 'طرابلس، ليبيا',
       lat: 32.8872, 
       lng: 13.1913,
-      logo: '/data/transport/dhl.png'
+      logo: '/assets/partners/transport/dhl.png'
     },
     { 
       id: 3, 
@@ -95,7 +97,7 @@ export default function LogisticsManagement() {
       address: 'طرابلس، ليبيا',
       lat: 32.8872, 
       lng: 13.1913,
-      logo: '/data/transport/aramex.webp'
+      logo: '/assets/partners/transport/aramex.webp'
     }
   ]);
 
@@ -171,7 +173,7 @@ export default function LogisticsManagement() {
       address: form.address,
       lat: parseFloat(form.lat) || 32.8872,
       lng: parseFloat(form.lng) || 13.1913,
-      logo: form.logo || '/data/transport/default.png'
+      logo: form.logo || LOGISTICS_FALLBACK_ICON
     };
 
     setShippingCompanies([...shippingCompanies, newCompany]);
@@ -291,7 +293,7 @@ export default function LogisticsManagement() {
                     className="w-full h-full object-contain p-2"
                     onError={(e) => {
                       const target = e.target as HTMLImageElement;
-                      target.src = '/placeholder-logo.png';
+                      target.src = LOGISTICS_FALLBACK_ICON;
                     }}
                   />
                 </div>
@@ -496,12 +498,14 @@ export default function LogisticsManagement() {
                     )}
                   </div>
 
+                  <Label htmlFor="logo-upload" className="sr-only">تحميل شعار شركة جديدة</Label>
                   <input
                     id="logo-upload"
                     type="file"
                     accept=".webp,.jpg,.jpeg,.bmp"
                     onChange={handleLogoUpload}
                     className="hidden"
+                    aria-label="تحميل شعار شركة جديدة"
                   />
 
                   {!logoPreview && (
@@ -770,12 +774,14 @@ export default function LogisticsManagement() {
                     )}
                   </div>
 
+                  <Label htmlFor="logo-upload-edit" className="sr-only">تحميل شعار شركة في التعديل</Label>
                   <input
                     id="logo-upload-edit"
                     type="file"
                     accept=".webp,.jpg,.jpeg,.bmp"
                     onChange={handleLogoUpload}
                     className="hidden"
+                    aria-label="تحميل شعار شركة في التعديل"
                   />
                 </div>
               </div>
@@ -789,8 +795,9 @@ export default function LogisticsManagement() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
                   <div>
-                    <Label className="text-gray-700 font-bold">خط العرض (Latitude)</Label>
+                    <Label htmlFor="edit-lat" className="text-gray-700 font-bold">خط العرض (Latitude)</Label>
                     <Input
+                      id="edit-lat"
                       type="number"
                       step="any"
                       value={form.lat}
@@ -799,8 +806,9 @@ export default function LogisticsManagement() {
                     />
                   </div>
                   <div>
-                    <Label className="text-gray-700 font-bold">خط الطول (Longitude)</Label>
+                    <Label htmlFor="edit-lng" className="text-gray-700 font-bold">خط الطول (Longitude)</Label>
                     <Input
+                      id="edit-lng"
                       type="number"
                       step="any"
                       value={form.lng}
@@ -861,7 +869,8 @@ export default function LogisticsManagement() {
                   <Save className="h-5 w-5 ml-2" />
                   💾 حفظ التعديلات
                 </button>
-                <button
+                <Button
+                  type="button"
                   variant="outline"
                   onClick={() => {
                     setShowEditModal(false);
@@ -871,7 +880,7 @@ export default function LogisticsManagement() {
                   className="px-8 py-6 border-2 hover:bg-gray-50"
                 >
                   إلغاء
-                </button>
+                </Button>
               </div>
             </div>
           </div>
