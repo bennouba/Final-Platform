@@ -803,8 +803,8 @@ const Footer = () => {
 
       <div className="container px-4 relative z-10">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
-          <div className="text-right">
-            <div className="flex items-right gap-2 mb-4 right">
+          <div className="text-center">
+            <div className="flex justify-center mb-4">
               <img src="/eshro-logo-white.png" alt="إشرو" className="h-10 w-auto" />
             </div>
             <p className="text-gray-400 mb-4">
