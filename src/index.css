@@ -264,18 +264,32 @@
   * {
     @apply border-border outline-ring/50;
   }
-  body {
-    @apply bg-background text-foreground font-sans;
-    font-family: "Cairo", sans-serif;
-  }
   
   html {
     direction: rtl;
+    width: 100%;
+    overflow-x: hidden;
+  }
+  
+  body {
+    @apply bg-background text-foreground font-sans;
+    font-family: "Cairo", sans-serif;
+    width: 100%;
+    overflow-x: hidden;
   }
 
   .container {
     @apply px-4 mx-auto max-w-7xl;
+    width: 100%;
   }
+}
+
+/* إصلاح التخطيط للبيئة الإنتاجية */
+#root {
+  width: 100%;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 /* تحسينات إضافية للمؤثرات */
