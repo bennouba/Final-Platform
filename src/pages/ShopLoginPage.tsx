@@ -419,7 +419,7 @@ const ShopLoginPage: React.FC<ShopLoginPageProps> = ({
 
       {/* الهيدر المبسط */}
       <header className="relative z-10 p-4 border-b bg-white/80 backdrop-blur-sm">
-        <div className="container mx-auto flex items-center justify-between">
+        <div className="w-full px-4 mx-auto max-w-7xl flex items-center justify-between">
           <Button
             variant="ghost"
             onClick={onBack}
@@ -440,7 +440,7 @@ const ShopLoginPage: React.FC<ShopLoginPageProps> = ({
         </div>
       </header>
 
-      <div className="relative z-10 container mx-auto px-4 py-12 flex flex-col items-center">
+      <div className="relative z-10 w-full px-4 mx-auto max-w-7xl py-12 flex flex-col items-center">
 
         {/* نموذج تسجيل الدخول */}
         <Card className="w-full max-w-md shadow-xl border-0">

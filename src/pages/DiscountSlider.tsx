@@ -99,7 +99,7 @@ export default function DiscountSlider() {
         </p>
       </div>
 
-      <div className="container mx-auto px-3 md:px-6 lg:px-8 relative z-10">
+      <div className="w-full px-3 md:px-6 lg:px-8 mx-auto max-w-7xl relative z-10">
         {/* 1️⃣ السلايدر الأفقي العلوي - Full Width */}
         <div 
           className="mb-4 md:mb-6" 
