@@ -1,7 +1,13 @@
-const LIGHTBOX_SRC = "https://tnpg.moamalat.net:6006/js/lightbox.js";
+const LIGHTBOX_SRC_SANDBOX = "https://tnpg.moamalat.net:6006/js/lightbox.js";
+const LIGHTBOX_SRC_PRODUCTION = "https://pgw.moamalat.net:6006/js/lightbox.js";
+const DEFAULT_MID = "10081014649";
+const DEFAULT_TID = "99179395";
+const DEFAULT_SECRET = "3a488a89b3f7993476c252f017c488bb";
 const CURRENCY_CODE = "434"; // LYD ISO code
 
 let scriptPromise: Promise<void> | null = null;
+let currentEnv: "sandbox" | "production" = "sandbox";
+let currentLightboxSrc = LIGHTBOX_SRC_SANDBOX;
 
 function getBrowserEnv(key: string): string | undefined {
   const w: any = typeof window !== "undefined" ? window : {};
@@ -38,27 +44,40 @@ function formatTrxDateTime(date: Date): string {
   return `${y}${m}${d}${hh}${mm}`;
 }
 
-async function ensureScriptLoaded(): Promise<void> {
+async function ensureScriptLoaded(env?: "sandbox" | "production"): Promise<void> {
   if (typeof window === "undefined") return;
-  if ((window as any).Lightbox?.Checkout) return;
+
+  if (env && currentEnv !== env) {
+    currentEnv = env;
+  }
+
+  currentLightboxSrc = currentEnv === "production" ? LIGHTBOX_SRC_PRODUCTION : LIGHTBOX_SRC_SANDBOX;
+
+  let existing = document.querySelector<HTMLScriptElement>("script[data-moamalat]");
+  if (existing && existing.src !== currentLightboxSrc) {
+    existing.remove();
+    existing = null;
+    (window as any).Lightbox = undefined;
+    scriptPromise = null;
+  }
+
+  if ((window as any).Lightbox?.Checkout && existing) {
+    return;
+  }
 
   if (!scriptPromise) {
     scriptPromise = new Promise<void>((resolve, reject) => {
-      const existing = document.querySelector<HTMLScriptElement>("script[data-moamalat]");
-      if (existing) {
-        if ((window as any).Lightbox?.Checkout) {
-          resolve();
-        } else {
-          existing.addEventListener("load", () => resolve(), { once: true });
-          existing.addEventListener("error", () => reject(new Error("فشل تحميل سكربت بوابة معاملات")), { once: true });
-        }
+      const currentScript = document.querySelector<HTMLScriptElement>("script[data-moamalat]");
+      if (currentScript) {
+        currentScript.addEventListener("load", () => resolve(), { once: true });
+        currentScript.addEventListener("error", () => reject(new Error("فشل تحميل سكربت بوابة معاملات")), { once: true });
         return;
       }
 
       const script = document.createElement("script");
-      script.src = LIGHTBOX_SRC;
+      script.src = currentLightboxSrc;
       script.async = true;
-      script.dataset.moamalat = LIGHTBOX_SRC;
+      script.dataset.moamalat = currentLightboxSrc;
       script.onload = () => resolve();
       script.onerror = () => reject(new Error("فشل تحميل سكربت بوابة معاملات"));
       document.head.appendChild(script);
@@ -107,11 +126,20 @@ async function resolveMerchantCredentials(): Promise<{ MID: string; TID: string;
     envFlag = envFlag ?? ENV;
   }
 
+  MID = MID ?? DEFAULT_MID;
+  TID = TID ?? DEFAULT_TID;
+
   if (!MID || !TID) {
     throw new Error("بيانات التاجر غير مكتملة (MID/TID)");
   }
 
-  const ENV = envFlag && envFlag.toLowerCase() === "production" ? "production" : "sandbox";
+  const desiredEnv = envFlag && envFlag.toLowerCase() === "production" ? "production" : "sandbox";
+  const hostname = typeof window !== "undefined" ? window.location.hostname : "";
+  const isLocalHost = hostname === "localhost" || hostname === "127.0.0.1" || hostname === "";
+  const ENV = isLocalHost ? "sandbox" : desiredEnv;
+  currentEnv = ENV;
+  currentLightboxSrc = ENV === "production" ? LIGHTBOX_SRC_PRODUCTION : LIGHTBOX_SRC_SANDBOX;
+
   return { MID, TID, ENV };
 }
 
@@ -140,10 +168,12 @@ async function requestSecureHash(payload: {
     }
     return data.secureHash;
   } catch (error) {
-    const keyHex = (window as any).__MOAMALAT_TEST_KEY__ as string | undefined;
+    const keyHex = (window as any).__MOAMALAT_TEST_KEY__ as string | undefined ?? DEFAULT_SECRET;
     if (!keyHex) {
       throw error instanceof Error ? error : new Error("فشل توليد SecureHash");
     }
+
+    (window as any).__MOAMALAT_TEST_KEY__ = keyHex;
 
     const message = `Amount=${payload.Amount}&DateTimeLocalTrxn=${payload.DateTimeLocalTrxn}&MerchantId=${payload.MerchantId}&MerchantReference=${payload.MerchantReference}&TerminalId=${payload.TerminalId}`;
     return await hmacSha256HexUpper(message, keyHex);
@@ -184,9 +214,9 @@ export interface OpenMoamalatOptions {
 }
 
 export async function openMoamalatLightbox(options: OpenMoamalatOptions): Promise<string> {
-  await ensureScriptLoaded();
-
   const { MID, TID, ENV } = await resolveMerchantCredentials();
+  await ensureScriptLoaded(ENV);
+
   const amountMinorUnits = String(Math.round(Number(options.amountLYD) * 1000));
   const trxDateTime = formatTrxDateTime(new Date());
   const merchantReference = `${options.referencePrefix ?? "ESH"}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;

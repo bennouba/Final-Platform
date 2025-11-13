@@ -1027,9 +1027,6 @@ const EnhancedMerchantDashboard: React.FC<{ currentMerchant?: any; onLogout?: ()
     if (!hasModuleAccess(NAV_GROUP_ACCESS.services)) {
       setServicesExpanded(false);
     }
-    if (!hasModuleAccess(NAV_GROUP_ACCESS.support)) {
-      setSupportExpanded(false);
-    }
   }, [hasModuleAccess]);
 
   useEffect(() => {
@@ -12050,7 +12047,7 @@ const EnhancedMerchantDashboard: React.FC<{ currentMerchant?: any; onLogout?: ()
                             { name: 'إدفعلي', file: 'edfali.png' },
                             { name: 'موبي كاش', file: 'mobicash.png' },
                             { name: 'بلو لاين', file: 'BlueLine.png' },
-                            { name: 'الدفع لاحقاً من خلال قصتلي', file: 'eshro-new-logo.png' }
+                            { name: 'الدفع لاحقاً من خلال قصتلي', file: 'qasatli.png' }
                           ].map((method, index) => (
                             <div key={index} className="bg-transparent rounded-lg p-4 text-center border hover:shadow-lg transition-shadow">
                               <img src={`/data/payment/${method.file}`} alt={method.name} className="w-24 h-24 object-contain mx-auto" />

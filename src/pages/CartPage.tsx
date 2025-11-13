@@ -82,6 +82,8 @@ const CartPage: React.FC<CartPageProps> = ({
   const [shippingType, setShippingType] = useState('normal-tripoli');
   const [notes, setNotes] = useState('');
 
+  const customerFullName = [customerData.firstName, customerData.lastName].filter(Boolean).join(' ').trim();
+
   // حساب تكلفة الشحن
   function getShippingCost(city: string, type: string): number {
     if (!type) return 0;
@@ -249,8 +251,8 @@ const CartPage: React.FC<CartPageProps> = ({
           <PaymentView
             orderData={{
               items: cartItems,
-              customer: customerData,
-              payment: { method: paymentMethod, type: paymentType },
+              customer: { ...customerData, name: customerFullName },
+              payment: { method: paymentMethod, type: paymentType || 'معاملات' },
               shipping: { type: shippingType, cost: shippingCost },
               notes,
               subtotal,
@@ -947,6 +949,19 @@ const PaymentView: React.FC<any> = ({
   const [isLaunchingMoamalat, setIsLaunchingMoamalat] = useState(false);
   const [isProcessingOrder, setIsProcessingOrder] = useState(false);
 
+  const immediateOptions = paymentMethods.immediate?.methods ?? [];
+  const selectedImmediateLabel =
+    immediateOptions.find((method) => method.name === orderData.payment.type)?.name ??
+    orderData.payment.type ??
+    'معاملات';
+  const isImmediate = orderData.payment.method === 'immediate';
+  const rawCustomerName =
+    (orderData.customer?.name ?? '').trim() ||
+    `${orderData.customer?.firstName ?? ''} ${orderData.customer?.lastName ?? ''}`.trim();
+  const customerName = rawCustomerName.trim() || 'عميل مسجل';
+  const primaryButtonLabel = isImmediate ? 'الدفع' : 'تأكيد الطلب';
+  const paymentSummaryLabel = isImmediate ? `دفع فوري عبر ${selectedImmediateLabel}` : 'عند الاستلام';
+
   useEffect(() => {
     if (orderData.payment.method === 'immediate') {
       ensureMoamalatScript().catch((error) => {
@@ -960,11 +975,18 @@ const PaymentView: React.FC<any> = ({
       setIsProcessingOrder(true);
       setIsLaunchingMoamalat(true);
       try {
+        const referencePrefix = (orderData.payment.type || 'ORD')
+          .toString()
+          .replace(/\s+/g, '')
+          .toUpperCase()
+          .slice(0, 8) || 'ORD';
+
         await openMoamalatLightbox({
           amountLYD: Number(orderData.total),
-          referencePrefix: 'ORD',
+          referencePrefix,
           orderId: orderData.id,
           customerMobile: orderData.customer?.phone,
+          additionalConfig: { PaymentChannel: orderData.payment.type },
           onComplete: (transactionData) => {
             handleMoamalatSuccess(transactionData);
             setIsProcessingOrder(false);
@@ -1026,10 +1048,15 @@ const PaymentView: React.FC<any> = ({
         <CardHeader>
           <CardTitle className="text-center flex items-center justify-center gap-2">
             <CreditCard className="h-6 w-6" />
-            {orderData.payment.method === 'immediate' ? 'بوابة الدفع معاملات' : 'تأكيد الطلب'}
+            تأكيد الطلب
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
+          {isImmediate && (
+            <div className="bg-green-50 border border-green-200 text-green-700 text-center text-sm font-semibold py-2 rounded-lg">
+              بوابة الدفع معاملات
+            </div>
+          )}
           {/* ملخص الطلب */}
           <div className="bg-gray-50 p-4 rounded-lg">
             <h3 className="font-semibold mb-3">ملخص الطلب</h3>
@@ -1040,11 +1067,11 @@ const PaymentView: React.FC<any> = ({
               </div>
               <div className="flex justify-between">
                 <span>طريقة الدفع:</span>
-                <span>{orderData.payment.method === 'immediate' ? 'دفع فوري عبر ' + orderData.payment.type : 'عند الاستلام'}</span>
+                <span>{paymentSummaryLabel}</span>
               </div>
               <div className="flex justify-between">
                 <span>العميل:</span>
-                <span>{orderData.customer.name}</span>
+                <span>{customerName}</span>
               </div>
             </div>
           </div>
@@ -1052,22 +1079,20 @@ const PaymentView: React.FC<any> = ({
           <div className="flex gap-4">
             <Button variant="outline" className="flex-1" onClick={onBack} disabled={isProcessingOrder}>
               <ArrowLeft className="h-4 w-4 mr-2" />
-              تراجع
+              العودة
             </Button>
-            <Button 
-              className="flex-1 bg-green-600 hover:bg-green-700 text-white" 
+            <Button
+              className="flex-1 bg-green-600 hover:bg-green-700 text-white"
               onClick={handlePaymentStart}
               disabled={isProcessingOrder}
             >
               {isProcessingOrder ? (
                 <div className="flex items-center gap-2">
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  جاري المعالجة...
+                  {isImmediate ? (isLaunchingMoamalat ? 'جاري فتح بوابة معاملات...' : 'جاري الدفع...') : 'جاري المعالجة...'}
                 </div>
               ) : (
-                <>
-                  {orderData.payment.method === 'immediate' ? 'ادفع عبر معاملات' : 'تأكيد الطلب'}
-                </>
+                primaryButtonLabel
               )}
             </Button>
           </div>

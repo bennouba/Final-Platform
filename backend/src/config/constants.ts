@@ -1,0 +1,69 @@
+export const API_PREFIX = '/api';
+
+export const HTTP_STATUS = {
+  OK: 200,
+  CREATED: 201,
+  BAD_REQUEST: 400,
+  UNAUTHORIZED: 401,
+  FORBIDDEN: 403,
+  NOT_FOUND: 404,
+  CONFLICT: 409,
+  INTERNAL_ERROR: 500,
+};
+
+export const ERROR_CODES = {
+  VALIDATION_ERROR: 'VALIDATION_ERROR',
+  UNAUTHORIZED: 'UNAUTHORIZED',
+  FORBIDDEN: 'FORBIDDEN',
+  NOT_FOUND: 'NOT_FOUND',
+  DUPLICATE_EMAIL: 'DUPLICATE_EMAIL',
+  INVALID_CREDENTIALS: 'INVALID_CREDENTIALS',
+  TOKEN_EXPIRED: 'TOKEN_EXPIRED',
+  INVALID_TOKEN: 'INVALID_TOKEN',
+  PAYMENT_ERROR: 'PAYMENT_ERROR',
+  DATABASE_ERROR: 'DATABASE_ERROR',
+  INTERNAL_ERROR: 'INTERNAL_ERROR',
+};
+
+export const PAGINATION = {
+  DEFAULT_PAGE: 1,
+  DEFAULT_LIMIT: 20,
+  MAX_LIMIT: 100,
+};
+
+export const PASSWORD_REQUIREMENTS = {
+  MIN_LENGTH: 8,
+  BCRYPT_ROUNDS: 10,
+};
+
+export const SHIPPING_COST = {
+  TRIPOLI: {
+    NORMAL: { min: 30, max: 45 },
+    EXPRESS: { min: 85, max: 120 },
+  },
+  OUTSIDE: {
+    NORMAL: { min: 50, max: 85 },
+    EXPRESS: { min: 120, max: 185 },
+  },
+};
+
+export const ORDER_TIMEOUT_HOURS = 24;
+
+export const MAX_PRODUCT_IMAGES = 5;
+
+export const COUPON_DEFAULTS = {
+  MAX_USES_UNLIMITED: null,
+  MAX_USES_PER_USER: 1,
+};
+
+export const REGEX = {
+  EMAIL: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+  PHONE_LIBYAN: /^(\+218|0)?[0-9]{9}$/,
+  SLUG: /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
+  COUPON_CODE: /^[A-Z0-9]{3,20}$/,
+};
+
+export const MOAMALAT_CONFIG = {
+  DATE_FORMAT: 'yyyyMMddHHmm',
+  AMOUNT_MULTIPLIER: 1000,
+};

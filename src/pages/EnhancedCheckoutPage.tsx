@@ -433,6 +433,9 @@ const EnhancedCheckoutPage: React.FC<EnhancedCheckoutPageProps> = ({
     { id: 'edfali', name: 'ادفع لي', icon: '/assets/payment/edfali.png' }
   ];
 
+  const largePaymentIcons = new Set(['moamalat', 'cards', 'yuser', 'blueline', 'nab4pay']);
+  const paymentIconBaseClass = 'object-contain filter drop-shadow-sm group-hover:scale-110 group-hover:drop-shadow-md transition-all duration-300';
+
   const deliveryCompanies = [
     { id: 'zam', name: 'زام', icon: '/assets/shipping/ZAM.png' },
     { id: 'amyal', name: 'أميال', icon: '/assets/shipping/amyal.png' },
@@ -767,11 +770,7 @@ const EnhancedCheckoutPage: React.FC<EnhancedCheckoutPageProps> = ({
                                 <img 
                                   src={method.icon} 
                                   alt={method.name}
-                                  className={`${
-                                    ['nab4pay.png', 'youssr.png', 'debit.png'].some(icon => method.icon.includes(icon))
-                                      ? 'w-48 h-48 object-contain filter drop-shadow-sm group-hover:scale-110 group-hover:drop-shadow-md transition-all duration-300' // Even larger for specified payment icons
-                                      : 'w-32 h-20 object-contain filter drop-shadow-sm group-hover:scale-110 group-hover:drop-shadow-md transition-all duration-300'
-                                  }`}
+                                  className={`${paymentIconBaseClass} ${largePaymentIcons.has(method.id) ? 'w-40 h-24' : 'w-32 h-20'}`}
                                   onError={(e) => {
                                     (e.target as HTMLImageElement).src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTI4IiBoZWlnaHQ9IjgwIiB2aWV3Qm94PSIwIDAgMTI4IDgwIiBmaWxsPSJub25lIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPgo8cmVjdCB3aWR0aD0iMTI4IiBoZWlnaHQ9IjgwIiByeD0iMTIiIGZpbGw9IiNmOWZhZmIiLz4KPHA9GggZD0iTTY0IDU2YzEzLjI1NSAwIDI0LTEwLjc0NSAyNC0yNHMtMTAuNzQ1LTI0LTI0LTI0LTI0IDEwLjc0NS0yNCAyNHMxMC43NDUgMjQgMjQgMjR6IiBmaWxsPSIjZTVlN2ViIi8+Cjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIyNCIgZmlsbD0iIzZiNzI4MCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4xZW0iPvCfkqQ8L3RleHQ+Cjwvc3ZnPg==';
                                   }}
