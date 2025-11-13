@@ -16,9 +16,7 @@
     }
   ],
   "env": {
-    "NODE_ENV": "production"
-  },
-  "framework": "vite",
-  "installCommand": "npm install",
-  "buildCommand": "npm run build"
+    "NODE_ENV": "production",
+    "VERCEL_NPM_COMMAND": "npm install"
+  }
 }
