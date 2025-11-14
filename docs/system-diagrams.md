@@ -33,7 +33,7 @@ graph TB
 
     %% Data Layer
     subgraph "Data Layer"
-        J[Cloudflare D1] --> K[(SQLite Database)]
+        J[Neon PostgreSQL] --> K[(Relational Database)]
         L[Cloudflare KV] --> M[(Key-Value Store)]
         N[Cloudflare R2] --> O[(Object Storage)]
     end
@@ -49,6 +49,7 @@ graph TB
     %% Connections
     B --> E
     E --> J
+    J --> P
     E --> L
     E --> N
     E --> P
