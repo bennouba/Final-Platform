@@ -621,7 +621,7 @@ const ShopLoginPage: React.FC<ShopLoginPageProps> = ({
                 <div className={`w-12 h-12 ${stat.color} rounded-full flex items-center justify-center mx-auto mb-2 text-white`}>
                   {stat.icon}
                 </div>
-                <div className="text-2xl font-bold text-slate-800 mb-1">{stat.number}</div>
+                <div className="text-2xl font-bold text-slate-800 mb-1 text-center">{stat.number}</div>
                 <div className="text-xs text-slate-600 leading-tight text-center">{stat.description}</div>
               </Card>
             </div>
