@@ -617,7 +617,7 @@ const ShopLoginPage: React.FC<ShopLoginPageProps> = ({
         <div className="grid grid-cols-3 gap-4 mt-12 w-full max-w-md">
           {stats.map((stat, index) => (
             <div key={index} className="text-center">
-              <Card className="p-4 hover:shadow-lg transition-shadow text-center">
+              <Card className="p-4 hover:shadow-lg transition-shadow text-center flex flex-col items-center">
                 <div className={`w-12 h-12 ${stat.color} rounded-full flex items-center justify-center mx-auto mb-2 text-white`}>
                   {stat.icon}
                 </div>
