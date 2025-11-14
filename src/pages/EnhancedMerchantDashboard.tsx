@@ -742,6 +742,12 @@ const EnhancedMerchantDashboard: React.FC<{ currentMerchant?: any; onLogout?: ()
     { id: 1, text: 'مرحباً! كيف يمكنني مساعدتك اليوم؟', sender: 'bot', timestamp: new Date() }
   ]);
   const [currentMessage, setCurrentMessage] = useState('');
+  const [selectedAIModel, setSelectedAIModel] = useState('ChatGPT-4');
+  const [aiModelModalOpen, setAiModelModalOpen] = useState(false);
+  const [contactPanelModalOpen, setContactPanelModalOpen] = useState(false);
+  const [callLogsModalOpen, setCallLogsModalOpen] = useState(false);
+  const [performanceReportsModalOpen, setPerformanceReportsModalOpen] = useState(false);
+  const [allTicketsModalOpen, setAllTicketsModalOpen] = useState(false);
   const [biddingForm, setBiddingForm] = useState({
     name: '',
     phone: '',
@@ -759,6 +765,64 @@ const EnhancedMerchantDashboard: React.FC<{ currentMerchant?: any; onLogout?: ()
     currency: 'LYD',
     iban: '',
     swift: ''
+  });
+
+  const [editBankModalOpen, setEditBankModalOpen] = useState(false);
+  const [editingBank, setEditingBank] = useState<number | null>(null);
+  const [editBankForm, setEditBankForm] = useState({
+    name: '',
+    companyName: '',
+    holder: '',
+    email: '',
+    phone: '',
+    number: '',
+    iban: ''
+  });
+
+  const [bankAccounts, setBankAccounts] = useState([
+    {
+      name: 'مصرف الجمهورية',
+      companyName: 'شركة النجم الساطع للملابس النسائية الراقية',
+      holder: 'شركة النجم الساطع للملابس النسائية الراقية',
+      email: 'info@star-clothing.com',
+      phone: '+218911234567',
+      number: '000296608010756115',
+      iban: 'SA4380000296608010756115'
+    },
+    {
+      name: 'مصرف شمال أفريقيا',
+      companyName: 'شركة دانيا للمواد للعطور والزينة',
+      holder: 'شركة دانيا للمواد للعطور والزينة',
+      email: 'contact@dania-perfumes.com',
+      phone: '+218922345678',
+      number: '092287897788771110',
+      iban: 'SA4380000868666862226'
+    }
+  ]);
+
+  const libyanBanks = [
+    { name: 'مصرف الجمهورية', logo: 'jumhouria.png' },
+    { name: 'مصرف الصحارى', logo: 'sahara-bank.jpg' },
+    { name: 'مصرف شمال أفريقيا', logo: 'north-africa.png' },
+    { name: 'مصرف التجاري الوطني', logo: 'national-commercial-bank.png' },
+    { name: 'مصرف الأمان', logo: 'aman-bank.png' },
+    { name: 'مصرف الوحدة', logo: 'wahda.png' },
+    { name: 'مصرف المتحد', logo: 'united.jpg' },
+    { name: 'مصرف اليقين', logo: 'yaken.png' },
+    { name: 'مصرف الليبي الإسلامي', logo: 'Libyan-islamic.png' },
+    { name: 'مصرف الخليج الأول', logo: 'ATIB.svg' },
+    { name: 'مصرف التضامن', logo: 'tadamun-bank.png' },
+    { name: 'مصرف أتيب', logo: 'ATIB.svg' },
+    { name: 'مصرف الأندلس', logo: 'andalus.png' },
+    { name: 'مصرف النوران', logo: 'nuran.png' },
+    { name: 'مصرف التجارة والتنمية', logo: 'commerce-bank.png' }
+  ];
+
+  const [chatbotModalOpen, setChatbotModalOpen] = useState(false);
+  const [chatbotSettings, setChatbotSettings] = useState({
+    chatgpt: '',
+    kilocode: '',
+    gemini: ''
   });
 
   // إصلاح أيقونة Leaflet
@@ -2482,6 +2546,57 @@ const EnhancedMerchantDashboard: React.FC<{ currentMerchant?: any; onLogout?: ()
       currency: 'LYD',
       iban: '',
       swift: ''
+    });
+  };
+
+  const handleSaveEditBank = () => {
+    if (!editBankForm.name.trim()) {
+      alert('يرجى اختيار اسم المصرف');
+      return;
+    }
+
+    if (!editBankForm.companyName.trim()) {
+      alert('يرجى إدخال اسم الشركة');
+      return;
+    }
+
+    if (!editBankForm.holder.trim()) {
+      alert('يرجى إدخال اسم صاحب الحساب');
+      return;
+    }
+
+    if (!editBankForm.number.trim()) {
+      alert('يرجى إدخال رقم الحساب');
+      return;
+    }
+
+    if (!editBankForm.iban.trim()) {
+      alert('يرجى إدخال رقم الآيبان');
+      return;
+    }
+
+    if (editingBank !== null) {
+      const updatedAccounts = [...bankAccounts];
+      updatedAccounts[editingBank] = {
+        ...updatedAccounts[editingBank],
+        ...editBankForm
+      };
+      setBankAccounts(updatedAccounts);
+
+      // Here you would typically save to database
+      console.log('Bank account updated:', editBankForm);
+    }
+
+    setEditBankModalOpen(false);
+    setEditingBank(null);
+    setEditBankForm({
+      name: '',
+      companyName: '',
+      holder: '',
+      email: '',
+      phone: '',
+      number: '',
+      iban: ''
     });
   };
 
@@ -4600,7 +4715,7 @@ const EnhancedMerchantDashboard: React.FC<{ currentMerchant?: any; onLogout?: ()
                                 <div>
                                   <Label htmlFor="bank-select">المصرف</Label>
                                   <Select>
-                                    <SelectTrigger>
+                                    <SelectTrigger className="mt-1 bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-gray-900 dark:text-white">
                                       <SelectValue placeholder="اختر المصرف" />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -12878,6 +12993,224 @@ const EnhancedMerchantDashboard: React.FC<{ currentMerchant?: any; onLogout?: ()
                     </div>
                   )}
 
+                  {/* Edit Bank Modal */}
+                  {editBankModalOpen && (
+                    <div className="fixed inset-0 bg-black/60 dark:bg-black/80 flex items-center justify-center z-[9999]">
+                      <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 w-full max-w-2xl mx-4 shadow-2xl border border-slate-200 dark:border-slate-700">
+                        <div className="flex items-center justify-between mb-6">
+                          <h3 className="text-xl font-bold text-gray-900 dark:text-white">تعديل البيانات</h3>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setEditBankModalOpen(false)}
+                            className="hover:bg-gray-100"
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+
+                        <div className="space-y-6">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="md:col-span-2">
+                              <Label htmlFor="edit-bank-name" className="text-gray-900 dark:text-white">إسم المصرف</Label>
+                              <Select
+                                value={editBankForm.name}
+                                onValueChange={(value) => {
+                                  const selectedBank = libyanBanks.find(bank => bank.name === value);
+                                  setEditBankForm({...editBankForm, name: value});
+                                }}
+                              >
+                                <SelectTrigger className="mt-1 bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-600 text-gray-900 dark:text-black">
+                                  <SelectValue placeholder="اختر المصرف" />
+                                </SelectTrigger>
+                                <SelectContent className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600">
+                                  {libyanBanks.map((bank) => (
+                                    <SelectItem
+                                      key={bank.name}
+                                      value={bank.name}
+                                      className="text-gray-900 hover:bg-gray-100 dark:hover:bg-slate-700 focus:bg-gray-100 dark:focus:bg-slate-700"
+                                    >
+                                      {bank.name}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              {editBankForm.name && (
+                                <div className="mt-2 flex items-center gap-2">
+                                  <img
+                                    src={`/assets/banks/${libyanBanks.find(bank => bank.name === editBankForm.name)?.logo}`}
+                                    alt={editBankForm.name}
+                                    className="w-8 h-8 object-contain"
+                                    onError={(e) => {
+                                      e.currentTarget.style.display = 'none';
+                                    }}
+                                  />
+                                  <span className="text-sm text-gray-600 dark:text-gray-300">{editBankForm.name}</span>
+                                </div>
+                              )}
+                            </div>
+                            <div>
+                              <Label htmlFor="edit-company-name" className="text-gray-900 dark:text-white">إسم الشركة صاحبة الحساب</Label>
+                              <Input
+                                id="edit-company-name"
+                                placeholder="أدخل إسم الشركة"
+                                value={editBankForm.companyName}
+                                onChange={(e) => setEditBankForm({...editBankForm, companyName: e.target.value})}
+                                className="mt-1 bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400"
+                              />
+                            </div>
+                            <div>
+                              <Label htmlFor="edit-account-holder" className="text-gray-900 dark:text-white">صاحب الحساب</Label>
+                              <Input
+                                id="edit-account-holder"
+                                placeholder="أدخل اسم صاحب الحساب"
+                                value={editBankForm.holder}
+                                onChange={(e) => setEditBankForm({...editBankForm, holder: e.target.value})}
+                                className="mt-1 bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400"
+                              />
+                            </div>
+                            <div>
+                              <Label htmlFor="edit-email" className="text-gray-900 dark:text-white">البريد الالكتروني</Label>
+                              <Input
+                                id="edit-email"
+                                type="email"
+                                placeholder="example@company.com"
+                                value={editBankForm.email}
+                                onChange={(e) => setEditBankForm({...editBankForm, email: e.target.value})}
+                                className="mt-1 bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400"
+                              />
+                            </div>
+                            <div>
+                              <Label htmlFor="edit-phone" className="text-gray-900 dark:text-white">رقم الهاتف</Label>
+                              <Input
+                                id="edit-phone"
+                                placeholder="+218xxxxxxxxx"
+                                value={editBankForm.phone}
+                                onChange={(e) => setEditBankForm({...editBankForm, phone: e.target.value})}
+                                className="mt-1 bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400"
+                              />
+                            </div>
+                            <div>
+                              <Label htmlFor="edit-account-number" className="text-gray-900 dark:text-white">رقم الحساب</Label>
+                              <Input
+                                id="edit-account-number"
+                                placeholder="أدخل رقم الحساب"
+                                value={editBankForm.number}
+                                onChange={(e) => setEditBankForm({...editBankForm, number: e.target.value})}
+                                className="mt-1 bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400"
+                              />
+                            </div>
+                            <div>
+                              <Label htmlFor="edit-iban" className="text-gray-900 dark:text-white">رقم الايبان</Label>
+                              <Input
+                                id="edit-iban"
+                                placeholder="SA4380000296608010756115"
+                                value={editBankForm.iban}
+                                onChange={(e) => setEditBankForm({...editBankForm, iban: e.target.value})}
+                                className="mt-1 bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="flex gap-3 pt-4">
+                            <Button
+                              onClick={handleSaveEditBank}
+                              className="flex-1 bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600"
+                            >
+                              <Save className="h-4 w-4 mr-2" />
+                              تعديل
+                            </Button>
+                            <Button
+                              variant="outline"
+                              onClick={() => setEditBankModalOpen(false)}
+                              className="transition-all duration-200 hover:bg-gray-50"
+                            >
+                              إلغاء
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Chatbot Settings Modal */}
+                  {chatbotModalOpen && (
+                    <div className="fixed inset-0 bg-black/60 dark:bg-black/80 flex items-center justify-center z-[9999]">
+                      <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 w-full max-w-2xl mx-4 shadow-2xl border border-slate-200 dark:border-slate-700">
+                        <div className="flex items-center justify-between mb-6">
+                          <h3 className="text-xl font-bold text-gray-900 dark:text-white">إعدادات الشات بوت</h3>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setChatbotModalOpen(false)}
+                            className="hover:bg-gray-100"
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+
+                        <div className="space-y-6">
+                          <div className="text-sm text-gray-600 mb-4">
+                            أدخل روابط الشات بوت للمنصات التالية لتفعيل الدردشة المباشرة:
+                          </div>
+
+                          <div className="space-y-4">
+                            <div>
+                              <Label htmlFor="chatgpt-link">ChatGPT Link</Label>
+                              <Input
+                                id="chatgpt-link"
+                                placeholder="https://chat.openai.com/..."
+                                value={chatbotSettings.chatgpt}
+                                onChange={(e) => setChatbotSettings({...chatbotSettings, chatgpt: e.target.value})}
+                                className="mt-1"
+                              />
+                            </div>
+                            <div>
+                              <Label htmlFor="kilocode-link">Kilo Code Link</Label>
+                              <Input
+                                id="kilocode-link"
+                                placeholder="https://kilocode.com/..."
+                                value={chatbotSettings.kilocode}
+                                onChange={(e) => setChatbotSettings({...chatbotSettings, kilocode: e.target.value})}
+                                className="mt-1"
+                              />
+                            </div>
+                            <div>
+                              <Label htmlFor="gemini-link">Gemini Link</Label>
+                              <Input
+                                id="gemini-link"
+                                placeholder="https://gemini.google.com/..."
+                                value={chatbotSettings.gemini}
+                                onChange={(e) => setChatbotSettings({...chatbotSettings, gemini: e.target.value})}
+                                className="mt-1"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="flex gap-3 pt-4">
+                            <Button
+                              onClick={() => {
+                                // Save settings logic here
+                                setChatbotModalOpen(false);
+                              }}
+                              className="flex-1 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600"
+                            >
+                              <Save className="h-4 w-4 mr-2" />
+                              حفظ الإعدادات
+                            </Button>
+                            <Button
+                              variant="outline"
+                              onClick={() => setChatbotModalOpen(false)}
+                              className="transition-all duration-200 hover:bg-gray-50"
+                            >
+                              إلغاء
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   <Card className="shadow-lg">
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
@@ -12889,25 +13222,59 @@ const EnhancedMerchantDashboard: React.FC<{ currentMerchant?: any; onLogout?: ()
                       <p className="text-sm text-gray-600 mb-4">يتم عرض هذه الحسابات المصرفية لعملائك كطريقة للدفع في متجرك.</p>
 
                       <div className="space-y-4">
-                        {[
-                          { name: 'مصرف الجمهورية', holder: 'شركة النجم الساطع للملابس النسائية الراقية', number: '000296608010756115', iban: 'SA4380000296608010756115', swift: 'RJHISARI' },
-                          { name: 'مصرف شمال أفريقيا', holder: 'شركة دانيا للمواد للعطور والزينة', number: '092287897788771110', iban: 'SA4380000868666862226', swift: 'WWWJ199J' }
-                        ].map((account, index) => (
+                        {bankAccounts.map((account, index) => (
                           <div key={index} className="bg-white rounded-lg p-4 border hover:shadow-md transition-shadow">
                             <div className="flex items-center justify-between mb-3">
                               <div className="flex items-center gap-3">
                                 <div className="w-20 h-20 flex items-center justify-center">
-                                  <img src={`/data/banks/${account.name === 'مصرف الجمهورية' ? 'jumhouria.png' : 'north-africa.png'}`} alt={account.name} className="w-20 h-20 object-contain" />
+                                  <img
+                                    src={`/assets/banks/${libyanBanks.find(bank => bank.name === account.name)?.logo || 'default.png'}`}
+                                    alt={account.name}
+                                    className="w-20 h-20 object-contain"
+                                    onError={(e) => {
+                                      e.currentTarget.src = '/assets/banks/default.png';
+                                    }}
+                                  />
                                 </div>
                                 <div>
                                   <h3 className="font-bold text-gray-900 dark:text-white">{account.name}</h3>
-                                  <p className="text-sm text-gray-600">{account.holder}</p>
+                                  <p className="text-sm text-gray-600">{account.companyName}</p>
                                 </div>
                               </div>
-                              <Button size="sm" variant="outline">تعديل</Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  setEditingBank(index);
+                                  setEditBankForm({
+                                    name: account.name,
+                                    companyName: account.companyName,
+                                    holder: account.holder,
+                                    email: account.email,
+                                    phone: account.phone,
+                                    number: account.number,
+                                    iban: account.iban
+                                  });
+                                  setEditBankModalOpen(true);
+                                }}
+                              >
+                                تعديل
+                              </Button>
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                              <div>
+                                <p className="text-gray-600">صاحب الحساب:</p>
+                                <p className="font-medium">{account.holder}</p>
+                              </div>
+                              <div>
+                                <p className="text-gray-600">البريد الإلكتروني:</p>
+                                <p className="font-medium">{account.email}</p>
+                              </div>
+                              <div>
+                                <p className="text-gray-600">رقم الهاتف:</p>
+                                <p className="font-medium">{account.phone}</p>
+                              </div>
                               <div>
                                 <p className="text-gray-600">رقم الحساب:</p>
                                 <p className="font-medium">{account.number}</p>
@@ -12915,10 +13282,6 @@ const EnhancedMerchantDashboard: React.FC<{ currentMerchant?: any; onLogout?: ()
                               <div>
                                 <p className="text-gray-600">رقم الآيبان:</p>
                                 <p className="font-medium">{account.iban}</p>
-                              </div>
-                              <div>
-                                <p className="text-gray-600">رمز التحويل:</p>
-                                <p className="font-medium">{account.swift}</p>
                               </div>
                             </div>
                           </div>
@@ -14081,7 +14444,7 @@ const EnhancedMerchantDashboard: React.FC<{ currentMerchant?: any; onLogout?: ()
                           </div>
                         </div>
                         <div className="space-y-3">
-                          <Button className="w-full bg-blue-600 hover:bg-blue-700">
+                          <Button className="w-full bg-blue-600 hover:bg-blue-700" onClick={() => setChatbotModalOpen(true)}>
                             <Settings className="h-4 w-4 mr-2" />
                             إعدادات الشات بوت
                           </Button>
@@ -14141,7 +14504,7 @@ const EnhancedMerchantDashboard: React.FC<{ currentMerchant?: any; onLogout?: ()
                           </div>
                         </div>
                         <div className="space-y-3">
-                          <Button className="w-full bg-green-600 hover:bg-green-700">
+                          <Button className="w-full bg-green-600 hover:bg-green-700" onClick={() => window.open('https://waplus.io/crm/v2/integration-center', '_blank')}>
                             <Phone className="h-4 w-4 mr-2" />
                             إجراء مكالمة
                           </Button>
@@ -14191,15 +14554,15 @@ const EnhancedMerchantDashboard: React.FC<{ currentMerchant?: any; onLogout?: ()
                         <div className="space-y-3">
                           <div className="p-3 bg-purple-50 rounded-lg">
                             <div className="text-sm font-medium">البريد الإلكتروني الرئيسي</div>
-                            <div className="text-lg font-bold text-purple-600 mt-1">support@merchant.com</div>
+                            <div className="text-lg font-bold text-purple-600 mt-1">c.services@eshro.ly</div>
                           </div>
                           <div className="p-3 bg-indigo-50 rounded-lg">
                             <div className="text-sm font-medium">البريد التجاري</div>
-                            <div className="text-lg font-bold text-indigo-600 mt-1">sales@merchant.com</div>
+                            <div className="text-lg font-bold text-indigo-600 mt-1">sales@eshro.ly</div>
                           </div>
                         </div>
                         <div className="space-y-3">
-                          <Button className="w-full bg-purple-600 hover:bg-purple-700">
+                          <Button className="w-full bg-purple-600 hover:bg-purple-700" onClick={() => window.open('https://outlook.live.com/', '_blank')}>
                             <Mail className="h-4 w-4 mr-2" />
                             إرسال بريد إلكتروني
                           </Button>
@@ -14250,7 +14613,7 @@ const EnhancedMerchantDashboard: React.FC<{ currentMerchant?: any; onLogout?: ()
                           <div className="text-2xl mb-2">📘</div>
                           <div className="font-medium">فيسبوك</div>
                           <div className="text-sm text-gray-600 mt-1">12 رسالة جديدة</div>
-                          <Button size="sm" className="mt-2 bg-blue-600 hover:bg-blue-700">
+                          <Button size="sm" className="mt-2 bg-blue-600 hover:bg-blue-700" onClick={() => window.open('https://facebook.com', '_blank')}>
                             إدارة
                           </Button>
                         </div>
@@ -14258,7 +14621,7 @@ const EnhancedMerchantDashboard: React.FC<{ currentMerchant?: any; onLogout?: ()
                           <div className="text-2xl mb-2">📷</div>
                           <div className="font-medium">إنستغرام</div>
                           <div className="text-sm text-gray-600 mt-1">8 تعليقات</div>
-                          <Button size="sm" className="mt-2 bg-pink-600 hover:bg-pink-700">
+                          <Button size="sm" className="mt-2 bg-pink-600 hover:bg-pink-700" onClick={() => window.open('https://instagram.com', '_blank')}>
                             إدارة
                           </Button>
                         </div>
@@ -14266,7 +14629,7 @@ const EnhancedMerchantDashboard: React.FC<{ currentMerchant?: any; onLogout?: ()
                           <div className="text-2xl mb-2">🐦</div>
                           <div className="font-medium">تويتر</div>
                           <div className="text-sm text-gray-600 mt-1">5 منشنات</div>
-                          <Button size="sm" className="mt-2 bg-blue-400 hover:bg-blue-500">
+                          <Button size="sm" className="mt-2 bg-blue-400 hover:bg-blue-500" onClick={() => window.open('https://twitter.com', '_blank')}>
                             إدارة
                           </Button>
                         </div>
@@ -14393,15 +14756,15 @@ const EnhancedMerchantDashboard: React.FC<{ currentMerchant?: any; onLogout?: ()
                           </div>
                         </div>
                         <div className="space-y-3">
-                          <Button className="w-full bg-green-600 hover:bg-green-700">
+                          <Button className="w-full bg-green-600 hover:bg-green-700" onClick={() => window.open('https://web.whatsapp.com', '_blank')}>
                             <MessageSquare className="h-4 w-4 mr-2" />
                             فتح واجهة الواتساب
                           </Button>
-                          <Button variant="outline" className="w-full">
+                          <Button variant="outline" className="w-full" onClick={() => window.open('https://wa.me/?text=رسالة%20جماعية%20من%20منصة%20إشرو', '_blank')}>
                             <Send className="h-4 w-4 mr-2" />
                             إرسال رسالة جماعية
                           </Button>
-                          <Button variant="outline" className="w-full">
+                          <Button variant="outline" className="w-full" onClick={() => window.open('https://premiumsender.in', '_blank')}>
                             <Settings className="h-4 w-4 mr-2" />
                             إعدادات Premium Sender
                           </Button>
@@ -14449,7 +14812,7 @@ const EnhancedMerchantDashboard: React.FC<{ currentMerchant?: any; onLogout?: ()
                             <div className="text-sm font-medium mb-1">الذكاء الاصطناعي النشط</div>
                             <div className="flex items-center gap-2">
                               <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                              <span className="text-sm text-indigo-600 font-medium">ChatGPT-4</span>
+                              <span className="text-sm text-indigo-600 font-medium">{selectedAIModel}</span>
                             </div>
                           </div>
                           <div className="p-3 bg-blue-50 rounded-lg">
@@ -14468,11 +14831,11 @@ const EnhancedMerchantDashboard: React.FC<{ currentMerchant?: any; onLogout?: ()
                             <Bot className="h-4 w-4 mr-2" />
                             فتح واجهة الشات بوت
                           </Button>
-                          <Button variant="outline" className="w-full">
+                          <Button variant="outline" className="w-full" onClick={() => setAiModelModalOpen(true)}>
                             <Settings className="h-4 w-4 mr-2" />
                             تبديل نموذج AI
                           </Button>
-                          <Button variant="outline" className="w-full">
+                          <Button variant="outline" className="w-full" onClick={() => alert('تحليلات الذكاء الاصطناعي - عرض إحصائيات مفصلة لاستخدام الذكاء الاصطناعي')}>
                             <BarChart3 className="h-4 w-4 mr-2" />
                             تحليلات الذكاء الاصطناعي
                           </Button>
@@ -14578,7 +14941,7 @@ const EnhancedMerchantDashboard: React.FC<{ currentMerchant?: any; onLogout?: ()
                           <Plus className="h-4 w-4 mr-2" />
                           إنشاء تذكرة جديدة
                         </Button>
-                        <Button variant="outline">
+                        <Button variant="outline" onClick={() => setAllTicketsModalOpen(true)}>
                           <Eye className="h-4 w-4 mr-2" />
                           عرض جميع التذاكر
                         </Button>
@@ -14621,15 +14984,15 @@ const EnhancedMerchantDashboard: React.FC<{ currentMerchant?: any; onLogout?: ()
                           </div>
                         </div>
                         <div className="space-y-3">
-                          <Button className="w-full bg-teal-600 hover:bg-teal-700">
+                          <Button className="w-full bg-teal-600 hover:bg-teal-700" onClick={() => setContactPanelModalOpen(true)}>
                             <Phone className="h-4 w-4 mr-2" />
                             لوحة الاتصال
                           </Button>
-                          <Button variant="outline" className="w-full">
+                          <Button variant="outline" className="w-full" onClick={() => setCallLogsModalOpen(true)}>
                             <FileText className="h-4 w-4 mr-2" />
                             سجل المكالمات
                           </Button>
-                          <Button variant="outline" className="w-full">
+                          <Button variant="outline" className="w-full" onClick={() => setPerformanceReportsModalOpen(true)}>
                             <BarChart3 className="h-4 w-4 mr-2" />
                             تقارير الأداء
                           </Button>
@@ -14706,7 +15069,7 @@ const EnhancedMerchantDashboard: React.FC<{ currentMerchant?: any; onLogout?: ()
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Bot className="h-5 w-5 text-indigo-600" />
-              شات بوت ذكي - دعم فني
+              شات بوت ذكي - دعم فني ({selectedAIModel})
             </DialogTitle>
             <DialogDescription>
               تحدث مع الشات بوت الذكي للحصول على المساعدة الفورية
@@ -14746,6 +15109,478 @@ const EnhancedMerchantDashboard: React.FC<{ currentMerchant?: any; onLogout?: ()
             <Button onClick={handleSendMessage} className="bg-indigo-600 hover:bg-indigo-700">
               <Send className="h-4 w-4" />
             </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* AI Model Selection Modal */}
+      <Dialog open={aiModelModalOpen} onOpenChange={setAiModelModalOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Settings className="h-5 w-5 text-indigo-600" />
+              تبديل نموذج الذكاء الاصطناعي
+            </DialogTitle>
+            <DialogDescription>
+              اختر نموذج الذكاء الاصطناعي الذي تريد استخدامه في الشات بوت
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="space-y-3">
+              {[
+                { name: 'ChatGPT-4', description: 'أقوى نموذج من OpenAI', icon: '🤖' },
+                { name: 'ChatGPT', description: 'نموذج OpenAI الكلاسيكي', icon: '💬' },
+                { name: 'DeepSeek', description: 'نموذج صيني متقدم', icon: '🔍' },
+                { name: 'Gemini', description: 'نموذج Google المتطور', icon: '💎' },
+                { name: 'Claude', description: 'نموذج Anthropic الذكي', icon: '🧠' },
+                { name: 'Grok', description: 'نموذج xAI المبتكر', icon: '🚀' }
+              ].map((model) => (
+                <div
+                  key={model.name}
+                  className={`p-4 border rounded-lg cursor-pointer transition-all ${
+                    selectedAIModel === model.name
+                      ? 'border-indigo-500 bg-indigo-50'
+                      : 'border-gray-200 hover:border-indigo-300'
+                  }`}
+                  onClick={() => {
+                    setSelectedAIModel(model.name);
+                    setAiModelModalOpen(false);
+                    alert(`تم تبديل النموذج إلى ${model.name}`);
+                  }}
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="text-2xl">{model.icon}</span>
+                    <div>
+                      <div className="font-medium">{model.name}</div>
+                      <div className="text-sm text-gray-600">{model.description}</div>
+                    </div>
+                    {selectedAIModel === model.name && (
+                      <div className="ml-auto">
+                        <div className="w-3 h-3 bg-indigo-500 rounded-full"></div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Contact Panel Modal */}
+      <Dialog open={contactPanelModalOpen} onOpenChange={setContactPanelModalOpen}>
+        <DialogContent className="sm:max-w-[800px] max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Phone className="h-5 w-5 text-teal-600" />
+              لوحة الاتصال - مركز الاتصال
+            </DialogTitle>
+            <DialogDescription>
+              إدارة المكالمات والتواصل مع العملاء
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-6">
+            {/* Active Calls */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">المكالمات النشطة</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {[
+                    { id: 1, customer: 'أحمد محمد', phone: '+218 91 234 5678', duration: '2:34', status: 'active' },
+                    { id: 2, customer: 'فاطمة علي', phone: '+218 92 345 6789', duration: '1:12', status: 'active' },
+                    { id: 3, customer: 'محمد سالم', phone: '+218 90 123 4567', duration: '0:45', status: 'ringing' }
+                  ].map((call) => (
+                    <div key={call.id} className="flex items-center justify-between p-4 border rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-3 h-3 rounded-full ${call.status === 'active' ? 'bg-green-500' : 'bg-yellow-500'}`}></div>
+                        <div>
+                          <div className="font-medium">{call.customer}</div>
+                          <div className="text-sm text-gray-600">{call.phone}</div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="text-sm font-mono">{call.duration}</div>
+                        <div className="flex gap-1">
+                          <Button size="sm" variant="outline">
+                            <Phone className="h-4 w-4" />
+                          </Button>
+                          <Button size="sm" variant="outline">
+                            <User className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Quick Actions */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">إجراءات سريعة</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  <Button className="h-20 flex flex-col gap-2">
+                    <Phone className="h-6 w-6" />
+                    <span className="text-xs">اتصال جديد</span>
+                  </Button>
+                  <Button variant="outline" className="h-20 flex flex-col gap-2">
+                    <User className="h-6 w-6" />
+                    <span className="text-xs">نقل المكالمة</span>
+                  </Button>
+                  <Button variant="outline" className="h-20 flex flex-col gap-2">
+                    <FileText className="h-6 w-6" />
+                    <span className="text-xs">تسجيل ملاحظة</span>
+                  </Button>
+                  <Button variant="outline" className="h-20 flex flex-col gap-2">
+                    <BarChart3 className="h-6 w-6" />
+                    <span className="text-xs">إحصائيات</span>
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Call Logs Modal */}
+      <Dialog open={callLogsModalOpen} onOpenChange={setCallLogsModalOpen}>
+        <DialogContent className="sm:max-w-[900px] max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5 text-blue-600" />
+              سجل المكالمات
+            </DialogTitle>
+            <DialogDescription>
+              عرض جميع المكالمات الواردة والصادرة مع التفاصيل
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            {/* Filters */}
+            <div className="flex gap-4">
+              <Select defaultValue="all">
+                <SelectTrigger className="w-40">
+                  <SelectValue placeholder="نوع المكالمة" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">الكل</SelectItem>
+                  <SelectItem value="incoming">واردة</SelectItem>
+                  <SelectItem value="outgoing">صادرة</SelectItem>
+                </SelectContent>
+              </Select>
+              <Input placeholder="البحث في الأسماء..." className="flex-1" />
+            </div>
+
+            {/* Call Logs Table */}
+            <div className="border rounded-lg overflow-hidden">
+              <table className="w-full">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-4 py-3 text-right text-sm font-medium">العميل</th>
+                    <th className="px-4 py-3 text-right text-sm font-medium">رقم الهاتف</th>
+                    <th className="px-4 py-3 text-right text-sm font-medium">النوع</th>
+                    <th className="px-4 py-3 text-right text-sm font-medium">التاريخ والوقت</th>
+                    <th className="px-4 py-3 text-right text-sm font-medium">المدة</th>
+                    <th className="px-4 py-3 text-right text-sm font-medium">الحالة</th>
+                    <th className="px-4 py-3 text-right text-sm font-medium">الإجراءات</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {[
+                    { id: 1, customer: 'أحمد محمد', phone: '+218 91 234 5678', type: 'واردة', date: '2025-01-14 14:30', duration: '5:23', status: 'مكتملة' },
+                    { id: 2, customer: 'فاطمة علي', phone: '+218 92 345 6789', type: 'صادرة', date: '2025-01-14 13:15', duration: '3:45', status: 'مكتملة' },
+                    { id: 3, customer: 'محمد سالم', phone: '+218 90 123 4567', type: 'واردة', date: '2025-01-14 12:00', duration: '0:00', status: 'لم يرد' },
+                    { id: 4, customer: 'سارة أحمد', phone: '+218 91 987 6543', type: 'واردة', date: '2025-01-14 11:30', duration: '8:12', status: 'مكتملة' },
+                    { id: 5, customer: 'علي حسن', phone: '+218 92 456 7890', type: 'صادرة', date: '2025-01-14 10:45', duration: '2:18', status: 'مكتملة' }
+                  ].map((call) => (
+                    <tr key={call.id} className="hover:bg-gray-50">
+                      <td className="px-4 py-3">{call.customer}</td>
+                      <td className="px-4 py-3">{call.phone}</td>
+                      <td className="px-4 py-3">
+                        <Badge variant={call.type === 'واردة' ? 'default' : 'secondary'}>
+                          {call.type}
+                        </Badge>
+                      </td>
+                      <td className="px-4 py-3 text-sm">{call.date}</td>
+                      <td className="px-4 py-3 text-sm font-mono">{call.duration}</td>
+                      <td className="px-4 py-3">
+                        <Badge variant={call.status === 'مكتملة' ? 'default' : 'destructive'}>
+                          {call.status}
+                        </Badge>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex gap-1">
+                          <Button size="sm" variant="outline">
+                            <Phone className="h-4 w-4" />
+                          </Button>
+                          <Button size="sm" variant="outline">
+                            <FileText className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Performance Reports Modal */}
+      <Dialog open={performanceReportsModalOpen} onOpenChange={setPerformanceReportsModalOpen}>
+        <DialogContent className="sm:max-w-[1000px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <BarChart3 className="h-5 w-5 text-purple-600" />
+              تقارير الأداء - مركز الاتصال
+            </DialogTitle>
+            <DialogDescription>
+              تحليل شامل لأداء وكلاء خدمة العملاء ومركز الاتصال
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-6">
+            {/* Performance Metrics */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <Card>
+                <CardContent className="p-6 text-center">
+                  <div className="text-3xl font-bold text-blue-600 mb-2">94%</div>
+                  <div className="text-sm text-gray-600">معدل الإجابة</div>
+                  <div className="text-xs text-green-600 mt-1">↑ 2% من الشهر الماضي</div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-6 text-center">
+                  <div className="text-3xl font-bold text-green-600 mb-2">3.2</div>
+                  <div className="text-sm text-gray-600">متوسط وقت الانتظار (دقيقة)</div>
+                  <div className="text-xs text-red-600 mt-1">↓ 0.5 من الشهر الماضي</div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-6 text-center">
+                  <div className="text-3xl font-bold text-purple-600 mb-2">4.6</div>
+                  <div className="text-sm text-gray-600">تقييم رضا العملاء</div>
+                  <div className="text-xs text-green-600 mt-1">↑ 0.2 من الشهر الماضي</div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-6 text-center">
+                  <div className="text-3xl font-bold text-orange-600 mb-2">156</div>
+                  <div className="text-sm text-gray-600">إجمالي المكالمات اليوم</div>
+                  <div className="text-xs text-green-600 mt-1">↑ 12 من الأمس</div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Agent Performance Table */}
+            <Card>
+              <CardHeader>
+                <CardTitle>أداء الوكلاء</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-4 py-3 text-right text-sm font-medium">الوكيل</th>
+                        <th className="px-4 py-3 text-right text-sm font-medium">المكالمات</th>
+                        <th className="px-4 py-3 text-right text-sm font-medium">معدل الإجابة</th>
+                        <th className="px-4 py-3 text-right text-sm font-medium">متوسط المدة</th>
+                        <th className="px-4 py-3 text-right text-sm font-medium">تقييم العملاء</th>
+                        <th className="px-4 py-3 text-right text-sm font-medium">الحالة</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y">
+                      {[
+                        { name: 'أحمد محمد', calls: 45, answerRate: '96%', avgDuration: '4:23', rating: 4.8, status: 'نشط' },
+                        { name: 'فاطمة علي', calls: 38, answerRate: '92%', avgDuration: '3:45', rating: 4.6, status: 'نشط' },
+                        { name: 'محمد سالم', calls: 52, answerRate: '98%', avgDuration: '5:12', rating: 4.9, status: 'نشط' },
+                        { name: 'سارة أحمد', calls: 29, answerRate: '89%', avgDuration: '3:18', rating: 4.5, status: 'في استراحة' },
+                        { name: 'علي حسن', calls: 41, answerRate: '94%', avgDuration: '4:05', rating: 4.7, status: 'نشط' }
+                      ].map((agent, index) => (
+                        <tr key={index} className="hover:bg-gray-50">
+                          <td className="px-4 py-3 font-medium">{agent.name}</td>
+                          <td className="px-4 py-3">{agent.calls}</td>
+                          <td className="px-4 py-3">{agent.answerRate}</td>
+                          <td className="px-4 py-3">{agent.avgDuration}</td>
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-1">
+                              <Star className="h-4 w-4 text-yellow-500 fill-current" />
+                              <span>{agent.rating}</span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3">
+                            <Badge variant={agent.status === 'نشط' ? 'default' : 'secondary'}>
+                              {agent.status}
+                            </Badge>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Performance Charts */}
+            <Card>
+              <CardHeader>
+                <CardTitle>الرسوم البيانية للأداء</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <h4 className="font-medium mb-4">معدل الإجابة خلال الأسبوع</h4>
+                    <ResponsiveContainer width="100%" height={200}>
+                      <AreaChart data={[
+                        { day: 'الأحد', rate: 92 },
+                        { day: 'الإثنين', rate: 95 },
+                        { day: 'الثلاثاء', rate: 93 },
+                        { day: 'الأربعاء', rate: 96 },
+                        { day: 'الخميس', rate: 94 },
+                        { day: 'الجمعة', rate: 97 },
+                        { day: 'السبت', rate: 91 }
+                      ]}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="day" />
+                        <YAxis />
+                        <RechartsTooltip />
+                        <Area type="monotone" dataKey="rate" stroke="#3B82F6" fill="#3B82F6" fillOpacity={0.3} />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <div>
+                    <h4 className="font-medium mb-4">توزيع المكالمات حسب الوقت</h4>
+                    <ResponsiveContainer width="100%" height={200}>
+                      <BarChart data={[
+                        { time: '9-11', calls: 45 },
+                        { time: '11-13', calls: 67 },
+                        { time: '13-15', calls: 89 },
+                        { time: '15-17', calls: 78 },
+                        { time: '17-19', calls: 56 }
+                      ]}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="time" />
+                        <YAxis />
+                        <RechartsTooltip />
+                        <Bar dataKey="calls" fill="#10B981" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* All Tickets Modal */}
+      <Dialog open={allTicketsModalOpen} onOpenChange={setAllTicketsModalOpen}>
+        <DialogContent className="sm:max-w-[1000px] max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Eye className="h-5 w-5 text-blue-600" />
+              جميع التذاكر
+            </DialogTitle>
+            <DialogDescription>
+              عرض جميع التذاكر مع إمكانية البحث والتصفية
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            {/* Filters and Search */}
+            <div className="flex gap-4">
+              <Select defaultValue="all">
+                <SelectTrigger className="w-40">
+                  <SelectValue placeholder="الحالة" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">جميع الحالات</SelectItem>
+                  <SelectItem value="مفتوحة">مفتوحة</SelectItem>
+                  <SelectItem value="قيد المعالجة">قيد المعالجة</SelectItem>
+                  <SelectItem value="تم الحل">تم الحل</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select defaultValue="all">
+                <SelectTrigger className="w-40">
+                  <SelectValue placeholder="الأولوية" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">جميع الأولويات</SelectItem>
+                  <SelectItem value="عالية">عالية</SelectItem>
+                  <SelectItem value="متوسطة">متوسطة</SelectItem>
+                  <SelectItem value="منخفضة">منخفضة</SelectItem>
+                </SelectContent>
+              </Select>
+              <Input placeholder="البحث في العنوان أو الوصف..." className="flex-1" />
+            </div>
+
+            {/* Tickets List */}
+            <div className="space-y-3 max-h-96 overflow-y-auto">
+              {tickets.map((ticket) => (
+                <Card key={ticket.id} className="hover:shadow-md transition-shadow">
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex items-center gap-3">
+                        <Badge
+                          variant={ticket.priority === 'عالية' ? 'destructive' : ticket.priority === 'متوسطة' ? 'secondary' : 'outline'}
+                          className={ticket.priority === 'متوسطة' ? 'bg-yellow-100 text-yellow-800' : ''}
+                        >
+                          {ticket.priority}
+                        </Badge>
+                        <span className="font-medium text-lg">#{ticket.id}</span>
+                        <Badge variant={ticket.status === 'مفتوحة' ? 'destructive' : ticket.status === 'قيد المعالجة' ? 'secondary' : 'default'}>
+                          {ticket.status}
+                        </Badge>
+                      </div>
+                      <span className="text-sm text-gray-500">{ticket.createdAt}</span>
+                    </div>
+                    <h5 className="font-medium mb-2 text-lg">{ticket.title}</h5>
+                    <p className="text-gray-600 mb-3">{ticket.description}</p>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <User className="h-4 w-4 text-gray-400" />
+                        <span className="text-sm text-gray-600">{ticket.customer}</span>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button size="sm" variant="outline">
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button size="sm" variant="outline">
+                          <MessageSquare className="h-4 w-4" />
+                        </Button>
+                        <Button size="sm" variant="outline">
+                          <Check className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
+            {/* Summary */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 pt-4 border-t">
+              <div className="text-center p-3 bg-red-50 rounded-lg">
+                <div className="text-2xl font-bold text-red-600">{tickets.filter(t => t.status === 'مفتوحة').length}</div>
+                <div className="text-sm text-gray-600">مفتوحة</div>
+              </div>
+              <div className="text-center p-3 bg-yellow-50 rounded-lg">
+                <div className="text-2xl font-bold text-yellow-600">{tickets.filter(t => t.status === 'قيد المعالجة').length}</div>
+                <div className="text-sm text-gray-600">قيد المعالجة</div>
+              </div>
+              <div className="text-center p-3 bg-green-50 rounded-lg">
+                <div className="text-2xl font-bold text-green-600">{tickets.filter(t => t.status === 'تم الحل').length}</div>
+                <div className="text-sm text-gray-600">تم الحل</div>
+              </div>
+              <div className="text-center p-3 bg-blue-50 rounded-lg">
+                <div className="text-2xl font-bold text-blue-600">{tickets.length}</div>
+                <div className="text-sm text-gray-600">المجموع</div>
+              </div>
+            </div>
           </div>
         </DialogContent>
       </Dialog>

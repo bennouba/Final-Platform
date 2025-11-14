@@ -30,7 +30,7 @@ export interface Product {
 const magnaBeautyProducts: Product[] = [
   {
     id: 4001, storeId: 4, name: "PINK PUFF", description: "PINK PUFF",
-    price: 10, originalPrice: 12, images: ["/assets/magne-beauty/pink-puff.webp","/assets/magne-beauty/pink-puff1.webp","/assets/magne-beauty/pink-puff2.webp"],
+    price: 10, originalPrice: 12, images: ["public/assets/magne-beauty/pink-puff.webp","/assets/magne-beauty/pink-puff1.webp","/assets/magne-beauty/pink-puff2.webp"],
     sizes: ["واحد"], availableSizes: ["واحد"],
     colors: [{name: "وردي", value: "#e2ababff"}, {name: "بيج", value: "#DEB887"}, {name: "أسود", value: "#0e0d0dff"}],
     rating: 4.9, reviews: 70, views: 298, likes: 300, orders: 200, category: "مكياج",
@@ -38,7 +38,7 @@ const magnaBeautyProducts: Product[] = [
   },
   {
     id: 4002, storeId: 4, name: "blush-brush", description: "blush-brush",
-    price: 25, originalPrice: 45, images: ["/assets/magne-beauty/blush-brush1.webp","/assets/magne-beauty/blush-brush2.webp"],
+    price: 25, originalPrice: 45, images: ["public/assets/magne-beauty/blush-brush1.webp","/assets/magne-beauty/blush-brush2.webp"],
     sizes: ["واحد"], availableSizes: ["واحد"],
     colors: [{name: "وردي", value: "#ffc6c6ff"}],
     rating: 4.9, reviews: 88, views: 456, likes: 500, orders: 300, category: "مكياج",
@@ -46,7 +46,7 @@ const magnaBeautyProducts: Product[] = [
   },
   {
     id: 4003, storeId: 4, name: "shader-brush", description: "shader-brush",
-    price: 15, originalPrice: 30, images: ["/assets/magne-beauty/shader-brush.webp"],
+    price: 15, originalPrice: 30, images: ["public/assets/magne-beauty/shader-brush.webp"],
     sizes: ["واحد"], availableSizes: ["واحد"],
     colors: [{name: "بني", value: "#8B4513"}],
     rating: 4.8, reviews: 70, views: 312, likes: 460, orders: 214, category: "مكياج",
@@ -54,7 +54,7 @@ const magnaBeautyProducts: Product[] = [
   },
   {
     id: 4004, storeId: 4, name: "foundation-brush", description: "foundation-brush",
-    price: 25, originalPrice: 40, images: ["/assets/magne-beauty/foundation-brush.webp"],
+    price: 25, originalPrice: 40, images: ["public/assets/magne-beauty/foundation-brush.webp"],
     sizes: ["واحد"], availableSizes: ["واحد"],
     colors: [{name: "ألوان دافئة", value: "#e6cab6ff"}],
     rating: 4.9, reviews: 44, views: 240, likes: 260, orders: 180, category: "مكياج",
@@ -62,7 +62,7 @@ const magnaBeautyProducts: Product[] = [
   },
   {
     id: 4005, storeId: 4, name: "fan-brush", description: "fan-brush",
-    price: 25, originalPrice: 40, images: ["/assets/magne-beauty/fan-brush.webp"],
+    price: 25, originalPrice: 40, images: ["public/assets/magne-beauty/fan-brush.webp"],
     sizes: ["واحد"], availableSizes: ["واحد"],
     colors: [{name: "طبيعي", value: "#F5F5DC"}],
     rating: 4.7, reviews: 52, views: 367, likes: 145, orders: 38, category: "عناية بالبشرة",
@@ -70,7 +70,7 @@ const magnaBeautyProducts: Product[] = [
   },
   {
     id: 4006, storeId: 4, name: "eye-contour", description: "eye-contour",
-    price: 15, originalPrice: 25, images: ["/assets/magne-beauty/eye-contour.webp"],
+    price: 15, originalPrice: 25, images: ["public/assets/magne-beauty/eye-contour.webp"],
     sizes: ["واحد"], availableSizes: ["واحد"],
     colors: [{name: "طبيعي", value: "#FFF8DC"}],
     rating: 4.8, reviews: 28, views: 234, likes: 98, orders: 21, category: "عناية بالبشرة",
@@ -78,7 +78,7 @@ const magnaBeautyProducts: Product[] = [
   },
   {
     id: 4007, storeId: 4, name: "eyebrow-brush", description: "eyebrow-brush",
-    price: 25, originalPrice: 40, images: ["/assets/magne-beauty/eyebrow-brush.webp"],
+    price: 25, originalPrice: 40, images: ["public/assets/magne-beauty/eyebrow-brush.webp"],
     sizes: ["واحد"], availableSizes: ["واحد"],
     colors: [{name: "طبيعي", value: "#F0F8FF"}],
     rating: 4.5, reviews: 39, views: 287, likes: 112, orders: 70, category: "عناية بالبشرة",
@@ -86,7 +86,7 @@ const magnaBeautyProducts: Product[] = [
   },
   {
     id: 4008, storeId: 4, name: "eyeliner-brush", description: "eyeliner-brush",
-    price: 25, originalPrice: 40, images: ["/assets/magne-beauty/eyeliner-brush.webp"],
+    price: 25, originalPrice: 40, images: ["public/assets/magne-beauty/eyeliner-brush.webp"],
     sizes: ["واحدة"], availableSizes: ["واحدة"],
     colors: [{name: "طبيعي", value: "#F0F8FF"}],
     rating: 4.9, reviews: 19, views: 167, likes: 89, orders: 44, category: "عطور",
@@ -94,7 +94,7 @@ const magnaBeautyProducts: Product[] = [
   },
   {
     id: 4009, storeId: 4, name: "POSE", description: "POSE",
-    price: 25, originalPrice: 40, images: ["/assets/magne-beauty/pose.webp"],
+    price: 25, originalPrice: 40, images: ["public/assets/magne-beauty/pose.webp"],
     sizes: ["واحدة"], availableSizes: ["واحدة"],
     colors: [{name: "طبيعي", value: "#F5E6D3"}],
     rating: 4.6, reviews: 33, views: 245, likes: 87, orders: 45, category: "عناية بالبشرة",
@@ -102,7 +102,7 @@ const magnaBeautyProducts: Product[] = [
   },
   {
     id: 4010, storeId: 4, name: "ANGEL", description: "ANGEL",
-    price: 25, originalPrice: 40, images: ["/assets/magne-beauty/angel.webp"],
+    price: 25, originalPrice: 40, images: ["public/assets/magne-beauty/angel.webp"],
     sizes: ["واحد"], availableSizes: ["واحد"],
     colors: [{name: "فاتح", value: "#FFEAA7"}],
     rating: 4.7, reviews: 26, views: 198, likes: 76, orders: 54, category: "مكياج",
@@ -110,7 +110,7 @@ const magnaBeautyProducts: Product[] = [
   },
   {
     id: 4011, storeId: 4, name: "GEM", description: "GEM",
-    price: 25, originalPrice: 40, images: ["/assets/magne-beauty/gem.webp"],
+    price: 25, originalPrice: 40, images: ["public/assets/magne-beauty/gem.webp"],
     sizes: ["واحدة"], availableSizes: ["واحدة"],
     colors: [{name: "طبيعي", value: "#F5E6D3"}],
     rating: 4.9, reviews: 37, views: 245, likes: 67, orders: 69, category: "عناية بالبشرة",
@@ -118,7 +118,7 @@ const magnaBeautyProducts: Product[] = [
   },
   {
     id: 4012, storeId: 4, name: "ICY1", description: "ICY1",
-    price: 75, originalPrice: 95, images: ["/assets/magne-beauty/icy1.webp"],
+    price: 75, originalPrice: 95, images: ["public/assets/magne-beauty/icy1.webp"],
     sizes: ["واحدة"], availableSizes: ["واحدة"],
     colors: [{name: "طبيعي", value: "#F5E6D3"}],
     rating: 4.9, reviews: 12, views: 130, likes: 55, orders: 102, category: "عناية بالبشرة",
@@ -126,7 +126,7 @@ const magnaBeautyProducts: Product[] = [
   },
   {
     id: 4013, storeId: 4, name: "TOPAZ", description: "TOPAZ",
-    price: 75, originalPrice: 95, images: ["/assets/magne-beauty/topaz1.webp","/assets/magne-beauty/topaz2.webp"],
+    price: 75, originalPrice: 95, images: ["public/assets/magne-beauty/topaz1.webp","/assets/magne-beauty/topaz2.webp"],
     sizes: ["واحدة"], availableSizes: ["واحدة"],
     colors: [{name: "طبيعي", value: "#F5E6D3"}],
     rating: 4.7, reviews: 48, views: 600, likes: 355, orders: 250, category: "عناية بالبشرة",

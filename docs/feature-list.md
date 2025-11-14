@@ -47,6 +47,10 @@
 - Wahda Bank
 - Commerce and Development Bank
 - Other major Libyan financial institutions
+- Bank account management with full CRUD operations
+- Dynamic bank selection with automatic logo display
+- Complete bank account information editing (name, company, holder, email, phone, account number, IBAN)
+- Real-time bank account data updates and persistence
 
 ### International Payment Gateways
 - Sadad payment system

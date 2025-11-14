@@ -30,7 +30,7 @@ export const Select: React.FC<SelectProps> = ({ value, defaultValue, onValueChan
     if (value === undefined) setInternal(v);
   };
   return (
-    <SelectContext.Provider value={{ items, register, value: current, onValueChange: setValue }}>
+    <SelectContext.Provider value={{ items, register, ...(current !== undefined && { value: current }), onValueChange: setValue }}>
       <div className={cn("w-full", className)} {...props}>{children}</div>
     </SelectContext.Provider>
   );
