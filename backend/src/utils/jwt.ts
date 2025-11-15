@@ -7,7 +7,7 @@ export const generateToken = (payload: Omit<JWTPayload, 'iat' | 'exp'>): string 
   try {
     const token = jwt.sign(payload, config.jwt.secret, {
       expiresIn: config.jwt.expire,
-    });
+    } as any);
     return token;
   } catch (error) {
     logger.error('Token generation failed:', error);
@@ -19,7 +19,7 @@ export const generateRefreshToken = (userId: string): string => {
   try {
     const token = jwt.sign({ id: userId }, config.jwt.refreshSecret, {
       expiresIn: config.jwt.refreshExpire,
-    });
+    } as any);
     return token;
   } catch (error) {
     logger.error('Refresh token generation failed:', error);

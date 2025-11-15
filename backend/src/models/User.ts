@@ -60,7 +60,6 @@ User.init(
       validate: {
         isEmail: true,
       },
-      index: true,
     },
     password: {
       type: DataTypes.STRING(255),
@@ -81,7 +80,6 @@ User.init(
     role: {
       type: DataTypes.ENUM(...Object.values(UserRole)),
       defaultValue: UserRole.CUSTOMER,
-      index: true,
     },
     storeName: {
       type: DataTypes.STRING(255),
@@ -120,6 +118,11 @@ User.init(
     underscored: false,
     charset: 'utf8mb4',
     collate: 'utf8mb4_unicode_ci',
+    indexes: [
+      {
+        fields: ['role'],
+      },
+    ],
     hooks: {
       beforeCreate: async (user: User) => {
         // Hash password before saving

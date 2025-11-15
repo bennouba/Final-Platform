@@ -66,7 +66,6 @@ Product.init(
     category: {
       type: DataTypes.STRING(100),
       allowNull: false,
-      index: true,
     },
     brand: {
       type: DataTypes.STRING(100),
@@ -87,7 +86,6 @@ Product.init(
         model: 'stores',
         key: 'id',
       },
-      index: true,
     },
     inStock: {
       type: DataTypes.BOOLEAN,
@@ -128,6 +126,14 @@ Product.init(
     underscored: false,
     charset: 'utf8mb4',
     collate: 'utf8mb4_unicode_ci',
+    indexes: [
+      {
+        fields: ['category'],
+      },
+      {
+        fields: ['storeId'],
+      },
+    ],
   }
 );
 

@@ -47,7 +47,6 @@ Store.init(
         model: 'users',
         key: 'id',
       },
-      index: true,
     },
     name: {
       type: DataTypes.STRING(255),
@@ -57,7 +56,6 @@ Store.init(
       type: DataTypes.STRING(255),
       unique: true,
       allowNull: false,
-      index: true,
     },
     category: {
       type: DataTypes.STRING(100),
@@ -95,6 +93,11 @@ Store.init(
     underscored: false,
     charset: 'utf8mb4',
     collate: 'utf8mb4_unicode_ci',
+    indexes: [
+      {
+        fields: ['merchantId'],
+      },
+    ],
   }
 );
 

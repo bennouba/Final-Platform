@@ -41,7 +41,6 @@ UserAddress.init(
         model: 'users',
         key: 'id',
       },
-      index: true,
     },
     city: {
       type: DataTypes.STRING(100),
@@ -62,7 +61,6 @@ UserAddress.init(
     isDefault: {
       type: DataTypes.BOOLEAN,
       defaultValue: false,
-      index: true,
     },
   },
   {
@@ -72,6 +70,14 @@ UserAddress.init(
     underscored: false,
     charset: 'utf8mb4',
     collate: 'utf8mb4_unicode_ci',
+    indexes: [
+      {
+        fields: ['userId'],
+      },
+      {
+        fields: ['isDefault'],
+      },
+    ],
   }
 );
 

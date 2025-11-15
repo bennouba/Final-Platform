@@ -37,7 +37,6 @@ ProductImage.init(
         model: 'products',
         key: 'id',
       },
-      index: true,
     },
     imageUrl: {
       type: DataTypes.STRING(500),
@@ -63,6 +62,11 @@ ProductImage.init(
     underscored: false,
     charset: 'utf8mb4',
     collate: 'utf8mb4_unicode_ci',
+    indexes: [
+      {
+        fields: ['productId'],
+      },
+    ],
   }
 );
 

@@ -61,6 +61,7 @@ export const createProduct = async (
       inStock: resolvedInStock,
       category,
       sku,
+      image: Array.isArray(images) && images.length > 0 ? images[0] : '',
       ...(brand !== undefined && { brand }),
       ...(thumbnail !== undefined && { thumbnail }),
     });
