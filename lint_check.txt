@@ -1,0 +1,4 @@
+
+> vite-template@0.0.0 lint
+> eslint .
+

@@ -27,7 +27,7 @@ const BrandSlider: React.FC<BrandSliderProps> = ({
 
     const interval = setInterval(() => {
       setCurrentIndex((prevIndex) => {
-        console.log('Changing slide from', prevIndex, 'to', (prevIndex + 1) % images.length);
+
         return (prevIndex + 1) % images.length;
       });
     }, autoRotateInterval);
@@ -55,7 +55,7 @@ const BrandSlider: React.FC<BrandSliderProps> = ({
         }
       };
       img.onerror = () => {
-        console.warn(`Failed to preload image: ${image}`);
+
         loadedCount++;
         setLoadedImages(prev => new Set(prev).add(index));
         if (loadedCount === totalImages) {
@@ -103,7 +103,13 @@ const BrandSlider: React.FC<BrandSliderProps> = ({
       {isLoading && (
         <div className="absolute inset-0 bg-black/10 backdrop-blur-sm rounded-2xl flex items-center justify-center z-20">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+            <div style={{ display: 'inline-block', animation: 'spin 1s linear infinite', borderRadius: '9999px', height: '48px', width: '48px', borderBottom: '2px solid currentColor', color: 'rgb(59, 130, 246)', margin: '0 auto 16px' }}></div>
+            <style>{`
+              @keyframes spin {
+                from { transform: rotate(0deg); }
+                to { transform: rotate(360deg); }
+              }
+            `}</style>
             <p className="text-primary font-medium">جاري تحميل الصور...</p>
           </div>
         </div>
@@ -116,7 +122,7 @@ const BrandSlider: React.FC<BrandSliderProps> = ({
           {images.map((image, index) => (
             <div
               key={index}
-              className="absolute inset-0 w-full h-full transition-all duration-1000 ease-in-out"
+              className="absolute inset-0 w-full h-full transition-opacity duration-1000 ease-in-out"
               style={{
                 opacity: index === currentIndex ? 1 : 0,
                 zIndex: index === currentIndex ? 10 : 1,
@@ -143,7 +149,7 @@ const BrandSlider: React.FC<BrandSliderProps> = ({
                   backfaceVisibility: 'hidden'
                 }}
                 onError={(e) => {
-                  console.warn(`Image not found: ${image}, hiding element`);
+
                   (e.target as HTMLImageElement).style.display = 'none';
                 }}
               />
@@ -156,7 +162,7 @@ const BrandSlider: React.FC<BrandSliderProps> = ({
           <>
             <button
               onClick={goToPrevious}
-              className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-black/60 hover:bg-black/80 text-white p-3 rounded-full transition-all duration-300 opacity-80 hover:opacity-100 z-10"
+              className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-black/60 hover:bg-black/80 text-white p-3 rounded-full transition-colors duration-300 opacity-80 hover:opacity-100 z-10"
               aria-label="Previous slide"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -165,7 +171,7 @@ const BrandSlider: React.FC<BrandSliderProps> = ({
             </button>
             <button
               onClick={goToNext}
-              className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-black/60 hover:bg-black/80 text-white p-3 rounded-full transition-all duration-300 opacity-80 hover:opacity-100 z-10"
+              className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-black/60 hover:bg-black/80 text-white p-3 rounded-full transition-colors duration-300 opacity-80 hover:opacity-100 z-10"
               aria-label="Next slide"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">

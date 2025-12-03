@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   AlertCircle,
@@ -24,6 +24,7 @@ import {
   MoreVertical,
   Package,
   Percent,
+  RefreshCw,
   Plus,
   Plus as PlusIcon,
   Save,
@@ -52,6 +53,8 @@ import { Badge } from './ui/badge';
 import { Checkbox } from './ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { libyanCities } from '@/data/libya/cities/cities';
+
+const API_BASE_URL = import.meta.env.VITE_APP_API_URL || '/api';
 
 interface Product {
   id: string;
@@ -104,6 +107,57 @@ interface ProductsViewProps {
   onSave: () => void;
 }
 
+const normalizeProductRecord = (record: any, index: number): Product => {
+  const resolvedQuantity = Number(record.quantity ?? record.stock ?? 0) || 0;
+  const baseName = String(record.name ?? `منتج ${index + 1}`);
+  const normalizedImages = Array.isArray(record.images) && record.images.length > 0
+    ? record.images
+    : record.image
+    ? [record.image]
+    : [];
+
+  return {
+    id: String(record.id ?? index + 1),
+    nameAr: baseName,
+    nameEn: baseName,
+    sku: record.sku ?? `SKU-${record.id ?? index + 1}`,
+    barcode: record.barcode ?? '',
+    price: Number(record.price ?? 0),
+    discountPercentage: Number(record.discountPercent ?? 0),
+    isActive: record.inStock !== false,
+    isSimilarProductsEnabled: true,
+    type: 'individual',
+    category: record.category ?? '',
+    brand: record.brand ?? '',
+    description: record.description ?? '',
+    images: normalizedImages,
+    inventory: [
+      {
+        warehouseId: 'default',
+        warehouseName: 'المخزون الرئيسي',
+        quantity: resolvedQuantity,
+        reservedQuantity: 0,
+        availableQuantity: resolvedQuantity,
+      },
+    ],
+    totalQuantity: resolvedQuantity,
+    unlimitedQuantity: false,
+    tags: Array.isArray(record.tags) ? record.tags : [],
+    isFreeShipping: false,
+    isDiscounted: Boolean(record.discountPercent),
+    isFeatured: false,
+    isLimitedQuantity: resolvedQuantity < 10,
+    isFastSelling: false,
+    isPaidShipping: false,
+    weight: Number(record.weight ?? 0),
+    dimensions: record.dimensions ?? { length: 0, width: 0, height: 0 },
+    seoTitle: record.seoTitle ?? baseName,
+    seoDescription: record.seoDescription ?? record.description ?? '',
+    createdAt: record.createdAt ?? new Date().toISOString(),
+    updatedAt: record.updatedAt ?? new Date().toISOString(),
+  };
+};
+
 const ProductsView: React.FC<ProductsViewProps> = ({ storeData, setStoreData, onSave }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
@@ -145,9 +199,17 @@ const ProductsView: React.FC<ProductsViewProps> = ({ storeData, setStoreData, on
     seoTitle: '',
     seoDescription: '',
   });
+  const [products, setProducts] = useState<Product[]>(storeData?.products || []);
+  const [isCatalogLoading, setIsCatalogLoading] = useState(false);
+  const [isSavingProduct, setIsSavingProduct] = useState(false);
+  const [syncError, setSyncError] = useState<string | null>(null);
+  const [syncSuccess, setSyncSuccess] = useState<string | null>(null);
+  const [deletePendingId, setDeletePendingId] = useState<string | null>(null);
+  const latestStoreDataRef = useRef(storeData);
 
-  // Get products from store data or use empty array
-  const products: Product[] = storeData?.products || [];
+  useEffect(() => {
+    latestStoreDataRef.current = storeData;
+  }, [storeData]);
 
   const filteredProducts = products.filter(product => {
     const matchesSearch =
@@ -162,8 +224,47 @@ const ProductsView: React.FC<ProductsViewProps> = ({ storeData, setStoreData, on
     return matchesSearch && matchesType && matchesStatus;
   });
 
+  const fetchProducts = useCallback(async () => {
+    setIsCatalogLoading(true);
+    setSyncError(null);
+    setSyncSuccess(null);
+    try {
+      const response = await fetch(`${API_BASE_URL}/products?limit=200`, {
+        method: 'GET',
+        credentials: 'include',
+      });
+      const result = await response.json();
+      if (!response.ok || result.success === false) {
+        throw new Error(result.error || 'تعذر تحميل المنتجات');
+      }
+      const incoming = Array.isArray(result.data) ? result.data : [];
+      const normalized = incoming.map((item: any, index: number) => normalizeProductRecord(item, index));
+      setProducts(normalized);
+      const currentStoreData = latestStoreDataRef.current;
+      if (currentStoreData) {
+        setStoreData({ ...currentStoreData, products: normalized });
+      }
+    } catch (error) {
+      setSyncError(error instanceof Error ? error.message : 'تعذر تحميل المنتجات');
+    } finally {
+      setIsCatalogLoading(false);
+    }
+  }, [setStoreData]);
+
+  useEffect(() => {
+    fetchProducts();
+  }, [fetchProducts]);
+
+  useEffect(() => {
+    if (Array.isArray(storeData?.products)) {
+      setProducts(storeData.products);
+    }
+  }, [storeData?.products]);
+
   const handleAddProduct = () => {
     setEditingProduct(null);
+    setSyncError(null);
+    setSyncSuccess(null);
     setProductForm({
       nameAr: '',
       nameEn: '',
@@ -202,6 +303,8 @@ const ProductsView: React.FC<ProductsViewProps> = ({ storeData, setStoreData, on
 
   const handleEditProduct = (product: Product) => {
     setEditingProduct(product);
+    setSyncError(null);
+    setSyncSuccess(null);
     setProductForm({
       nameAr: product.nameAr,
       nameEn: product.nameEn,
@@ -234,83 +337,108 @@ const ProductsView: React.FC<ProductsViewProps> = ({ storeData, setStoreData, on
     setActiveTab('basic');
   };
 
-  const handleSaveProduct = () => {
+  const handleSaveProduct = async () => {
     if (!storeData) return;
+    setSyncError(null);
+    setSyncSuccess(null);
+
+    const trimmedName = productForm.nameAr.trim() || productForm.nameEn.trim();
+    if (!trimmedName) {
+      setSyncError('يرجى إدخال اسم المنتج');
+      return;
+    }
+
+    if (!productForm.description.trim()) {
+      setSyncError('يرجى إدخال وصف المنتج');
+      return;
+    }
+
+    if (!productForm.category.trim()) {
+      setSyncError('يرجى تحديد التصنيف');
+      return;
+    }
 
     const totalQuantity = productForm.inventory.reduce((sum, inv) => sum + inv.quantity, 0);
 
-    const newProduct: Product = {
-      id: editingProduct ? editingProduct.id : Date.now().toString(),
-      nameAr: productForm.nameAr,
-      nameEn: productForm.nameEn,
-      sku: productForm.sku,
-      barcode: productForm.barcode,
-      price: productForm.price,
-      discountPercentage: productForm.discountPercentage,
-      isActive: productForm.isActive,
-      isSimilarProductsEnabled: productForm.isSimilarProductsEnabled,
-      type: productForm.type,
+    const payload: Record<string, unknown> = {
+      name: trimmedName,
+      description: productForm.description.trim(),
+      price: Number(productForm.price ?? 0),
+      stock: Math.max(totalQuantity, 1),
+      quantity: totalQuantity,
+      inStock: totalQuantity > 0 && productForm.isActive,
       category: productForm.category,
-      brand: productForm.brand,
-      description: productForm.description,
-      images: productForm.images,
-      inventory: productForm.inventory.map(inv => ({
-        warehouseId: inv.warehouseId,
-        warehouseName: inv.warehouseName,
-        quantity: inv.quantity,
-        reservedQuantity: 0,
-        availableQuantity: inv.quantity,
-      })),
-      totalQuantity,
-      unlimitedQuantity: productForm.unlimitedQuantity,
-      tags: productForm.tags,
-      isFreeShipping: productForm.isFreeShipping,
-      isDiscounted: productForm.isDiscounted,
-      isFeatured: productForm.isFeatured,
-      isLimitedQuantity: productForm.isLimitedQuantity,
-      isFastSelling: productForm.isFastSelling,
-      isPaidShipping: productForm.isPaidShipping,
-      weight: productForm.weight,
-      dimensions: productForm.dimensions,
-      seoTitle: productForm.seoTitle,
-      seoDescription: productForm.seoDescription,
-      createdAt: editingProduct ? editingProduct.createdAt : (() => {
-        const date = new Date().toISOString();
-        return date.split('T')[0] || date.substring(0, 10);
-      })(),
-      updatedAt: (() => {
-        const date = new Date().toISOString();
-        return date.split('T')[0] || date.substring(0, 10);
-      })(),
+      sku: productForm.sku,
+      images: productForm.images.filter(Boolean),
     };
 
-    if (editingProduct) {
-      // Edit existing product
-      const updatedProducts = products.map(p => p.id === editingProduct.id ? newProduct : p);
-      setStoreData({
-        ...storeData,
-        products: updatedProducts,
-      });
-    } else {
-      // Add new product
-      const updatedProducts = [...products, newProduct];
-      setStoreData({
-        ...storeData,
-        products: updatedProducts,
-      });
+    if (productForm.brand) {
+      payload.brand = productForm.brand;
     }
 
-    setShowProductModal(false);
-    onSave();
+    if (productForm.images[0]) {
+      payload.thumbnail = productForm.images[0];
+    }
+
+    if (productForm.discountPercentage) {
+      payload.discountPercent = Number(productForm.discountPercentage);
+      payload.discountType = 'percentage';
+      payload.originalPrice = Number(productForm.price ?? 0);
+    }
+
+    setIsSavingProduct(true);
+
+    try {
+      const endpoint = editingProduct ? `/products/${editingProduct.id}` : '/products';
+      const method = editingProduct ? 'PUT' : 'POST';
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        method,
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const result = await response.json();
+      if (!response.ok || result.success === false) {
+        throw new Error(result.error || 'تعذر حفظ المنتج');
+      }
+      await fetchProducts();
+      setShowProductModal(false);
+      setEditingProduct(null);
+      setSyncSuccess(editingProduct ? 'تم تحديث المنتج بنجاح ✓ سيتم تحديث المتجر' : 'تم إنشاء المنتج بنجاح ✓');
+      
+      window.dispatchEvent(new CustomEvent('productUpdated', {
+        detail: { storeId: storeData?.id, products: products }
+      }));
+      
+      onSave();
+    } catch (error) {
+      setSyncError(error instanceof Error ? error.message : 'تعذر حفظ المنتج');
+    } finally {
+      setIsSavingProduct(false);
+    }
   };
 
-  const handleDeleteProduct = (productId: string) => {
-    const updatedProducts = products.filter(p => p.id !== productId);
-    setStoreData({
-      ...storeData,
-      products: updatedProducts,
-    });
-    onSave();
+  const handleDeleteProduct = async (productId: string) => {
+    setSyncError(null);
+    setSyncSuccess(null);
+    setDeletePendingId(productId);
+    try {
+      const response = await fetch(`${API_BASE_URL}/products/${productId}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok || result.success === false) {
+        throw new Error(result.error || 'تعذر حذف المنتج');
+      }
+      await fetchProducts();
+      setSyncSuccess('تم حذف المنتج');
+      onSave();
+    } catch (error) {
+      setSyncError(error instanceof Error ? error.message : 'تعذر حذف المنتج');
+    } finally {
+      setDeletePendingId(null);
+    }
   };
 
   const getTypeBadge = (type: Product['type']) => {
@@ -344,14 +472,37 @@ const ProductsView: React.FC<ProductsViewProps> = ({ storeData, setStoreData, on
           <h2 className="text-3xl font-bold text-gray-900">المنتجات</h2>
           <p className="text-gray-600 mt-1">جميع منتجات متجرك هنا</p>
         </div>
-        <Button
-          onClick={handleAddProduct}
-          className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600"
-        >
-          <Plus className="h-4 w-4 ml-2" />
-          إضافة منتج جديد
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={fetchProducts}
+            disabled={isCatalogLoading}
+            className="flex items-center gap-2"
+          >
+            <RefreshCw className={`h-4 w-4 ${isCatalogLoading ? 'animate-spin' : ''}`} />
+            {isCatalogLoading ? 'جاري المزامنة' : 'مزامنة المخزون'}
+          </Button>
+          <Button
+            onClick={handleAddProduct}
+            className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600"
+          >
+            <Plus className="h-4 w-4 ml-2" />
+            إضافة منتج جديد
+          </Button>
+        </div>
       </div>
+
+      {syncError && (
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {syncError}
+        </div>
+      )}
+
+      {syncSuccess && (
+        <div className="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+          {syncSuccess}
+        </div>
+      )}
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -540,8 +691,9 @@ const ProductsView: React.FC<ProductsViewProps> = ({ storeData, setStoreData, on
                           size="sm"
                           onClick={() => handleDeleteProduct(product.id)}
                           className="text-red-600 hover:text-red-700"
+                          disabled={deletePendingId === product.id}
                         >
-                          <Trash2 className="h-4 w-4" />
+                          <Trash2 className={`h-4 w-4 ${deletePendingId === product.id ? 'animate-spin' : ''}`} />
                         </Button>
                       </div>
                     </td>
@@ -950,10 +1102,10 @@ const ProductsView: React.FC<ProductsViewProps> = ({ storeData, setStoreData, on
                     <Button
                       onClick={handleSaveProduct}
                       className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600"
-                      disabled={!productForm.nameAr.trim() || !productForm.price}
+                      disabled={isSavingProduct || !productForm.nameAr.trim() || !productForm.price}
                     >
-                      <Package className="h-4 w-4 ml-2" />
-                      {editingProduct ? 'حفظ التغييرات' : 'إنشاء المنتج'}
+                      <Package className={`h-4 w-4 ml-2 ${isSavingProduct ? 'animate-spin' : ''}`} />
+                      {isSavingProduct ? 'جاري الحفظ...' : editingProduct ? 'حفظ التغييرات' : 'إنشاء المنتج'}
                     </Button>
                   </div>
                 </div>

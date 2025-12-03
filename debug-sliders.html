@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>فحص السلايدرز - Debug</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            border-bottom: 3px solid #4CAF50;
+            padding-bottom: 10px;
+        }
+        .section {
+            margin: 30px 0;
+            padding: 20px;
+            background: #f9f9f9;
+            border-radius: 5px;
+        }
+        .key {
+            font-weight: bold;
+            color: #2196F3;
+            margin-top: 15px;
+        }
+        pre {
+            background: #263238;
+            color: #aed581;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 16px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        .error {
+            color: #f44336;
+            font-weight: bold;
+        }
+        .success {
+            color: #4CAF50;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 فحص بيانات السلايدرز في LocalStorage</h1>
+        
+        <div class="section">
+            <h2>أدوات الفحص:</h2>
+            <button onclick="checkSliders()">فحص جميع السلايدرز</button>
+            <button onclick="checkIndeeshSliders()">فحص سلايدرز متجر انديش</button>
+            <button onclick="clearAllSliders()">مسح جميع السلايدرز</button>
+            <button onclick="location.reload()">تحديث الصفحة</button>
+        </div>
+
+        <div id="results"></div>
+    </div>
+
+    <script>
+        function checkSliders() {
+            const results = document.getElementById('results');
+            results.innerHTML = '<div class="section"><h2>نتائج الفحص:</h2>';
+            
+            let foundSliders = 0;
+            
+            // فحص جميع المفاتيح في localStorage
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                
+                // البحث عن أي مفتاح يحتوي على "slider"
+                if (key && (key.includes('slider') || key.includes('Slider'))) {
+                    foundSliders++;
+                    const value = localStorage.getItem(key);
+                    
+                    results.innerHTML += `
+                        <div class="key">🔑 المفتاح: ${key}</div>
+                        <pre>${JSON.stringify(JSON.parse(value), null, 2)}</pre>
+                    `;
+                }
+            }
+            
+            if (foundSliders === 0) {
+                results.innerHTML += '<p class="error">❌ لم يتم العثور على أي سلايدرز في localStorage</p>';
+            } else {
+                results.innerHTML += `<p class="success">✅ تم العثور على ${foundSliders} مفتاح للسلايدرز</p>`;
+            }
+            
+            results.innerHTML += '</div>';
+        }
+        
+        function checkIndeeshSliders() {
+            const results = document.getElementById('results');
+            results.innerHTML = '<div class="section"><h2>سلايدرز متجر انديش (indeesh):</h2>';
+            
+            const keys = [
+                'eshro_sliders_indeesh',
+                'store_sliders_indeesh',
+                'eshro_sliders_انديش',
+                'store_sliders_انديش'
+            ];
+            
+            let found = false;
+            
+            keys.forEach(key => {
+                const value = localStorage.getItem(key);
+                if (value) {
+                    found = true;
+                    results.innerHTML += `
+                        <div class="key">🔑 المفتاح: ${key}</div>
+                        <pre>${JSON.stringify(JSON.parse(value), null, 2)}</pre>
+                    `;
+                } else {
+                    results.innerHTML += `<p>❌ المفتاح "${key}" غير موجود</p>`;
+                }
+            });
+            
+            if (!found) {
+                results.innerHTML += '<p class="error">⚠️ لم يتم العثور على أي بيانات لمتجر انديش</p>';
+            }
+            
+            results.innerHTML += '</div>';
+        }
+        
+        function clearAllSliders() {
+            if (!confirm('هل أنت متأكد من مسح جميع السلايدرز؟')) return;
+            
+            const keysToRemove = [];
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key && (key.includes('slider') || key.includes('Slider'))) {
+                    keysToRemove.push(key);
+                }
+            }
+            
+            keysToRemove.forEach(key => localStorage.removeItem(key));
+            
+            alert(`تم مسح ${keysToRemove.length} مفتاح`);
+            location.reload();
+        }
+        
+        // فحص تلقائي عند تحميل الصفحة
+        window.onload = function() {
+            checkSliders();
+        };
+    </script>
+</body>
+</html>

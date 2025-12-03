@@ -126,7 +126,6 @@ export const SubscriptionCheckoutModal: React.FC<SubscriptionCheckoutModalProps>
       s.async = true;
       s.dataset.moamalat = src;
       s.onload = () => {
-        console.log('[Moamalat] Lightbox script loaded:', src);
         resolve();
       };
       s.onerror = () => reject(new Error('Failed to load Moamalat Lightbox script'));
@@ -137,21 +136,19 @@ export const SubscriptionCheckoutModal: React.FC<SubscriptionCheckoutModalProps>
       if (Date.now() - started > 5000) throw new Error('Lightbox not available within timeout');
       await new Promise(r => setTimeout(r, 100));
     }
-    console.log('[Moamalat] Lightbox ready. Available methods:', Object.keys((window as any).Lightbox || {}), 'Checkout:', Object.keys((window as any).Lightbox.Checkout || {}));
+
     setScriptReady(true);
   }, []);
 
   useEffect(() => {
     if (isOpen && selectedPaymentMethod === 'moamalat' && !scriptReady) {
       loadMoamalatScript().catch((e) => {
-        console.error(e);
         alert('تعذر تحميل سكربت بوابة معاملات. حاول مرة أخرى.');
       });
     }
   }, [isOpen, selectedPaymentMethod, scriptReady, loadMoamalatScript]);
 
   async function initializeMoamalatPayment() {
-    console.log('[Moamalat] Initializing payment...');
     if (!scriptReady) await loadMoamalatScript();
 
     let MID = getFirstEnv('MOAMALAT_MID', 'MOAMALATPAY_MID');
@@ -171,7 +168,7 @@ export const SubscriptionCheckoutModal: React.FC<SubscriptionCheckoutModalProps>
           MID = data.MID || MID;
           TID = data.TID || TID;
           ENV = (data.ENV || ENV || 'sandbox').toLowerCase();
-          console.log('[Moamalat] Loaded MID/TID from server');
+
         }
       } catch (e) {
         // ignore, fallback to throwing below if still missing
@@ -187,13 +184,7 @@ export const SubscriptionCheckoutModal: React.FC<SubscriptionCheckoutModalProps>
     const MerchantReference = `SUB-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
 
     const payloadForHash = { AmountTrxn, MerchantReference, TrxDateTime, MID, TID };
-    console.log('[Moamalat] Config (no hash):', {
-      ...payloadForHash,
-      CurrencyCode: '434',
-      MOAMALATPAY_PRODUCTION: ENV === 'production',
-      ReturnUrl: `${window.location.origin}/payment-success`,
-      CallbackUrl: `${window.location.origin}/payment-callback`,
-    });
+
 
     const apiBase = '';
     const res = await fetch(`${apiBase}/api/moamalat/hash`, {
@@ -214,7 +205,7 @@ export const SubscriptionCheckoutModal: React.FC<SubscriptionCheckoutModalProps>
     }
     const { secureHash } = await res.json();
     if (!secureHash) throw new Error('لم يتم استلام secureHash من الخادم');
-    console.log('[Moamalat] secureHash preview:', String(secureHash).slice(0, 6) + '…');
+
 
     const config = {
       MID,
@@ -224,25 +215,20 @@ export const SubscriptionCheckoutModal: React.FC<SubscriptionCheckoutModalProps>
       TrxDateTime,
       SecureHash: secureHash,
       completeCallback: function(data: any) {
-        console.log('[Moamalat] Payment complete:', data);
         setIsProcessing(false);
         onClose();
         setTimeout(() => alert('تمت عملية الدفع بنجاح! سيتم تفعيل الاشتراك قريباً.'), 400);
       },
       errorCallback: function(err: any) {
-        console.error('[Moamalat] Payment error:', err);
         setIsProcessing(false);
         alert('حدث خطأ في عملية الدفع: ' + (err?.error || err?.message || 'خطأ غير معروف'));
       },
       cancelCallback: function() {
-        console.warn('[Moamalat] Payment cancelled by user');
         setIsProcessing(false);
       }
     };
 
-    console.log('[Moamalat] Configuring Lightbox with:', { MID, TID, AmountTrxn, MerchantReference, TrxDateTime, SecureHashPreview: secureHash.substring(0, 8) + '...' });
     (window as any).Lightbox.Checkout.configure(config);
-    console.log('[Moamalat] Opening Lightbox...');
     (window as any).Lightbox.Checkout.showLightbox();
   }
 
@@ -252,7 +238,6 @@ export const SubscriptionCheckoutModal: React.FC<SubscriptionCheckoutModalProps>
       try {
         await initializeMoamalatPayment();
       } catch (error: any) {
-        console.error('[Moamalat] init failed:', error);
         setIsProcessing(false);
         alert('فشل في تهيئة بوابة الدفع: ' + (error?.message || 'خطأ غير معروف'));
       }

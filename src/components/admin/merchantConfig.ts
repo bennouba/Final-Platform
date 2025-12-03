@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import { Cpu, Flower2, Gem, Shirt, Sparkles } from "lucide-react";
+import { Cpu, Flower2, Gem, Shirt, Sparkles, Heart, Palette, Watch, Coffee, Package } from "lucide-react";
 
 interface SectionNode {
   id: string;
@@ -19,6 +19,7 @@ interface MerchantProfile {
   color: string;
   icon: LucideIcon;
   emblem: string;
+  logo?: string;
   stats: {
     orders: number;
     satisfaction: number;
@@ -37,7 +38,10 @@ const getDynamicMerchants = (): MerchantProfile[] => {
     if (!stored) return [];
 
     const stores = JSON.parse(stored);
-    return stores.map((store: any) => ({
+      const hardcodedSubdomains = new Set(['nawaem', 'sheirine', 'pretty', 'delta-store', 'magna-beauty', 'indeesh']);
+      return stores
+  .filter((store: any) => !hardcodedSubdomains.has(store.subdomain))
+    .map((store: any) => ({
       id: store.id,
       name: store.nameAr,
       tagline: store.description || 'متجر جديد',
@@ -45,24 +49,40 @@ const getDynamicMerchants = (): MerchantProfile[] => {
       plan: 'Basic',
       tier: 'جديد',
       color: 'from-blue-500 to-cyan-500',
-      icon: Shirt, // استخدام أيقونة افتراضية
+      icon: Shirt,
       emblem: '🛍️',
+      logo: store.logo || undefined,
       stats: {
         orders: 0,
         satisfaction: 100,
         growth: '+0%'
       },
-      disabled: [] // المتاجر الجديدة تبدأ بجميع الأقسام مفعلة
+      disabled: [] 
     }));
   } catch (error) {
-    console.error('Error loading dynamic merchants:', error);
+
     return [];
   }
 };
 
-// دمج المتاجر الثابتة مع الديناميكية
+// دمج المتاجر الثابتة مع الديناميكية (مع إزالة التكرار)
 const getAllMerchants = (): MerchantProfile[] => {
-  return [...merchants, ...getDynamicMerchants()];
+  const hardcodedMerchants = merchants;
+  const dynamicMerchants = getDynamicMerchants();
+  
+  const uniqueMap = new Map<string, MerchantProfile>();
+  
+  hardcodedMerchants.forEach(merchant => {
+    uniqueMap.set(merchant.id, merchant);
+  });
+  
+  dynamicMerchants.forEach(merchant => {
+    if (!uniqueMap.has(merchant.id)) {
+      uniqueMap.set(merchant.id, merchant);
+    }
+  });
+  
+  return Array.from(uniqueMap.values());
 };
 
 const merchantSections: SectionNode[] = [
@@ -93,7 +113,6 @@ const merchantSections: SectionNode[] = [
       { id: "catalog-categories", label: "التصنيفات" },
       { id: "catalog-stock", label: "المخزون" },
       { id: "catalog-stock-adjustments", label: "إدارة تغيير المخزون" },
-      { id: "catalog-custom-fields", label: "الحقول المخصصة" },
       { id: "catalog-stock-notifications", label: "إشعارات بالمخزون" }
     ]
   },
@@ -205,8 +224,9 @@ const merchants: MerchantProfile[] = [
     color: "from-rose-500 to-fuchsia-500",
     icon: Sparkles,
     emblem: "🌸",
+    logo: "/assets/stores/nawaem.webp",
     stats: { orders: 1280, satisfaction: 97, growth: "+18%" },
-    disabled: ["catalog-custom-fields", "finance-wallet", "logistics-awb", "logistics-bidding"]
+    disabled: ["logistics-bidding"]
   },
   {
     id: "sherine",
@@ -218,8 +238,9 @@ const merchants: MerchantProfile[] = [
     color: "from-sky-500 to-indigo-500",
     icon: Shirt,
     emblem: "👗",
+    logo: "/assets/stores/sheirine.webp",
     stats: { orders: 1124, satisfaction: 94, growth: "+12%" },
-    disabled: ["catalog-custom-fields", "finance-wallet", "logistics-awb", "logistics-bidding"]
+    disabled: ["logistics-bidding"]
   },
   {
     id: "pretty",
@@ -231,8 +252,9 @@ const merchants: MerchantProfile[] = [
     color: "from-emerald-500 to-lime-500",
     icon: Flower2,
     emblem: "💄",
+    logo: "/assets/stores/pretty.webp",
     stats: { orders: 980, satisfaction: 92, growth: "+9%" },
-    disabled: ["catalog-custom-fields", "finance-wallet", "logistics-awb", "logistics-bidding"]
+    disabled: ["logistics-bidding", "finance-wallet"]
   },
   {
     id: "delta",
@@ -244,8 +266,9 @@ const merchants: MerchantProfile[] = [
     color: "from-purple-500 to-violet-500",
     icon: Cpu,
     emblem: "💡",
+    logo: "/assets/stores/delta-store.webp",
     stats: { orders: 846, satisfaction: 90, growth: "+7%" },
-    disabled: ["catalog-custom-fields", "finance-wallet", "logistics-awb", "logistics-bidding"]
+    disabled: ["marketing-loyalty", "logistics-bidding"]
   },
   {
     id: "magna",
@@ -257,8 +280,23 @@ const merchants: MerchantProfile[] = [
     color: "from-amber-500 to-orange-500",
     icon: Gem,
     emblem: "🛍️",
+    logo: "/assets/stores/magna-beauty.webp",
     stats: { orders: 772, satisfaction: 89, growth: "+6%" },
-    disabled: ["catalog-custom-fields", "finance-wallet", "logistics-awb", "logistics-bidding"]
+    disabled: ["analytics-stock", "logistics-bidding"]
+  },
+  {
+    id: "indeesh",
+    name: "متجر انديش",
+    tagline: "حلول العناية المنزلية والعطور",
+    owner: "سالم محمد الأشقر",
+    plan: "Enterprise",
+    tier: "بلاتيني",
+    color: "from-indigo-500 to-purple-500",
+    icon: Package,
+    emblem: "🧼",
+    logo: "/assets/indeesh/logo/1764003949069-2wl3b2-Indeesh.png",
+    stats: { orders: 640, satisfaction: 95, growth: "+14%" },
+    disabled: []
   }
 ];
 

@@ -35,7 +35,7 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({ order, onClose, f
         <div className="p-6">
           <div className="flex justify-between items-start mb-6">
             <div>
-              <h2 className="text-2xl font-bold">تفاص اطب #{order.id}</h2>
+              <h2 className="text-2xl font-bold">تفاصيل الطلب #{order.id}</h2>
               <p className="text-gray-600 mt-1">
                 {formattedDate.date} - {formattedDate.time}
               </p>
@@ -52,30 +52,30 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({ order, onClose, f
           </div>
 
           <div className="space-y-6">
-            {/* عات اع */}
+            {/* بيانات العميل */}
             <Card>
               <CardHeader>
-                <CardTitle>عات اع</CardTitle>
+                <CardTitle>بيانات العميل</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
-                    <span className="font-medium">ااس:</span> {order.customer?.name || 'غر حدد'}
+                    <span className="font-medium">الاسم:</span> {order.customer?.name || 'غير محدد'}
                   </div>
                   <div>
-                    <span className="font-medium">ااتف:</span> {order.customer?.phone || 'غر حدد'}
+                    <span className="font-medium">رقم الهاتف:</span> {order.customer?.phone || 'غير محدد'}
                   </div>
                   <div>
-                    <span className="font-medium">ابرد اإتر:</span> {order.customer?.email || 'غر حدد'}
+                    <span className="font-medium">البريد الإلكتروني:</span> {order.customer?.email || 'غير محدد'}
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            {/* اتجات */}
+            {/* المنتجات */}
             <Card>
               <CardHeader>
-                <CardTitle>اتجات</CardTitle>
+                <CardTitle>المنتجات</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
@@ -83,71 +83,71 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({ order, onClose, f
                     <div key={index} className="flex justify-between items-center py-2 border-b last:border-b-0">
                       <div>
                         <p className="font-medium">{item.name}</p>
-                        <p className="text-sm text-gray-600">اة: {item.quantity}</p>
+                        <p className="text-sm text-gray-600">الكمية: {item.quantity}</p>
                       </div>
-                      <p className="font-medium">{item.price?.toFixed(2)} د.</p>
+                      <p className="font-medium">{item.price?.toFixed(2)} د.ل</p>
                     </div>
                   ))}
                 </div>
               </CardContent>
             </Card>
 
-            {/* عات ادفع اشح */}
+            {/* بيانات الدفع والشحن */}
             <div className="grid grid-cols-2 gap-6">
               <Card>
                 <CardHeader>
-                  <CardTitle>عات ادفع</CardTitle>
+                  <CardTitle>بيانات الدفع</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-2 text-sm">
                   <div className="flex justify-between">
-                    <span>طرة ادفع:</span>
-                    <span>{order.payment?.method || 'غر حدد'}</span>
+                    <span>طريقة الدفع:</span>
+                    <span>{order.payment?.method || 'غير محدد'}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span>حاة ادفع:</span>
-                    <span>{order.payment?.status || 'غر حدد'}</span>
+                    <span>حالة الدفع:</span>
+                    <span>{order.payment?.status || 'غير محدد'}</span>
                   </div>
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader>
-                  <CardTitle>عات اشح</CardTitle>
+                  <CardTitle>بيانات الشحن</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-2 text-sm">
                   <div className="flex justify-between">
-                    <span>عا اشح:</span>
-                    <span>{order.shipping?.address || 'غر حدد'}</span>
+                    <span>عنوان الشحن:</span>
+                    <span>{order.shipping?.address || 'غير محدد'}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span>تفة اشح:</span>
-                    <span>{order.shippingCost?.toFixed(2)} د.</span>
+                    <span>رسوم الشحن:</span>
+                    <span>{order.shippingCost?.toFixed(2)} د.ل</span>
                   </div>
                 </CardContent>
               </Card>
             </div>
 
-            {/* اجاع */}
+            {/* الإجمالي */}
             <Card>
               <CardContent className="pt-6">
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
-                    <span>اجع افرع:</span>
-                    <span>{order.total.toFixed(2)} د.</span>
+                    <span>المجموع الفرعي:</span>
+                    <span>{order.total.toFixed(2)} د.ل</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span>تفة اشح:</span>
-                    <span>{order.shippingCost.toFixed(2)} د.</span>
+                    <span>رسوم الشحن:</span>
+                    <span>{order.shippingCost.toFixed(2)} د.ل</span>
                   </div>
                   {order.discountAmount > 0 && (
                     <div className="flex justify-between text-sm text-green-600">
-                      <span>اخص:</span>
-                      <span>-{order.discountAmount.toFixed(2)} د.</span>
+                      <span>الخصم:</span>
+                      <span>-{order.discountAmount.toFixed(2)} د.ل</span>
                     </div>
                   )}
                   <div className="flex justify-between text-lg font-bold border-t pt-2">
-                    <span>اجع اائ:</span>
-                    <span>{(order.finalTotal || order.total).toFixed(2)} د.</span>
+                    <span>المجموع الإجمالي:</span>
+                    <span>{(order.finalTotal || order.total).toFixed(2)} د.ل</span>
                   </div>
                 </div>
               </CardContent>

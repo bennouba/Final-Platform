@@ -72,7 +72,7 @@ const MoamalatOfficialLightbox: React.FC<MoamalatOfficialLightboxProps> = ({
       setLogoFailed(false);
     }
     if (isOpen && MOAMALAT_CONFIG.testMode) {
-      console.log('Moamalat Test Mode - Ready for integration');
+
       // In production, load real Moamalat SDK here
       loadMoamalatLightboxSDK();
     }
@@ -98,7 +98,7 @@ const MoamalatOfficialLightbox: React.FC<MoamalatOfficialLightboxProps> = ({
           }
         }, { once: true });
         existing.addEventListener('error', () => {
-          console.warn('Failed to load Moamalat SDK, using simulation mode');
+
         }, { once: true });
         return;
       }
@@ -114,16 +114,16 @@ const MoamalatOfficialLightbox: React.FC<MoamalatOfficialLightboxProps> = ({
         if (globalLightbox && !w.MoamalatLightbox) {
           w.MoamalatLightbox = globalLightbox;
         }
-        console.log('Moamalat Lightbox SDK loaded successfully');
+
       };
 
       script.onerror = () => {
-        console.warn('Failed to load Moamalat SDK, using simulation mode');
+
       };
 
       document.head.appendChild(script);
     } catch (error) {
-      console.warn('Moamalat SDK loading failed:', error);
+
     }
   };
 
@@ -287,7 +287,7 @@ const MoamalatOfficialLightbox: React.FC<MoamalatOfficialLightboxProps> = ({
         throw new Error('Moamalat SDK not loaded');
       }
     } catch (error) {
-      console.error('Moamalat payment initiation failed:', error);
+
       onPaymentError('فشل في بدء عملية الدفع');
       setIsLoading(false);
     }
@@ -403,7 +403,7 @@ const MoamalatOfficialLightbox: React.FC<MoamalatOfficialLightboxProps> = ({
         throw new Error('Moamalat LightBox SDK not loaded');
       }
     } catch (error) {
-      console.error('Moamalat LightBox payment initiation failed:', error);
+
       onPaymentError('فشل في بدء عملية الدفع');
       setIsLoading(false);
     }

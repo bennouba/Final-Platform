@@ -427,11 +427,11 @@ const StoreSettingsView: React.FC<StoreSettingsViewProps> = ({ storeData, setSto
           });
         }
       } else {
-        console.log('Google Maps not loaded yet, retrying...');
+
         setTimeout(initializeGoogleMap, 500);
       }
     } catch (error) {
-      console.error('Error initializing Google Map:', error);
+
       setMapLoaded(false);
     }
   };
@@ -500,7 +500,7 @@ const StoreSettingsView: React.FC<StoreSettingsViewProps> = ({ storeData, setSto
 
         // Global callback for when Google Maps loads
         (window as any).initStoreGoogleMaps = () => {
-          console.log('Store Google Maps loaded successfully');
+
           initializeGoogleMap();
         };
       } else {
@@ -573,7 +573,7 @@ const StoreSettingsView: React.FC<StoreSettingsViewProps> = ({ storeData, setSto
 
     // Add the new location to the storeLocations array
     // Note: In a real app, this would be handled by state management or API call
-    console.log('New location created:', newLocation);
+
     setShowLocationModal(false);
 
     // Reset form
@@ -1462,7 +1462,7 @@ const StoreSettingsView: React.FC<StoreSettingsViewProps> = ({ storeData, setSto
                             onChange={(e) => {
                               const file = e.target.files?.[0];
                               if (file) {
-                                console.log(`Payment method ${payment.id} icon uploaded:`, file.name);
+
                                 // Here you would handle the file upload for payment method icons
                               }
                             }}

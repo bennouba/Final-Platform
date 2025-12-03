@@ -103,6 +103,13 @@ export const errorHandler = (
 };
 
 export const notFoundHandler = (req: AuthRequest, res: Response, next: NextFunction): void => {
+  const staticFileExtensions = ['.js', '.css', '.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg', '.ico', '.woff', '.woff2', '.ttf', '.eot'];
+  const isStaticFile = staticFileExtensions.some(ext => req.path.endsWith(ext));
+  
+  if (!isStaticFile) {
+    logger.warn(`Route not found: ${req.method} ${req.originalUrl}`);
+  }
+  
   const error = new AppError(
     HTTP_STATUS.NOT_FOUND,
     `Route ${req.originalUrl} not found`,

@@ -110,7 +110,7 @@ const CouponSuccessModal: React.FC<CouponSuccessModalProps> = ({
             <Button
               onClick={onClose}
               size="lg"
-              className="w-full bg-gradient-to-r from-green-500 to-primary hover:from-green-600 hover:to-primary/90 text-white font-bold py-4 rounded-xl shadow-xl hover:shadow-2xl transition-all duration-300 text-lg"
+              className="w-full bg-gradient-to-r from-green-500 to-primary hover:from-green-600 hover:to-primary/90 text-white font-bold py-4 rounded-xl shadow-xl hover:shadow-2xl transition-colors transition-shadow duration-300 text-lg"
             >
               <Gift className="h-5 w-5 mr-2" />
               متابعة التسوق

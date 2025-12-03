@@ -16,7 +16,7 @@ interface StoreAttributes {
   updatedAt?: Date;
 }
 
-interface StoreCreationAttributes extends Optional<StoreAttributes, 'id' | 'createdAt' | 'updatedAt'> {}
+type StoreCreationAttributes = Optional<StoreAttributes, 'id' | 'createdAt' | 'updatedAt'>;
 
 class Store extends Model<StoreAttributes, StoreCreationAttributes> implements StoreAttributes {
   declare id: number;

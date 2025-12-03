@@ -55,9 +55,8 @@ class NotificationManager {
     if ('serviceWorker' in navigator) {
       try {
         this.serviceWorkerRegistration = await navigator.serviceWorker.register('/sw.js');
-        console.log('Service Worker registered successfully');
       } catch (error) {
-        console.error('Service Worker registration failed:', error);
+        // Service worker registration failed - silent handling
       }
     }
   }
@@ -65,7 +64,6 @@ class NotificationManager {
   // Request notification permission
   async requestNotificationPermission(): Promise<boolean> {
     if (!('Notification' in window)) {
-      console.warn('This browser does not support notifications');
       return false;
     }
 
@@ -106,7 +104,6 @@ class NotificationManager {
 
       return true;
     } catch (error) {
-      console.error('Push subscription failed:', error);
       return false;
     }
   }
@@ -146,7 +143,7 @@ class NotificationManager {
         })
       });
     } catch (error) {
-      console.error('Failed to send push notification:', error);
+      // Push notification failed - silent handling
     }
   }
 
@@ -199,8 +196,7 @@ class NotificationManager {
       oscillator.start(audioContext.currentTime);
       oscillator.stop(audioContext.currentTime + 0.3);
     } catch (error) {
-      // Fallback to simple beep
-      console.log('Notification sound played');
+      // Fallback to simple beep - silent handling
     }
   }
 
@@ -358,8 +354,7 @@ class NotificationManager {
   }
 
   private async savePushSubscription(subscription: PushSubscription): Promise<void> {
-    // Mock API call to save subscription
-    console.log('Saving push subscription:', subscription);
+    // Mock API call to save subscription - silent handling
   }
 
   private loadSettings(): NotificationSettings {

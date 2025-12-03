@@ -8,7 +8,7 @@ export {
   getAreasByCity,
   searchAreas,
   type LibyanArea
-} from './المناطق/areas';
+} from './areas/areas';
 
 // Cities - المدن
 export {
@@ -17,7 +17,7 @@ export {
   getCityById,
   getCityAreas,
   getAreaById as getCityAreaById
-} from './المدن/cities';
+} from './cities/cities';
 
 // Banks - المصارف
 export {
@@ -25,4 +25,4 @@ export {
   getBankById,
   searchBanks,
   type LibyanBank
-} from './المصارف/banks';
+} from './banks/banks';

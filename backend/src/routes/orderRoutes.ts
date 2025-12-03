@@ -6,6 +6,7 @@ import {
   createOrderSchema,
   getOrdersSchema,
   updateOrderStatusSchema,
+  createManualOrderSchema,
 } from '@validators/orderValidator';
 
 const router = Router();
@@ -23,6 +24,15 @@ router.get(
   (req: Request, res: Response, next: NextFunction) => validate(getOrdersSchema)(req, res, next),
   orderController.getOrders
 );
+
+router.post(
+  '/manual',
+  authenticate,
+  (req: Request, res: Response, next: NextFunction) => validate(createManualOrderSchema)(req, res, next),
+  orderController.createManualOrder
+);
+
+router.get('/unavailable', authenticate, orderController.getUnavailableForMerchant);
 
 router.get('/:orderId', authenticate, orderController.getOrderById);
 

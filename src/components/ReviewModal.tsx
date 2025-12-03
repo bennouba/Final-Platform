@@ -122,7 +122,7 @@ const ReviewModal: React.FC<ReviewModalProps> = ({
       }, 2000);
 
     } catch (error) {
-      console.error('Error submitting review:', error);
+
     } finally {
       setIsSubmitting(false);
     }

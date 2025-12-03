@@ -211,7 +211,7 @@ const AddToCartPopup: React.FC<AddToCartPopupProps> = ({
                 <button
                   key={size}
                   onClick={() => setSelectedSize(size)}
-                  className={`px-3 py-2 rounded-lg border text-sm font-medium transition-all ${
+                  className={`px-3 py-2 rounded-lg border text-sm font-medium transition-colors ${
                     selectedSize === size
                       ? 'border-primary bg-primary text-white shadow-md'
                       : 'border-gray-200 bg-white text-gray-700 hover:border-primary hover:bg-primary/10'
@@ -231,7 +231,7 @@ const AddToCartPopup: React.FC<AddToCartPopupProps> = ({
                 <button
                   key={color}
                   onClick={() => setSelectedColor(color)}
-                  className={`px-3 py-2 rounded-lg border text-sm font-medium transition-all ${
+                  className={`px-3 py-2 rounded-lg border text-sm font-medium transition-colors ${
                     selectedColor === color
                       ? 'border-primary bg-primary text-white shadow-md'
                       : 'border-gray-200 bg-white text-gray-700 hover:border-primary hover:bg-primary/10'

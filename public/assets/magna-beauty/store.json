@@ -1,0 +1,45 @@
+{
+  "id": 1763895960005,
+  "storeId": 5,
+  "slug": "magna-beauty",
+  "name": "ماغنا بيوتي",
+  "subdomain": "magna-beauty",
+  "storeSlug": "magna-beauty",
+  "nameAr": "ماغنا بيوتي",
+  "nameEn": "Magna Beauty",
+  "description": "متجر منتجات التجميل والعناية بالجمال",
+  "icon": "💄",
+  "color": "from-purple-500 to-violet-600",
+  "logo": "/assets/stores/magna-beauty.webp",
+  "categories": [
+    "مكياج",
+    "عناية بالبشرة",
+    "منتجات تجميل"
+  ],
+  "products": [],
+  "sliderImages": [
+    {
+      "id": "magna-banner1",
+      "title": "منتجات تجميل عالية الجودة من ماغنا",
+      "subtitle": "",
+      "buttonText": "تسوق الآن",
+      "image": "/assets/magna-beauty/slide1.webp"
+    },
+    {
+      "id": "magna-banner2",
+      "title": "أدوات مكياج احترافية وفرش فاخرة",
+      "subtitle": "",
+      "buttonText": "تسوق الآن",
+      "image": "/assets/magna-beauty/slide2.webp"
+    },
+    {
+      "id": "magna-banner3",
+      "title": "عناية بالبشرة بالمنتجات الطبيعية",
+      "subtitle": "",
+      "buttonText": "تسوق الآن",
+      "image": "/assets/magna-beauty/slide3.webp"
+    }
+  ],
+  "status": "active",
+  "createdAt": "2025-11-24T10:45:00.000Z"
+}

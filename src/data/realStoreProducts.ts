@@ -13,15 +13,16 @@ export interface RealProduct {
   colors: Array<{ name: string; value: string }>;
   rating: number;
   reviews: number;
-  views: number; // إضافة الخصائص المفقودة
+  views: number;
   likes: number;
   orders: number;
+  quantity?: number;
   category: string;
   inStock: boolean;
   isAvailable: boolean;
   tags: string[];
   badge?: string;
-  image: string; // للتوافق مع النظام الحالي
+  image: string;
 }
 
 // منتجات متجر بريتي (ID: 3) - عطور فاخرة

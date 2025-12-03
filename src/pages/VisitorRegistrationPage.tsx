@@ -15,15 +15,13 @@ interface VisitorRegistrationPageProps {
   onRegister: (userData: any) => void;
   onNavigateToLogin: () => void;
   onNavigateToTerms: () => void;
-  onNavigateToPrivacy: () => void;
 }
 
 const VisitorRegistrationPage: React.FC<VisitorRegistrationPageProps> = ({
   onBack,
   onRegister,
   onNavigateToLogin,
-  onNavigateToTerms,
-  onNavigateToPrivacy
+  onNavigateToTerms
 }) => {
   const [formData, setFormData] = useState({
     firstName: '',

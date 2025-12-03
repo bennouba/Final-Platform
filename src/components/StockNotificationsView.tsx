@@ -138,13 +138,13 @@ const StockNotificationsView: React.FC<StockNotificationsViewProps> = ({ storeDa
 
   const handleStatusChange = (notificationId: string, newStatus: StockNotification['status']) => {
     // In real app, this would update the notification status
-    console.log('Updating notification status:', notificationId, newStatus);
+
     onSave();
   };
 
   const handleBulkNotification = () => {
     // In real app, this would send notifications to all active subscribers
-    console.log('Sending bulk notifications to active subscribers');
+
     onSave();
   };
 

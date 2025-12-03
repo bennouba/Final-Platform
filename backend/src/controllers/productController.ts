@@ -186,6 +186,11 @@ export const updateProduct = async (
       name,
       description,
       price,
+      originalPrice,
+      discountPercent,
+      discountType,
+      discountStart,
+      discountEnd,
       quantity,
       stock,
       inStock,
@@ -217,6 +222,11 @@ export const updateProduct = async (
     if (name !== undefined) updates.name = name;
     if (description !== undefined) updates.description = description;
     if (price !== undefined) updates.price = price;
+    if (originalPrice !== undefined) updates.originalPrice = originalPrice;
+    if (discountPercent !== undefined) updates.discountPercent = discountPercent;
+    if (discountType !== undefined) updates.discountType = discountType;
+    if (discountStart !== undefined) updates.discountStart = discountStart;
+    if (discountEnd !== undefined) updates.discountEnd = discountEnd;
     if (category !== undefined) updates.category = category;
     if (brand !== undefined) updates.brand = brand;
     if (thumbnail !== undefined) updates.thumbnail = thumbnail;

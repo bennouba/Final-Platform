@@ -1,0 +1,65 @@
+✅ VERIFICATION CHECKLIST - التحقق من الإصلاحات
+
+البنية الأساسية:
+☐ backend/src/index.ts - يحتوي على server.requestTimeout = 300000
+☐ backend/src/app.ts - يحتوي على req.setTimeout(120000)
+☐ vite.config.ts - يحتوي على proxy config
+
+الراوترات:
+☐ backend/src/routes/index.ts - router.use(`${API_PREFIX}/stores`, storeRoutes)
+☐ backend/src/routes/storeRoutes.ts - POST /create-with-images مع uploadBothImages
+
+Middleware:
+☐ backend/src/middleware/storeImageUpload.ts يحتوي على:
+  ☐ moveUploadedFiles دالة
+  ☐ cleanupTempUploads دالة
+  ☐ uploadBothImages مع timeout 60 ثانية
+
+الـ Controller:
+☐ backend/src/controllers/storeController.ts - يستورد moveUploadedFiles
+☐ يستدعي moveUploadedFiles في createStoreWithImages
+
+الخدمات:
+☐ backend/src/services/storeGeneratorService.ts موجود ويحتوي على:
+  ☐ generateStoreFiles
+  ☐ generateJSONFiles
+  ☐ updateStoresIndex
+
+الواجهة:
+☐ src/pages/CreateStorePage.tsx - ترسل إلى /api/stores/create-with-images
+☐ FormData تتضمن productsImageCounts
+
+البناء:
+☐ npm run build يعمل بدون أخطاء
+☐ backend/dist موجود
+☐ dist/ موجود
+
+الإعدادات:
+☐ package.json يحتوي على:
+  "dev": "concurrently -n FRONTEND,BACKEND -c green,blue \"npm run dev:frontend\" \"npm run dev:backend\""
+  "dev:frontend": "vite"
+  "dev:backend": "cd backend && npm run dev"
+
+غياب الأخطاء:
+☐ لا توجد أخطاء في Console
+☐ لا توجد أخطاء في TypeScript
+☐ concurrently مثبت (npm list concurrently)
+
+الآن جاهز للتشغيل:
+npm run dev
+
+ثم اختبر:
+1. متجر صغير (2 منتج فقط)
+2. متجر كبير (16 منتج)
+
+توقع النتائج:
+✅ POST http://localhost:4000/api/stores/create-with-images - Status 201
+✅ Console: "✅ Store created successfully on backend"
+✅ Files في public/assets/{slug}/
+✅ Store.json موجود
+✅ Products images محفوظة
+
+إذا حصل خطأ "Failed to fetch":
+1. تحقق من أن البيانات متطابقة مع ما قاله الـ server
+2. افتح Network tab وشوف Response
+3. افتح لوج الـ server وشوف الخطأ

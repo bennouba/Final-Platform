@@ -34,7 +34,7 @@ const OrderCard: React.FC<OrderCardProps> = ({ order, onViewDetails, formatDate,
       <CardHeader className="pb-3">
         <div className="flex justify-between items-start">
           <div>
-            <CardTitle className="text-lg">طب #{order.id}</CardTitle>
+            <CardTitle className="text-lg">طلب #{order.id}</CardTitle>
             <p className="text-sm text-gray-600 mt-1">
               {formattedDate.date} - {formattedDate.time}
             </p>
@@ -48,17 +48,17 @@ const OrderCard: React.FC<OrderCardProps> = ({ order, onViewDetails, formatDate,
       <CardContent>
         <div className="space-y-3">
           <div className="flex justify-between text-sm">
-            <span>عدد اتجات:</span>
+            <span>عدد المنتجات:</span>
             <span>{order.items.length}</span>
           </div>
           <div className="flex justify-between text-sm">
-            <span>اجع:</span>
-            <span>{order.total.toFixed(2)} د.</span>
+            <span>المجموع:</span>
+            <span>{order.total.toFixed(2)} د.ل</span>
           </div>
           {order.finalTotal && (
             <div className="flex justify-between text-sm font-medium">
-              <span>اجع اائ:</span>
-              <span>{order.finalTotal.toFixed(2)} د.</span>
+              <span>المجموع الإجمالي:</span>
+              <span>{order.finalTotal.toFixed(2)} د.ل</span>
             </div>
           )}
           <Button type="button" onClick={onViewDetails}
@@ -67,7 +67,7 @@ const OrderCard: React.FC<OrderCardProps> = ({ order, onViewDetails, formatDate,
             className="w-full"
           >
             <Eye className="h-4 w-4 mr-2" />
-            عرض اتفاص
+            عرض التفاصيل
           </Button>
         </div>
       </CardContent>

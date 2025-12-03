@@ -77,7 +77,6 @@ const TermsAndConditionsPage: React.FC<TermsAndConditionsPageProps> = ({ onBack 
 للتواصل معنا: support@eshro.ly | +218 94 406 2927 | طرابلس، ليبيا`);
       }
     } catch (error) {
-      console.error('Error loading document:', error);
       setError('حدث خطأ في تحميل المستند');
     } finally {
       setLoading(false);

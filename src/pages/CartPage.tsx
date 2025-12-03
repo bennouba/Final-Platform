@@ -128,7 +128,7 @@ const CartPage: React.FC<CartPageProps> = ({
       try {
         return JSON.parse(raw);
       } catch (e) {
-        console.error('خطأ في قراءة كوبون الترحيب:', e);
+
         return null;
       }
     };
@@ -965,7 +965,7 @@ const PaymentView: React.FC<any> = ({
   useEffect(() => {
     if (orderData.payment.method === 'immediate') {
       ensureMoamalatScript().catch((error) => {
-        console.error('Moamalat script preload failed:', error);
+
       });
     }
   }, [orderData.payment.method]);
@@ -1003,7 +1003,7 @@ const PaymentView: React.FC<any> = ({
           },
         });
       } catch (error: any) {
-        console.error('Moamalat launch failed:', error);
+
         setIsProcessingOrder(false);
         setIsLaunchingMoamalat(false);
         alert('تعذر فتح بوابة معاملات. يرجى المحاولة مرة أخرى.');

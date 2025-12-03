@@ -1,0 +1,67 @@
+
+> vite-template@0.0.0 lint
+> eslint .
+
+
+c:\Users\dataf\Downloads\Eishro-Platform_V7\backend\src\database\backup.ts
+  214:33  error  Empty block statement  no-empty
+
+c:\Users\dataf\Downloads\Eishro-Platform_V7\backend\src\middleware\storeImageUpload.ts
+  240:38  error  Empty block statement  no-empty
+
+c:\Users\dataf\Downloads\Eishro-Platform_V7\backend\src\routes\storeImageUpload.ts
+  234:16  error  Empty block statement  no-empty
+  242:16  error  Empty block statement  no-empty
+  300:38  error  Empty block statement  no-empty
+
+c:\Users\dataf\Downloads\Eishro-Platform_V7\src\components\LiveChat.tsx
+  260:18  error  Unexpected console statement  no-console
+
+c:\Users\dataf\Downloads\Eishro-Platform_V7\src\components\NotifyWhenAvailable.tsx
+  335:27  error  Empty block statement  no-empty
+
+c:\Users\dataf\Downloads\Eishro-Platform_V7\src\components\OrderTracking.tsx
+  255:18  error  Unexpected console statement  no-console
+
+c:\Users\dataf\Downloads\Eishro-Platform_V7\src\components\admin\MerchantManagement.tsx
+  284:42  error  Empty block statement  no-empty
+
+c:\Users\dataf\Downloads\Eishro-Platform_V7\src\data\ecommerceData.ts
+  398:32  error  Empty block statement  no-empty
+
+c:\Users\dataf\Downloads\Eishro-Platform_V7\src\data\stores\delta-store\Slider.tsx
+  69:48  error  Empty block statement  no-empty
+
+c:\Users\dataf\Downloads\Eishro-Platform_V7\src\data\stores\magna-beauty\Slider.tsx
+  60:48  error  Empty block statement  no-empty
+
+c:\Users\dataf\Downloads\Eishro-Platform_V7\src\data\stores\nawaem\Slider.tsx
+  141:48  error  Empty block statement  no-empty
+
+c:\Users\dataf\Downloads\Eishro-Platform_V7\src\data\stores\pretty\Slider.tsx
+  74:48  error  Empty block statement  no-empty
+
+c:\Users\dataf\Downloads\Eishro-Platform_V7\src\data\stores\sheirine\Slider.tsx
+  55:48  error  Empty block statement  no-empty
+
+c:\Users\dataf\Downloads\Eishro-Platform_V7\src\pages\CompleteOrdersPage.tsx
+  934:30  error  Unexpected console statement  no-console
+  935:33  error  Unexpected console statement  no-console
+
+c:\Users\dataf\Downloads\Eishro-Platform_V7\src\pages\EnhancedMerchantDashboard.tsx
+   1512:51  error  Empty block statement  no-empty
+   1558:44  error  Empty block statement  no-empty
+   1592:43  error  Empty block statement  no-empty
+   1594:49  error  Empty block statement  no-empty
+   1600:44  error  Empty block statement  no-empty
+  10829:45  error  Empty block statement  no-empty
+
+c:\Users\dataf\Downloads\Eishro-Platform_V7\src\pages\ModernStorePage.tsx
+  316:14  error  Empty block statement  no-empty
+  373:12  error  Empty block statement  no-empty
+
+c:\Users\dataf\Downloads\Eishro-Platform_V7\src\utils\assetValidation.ts
+  135:17  error  Empty block statement  no-empty
+
+✖ 26 problems (26 errors, 0 warnings)
+

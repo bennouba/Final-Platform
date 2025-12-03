@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -38,7 +38,8 @@ import {
   MoreHorizontal,
   Eye,
   Copy,
-  ExternalLink
+  ExternalLink,
+  Check
 } from 'lucide-react';
 
 interface StoreLocation {
@@ -65,6 +66,7 @@ const MerchantSettings: React.FC = () => {
   ];
 
   const [storeData, setStoreData] = useState({
+    id: 'store-1',
     name: 'متجر نواعم',
     phone: '0942161516',
     address: 'طرابلس - سوق الجمعة',
@@ -138,8 +140,8 @@ const MerchantSettings: React.FC = () => {
               />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">المدينة</label>
-              <select className="w-full p-2 border rounded-md">
+              <label htmlFor="city-select" className="text-sm font-medium">المدينة</label>
+              <select id="city-select" className="w-full p-2 border rounded-md">
                 <option value="">إختيار المدينة من القائمة</option>
                 <option value="tripoli" selected={storeData.city === 'طرابلس'}>طرابلس</option>
                 <option value="benghazi">بنغازي</option>
@@ -147,8 +149,8 @@ const MerchantSettings: React.FC = () => {
               </select>
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">المنطقة</label>
-              <select className="w-full p-2 border rounded-md">
+              <label htmlFor="region-select" className="text-sm font-medium">المنطقة</label>
+              <select id="region-select" className="w-full p-2 border rounded-md">
                 <option value="">إختيار المنطقة من القائمة</option>
                 <option value="souk_joumaa" selected={storeData.region === 'سوق الجمعة'}>سوق الجمعة</option>
                 <option value="downtown">وسط المدينة</option>
@@ -384,8 +386,8 @@ const MerchantSettings: React.FC = () => {
         <CardContent className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
-              <label className="text-sm font-medium">تمكين من العرض ؟</label>
-              <select className="w-full p-2 border rounded-md">
+              <label htmlFor="popup-enable-select" className="text-sm font-medium">تمكين من العرض ؟</label>
+              <select id="popup-enable-select" className="w-full p-2 border rounded-md">
                 <option value="no" selected>لا</option>
                 <option value="yes">نعم</option>
               </select>
@@ -443,7 +445,7 @@ const MerchantSettings: React.FC = () => {
           <div className="space-y-4">
             <div className="flex gap-4">
               <Button variant="outline" size="sm">الكل</Button>
-              <select className="p-2 border rounded-md text-sm">
+              <select aria-label="ترتيب الصفحات" className="p-2 border rounded-md text-sm">
                 <option>القيمة</option>
                 <option>الحالة</option>
               </select>
@@ -521,7 +523,7 @@ const MerchantSettings: React.FC = () => {
               <label className="text-sm font-medium">إضافة رابط</label>
               <Input placeholder="العنوان" />
               <Input placeholder="URL الرابط" value="http://" />
-              <select className="w-full p-2 border rounded-md">
+              <select aria-label="مكان العرض" className="w-full p-2 border rounded-md">
                 <option>مكان العرض</option>
                 <option>رأس الصفحة</option>
                 <option>تذييل الصفحة</option>
@@ -600,7 +602,7 @@ const MerchantSettings: React.FC = () => {
           <div className="space-y-4">
             <div className="flex gap-4">
               <Button variant="outline" size="sm">الكل</Button>
-              <select className="p-2 border rounded-md text-sm">
+              <select aria-label="ترتيب السلايدرز" className="p-2 border rounded-md text-sm">
                 <option>القيمة</option>
                 <option>الحالة</option>
               </select>
@@ -653,92 +655,317 @@ const MerchantSettings: React.FC = () => {
     </div>
   );
 
-  const AdsTab: React.FC = () => (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <Megaphone className="h-5 w-5" />
-              إدارة الإعلانات
-            </CardTitle>
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              إضافة إعلان جديد
+  const adTemplates = [
+    { id: 1, name: 'قالب 1', image: '/Backup-platform/adv1.jpg' },
+    { id: 2, name: 'قالب 2', image: '/Backup-platform/adv2.jpg' },
+    { id: 3, name: 'قالب 3', image: '/Backup-platform/adv3.jpg' },
+    { id: 4, name: 'قالب 4', image: '/Backup-platform/adv4.jpg' },
+    { id: 5, name: 'قالب 5', image: '/Backup-platform/adv5.jpg' },
+    { id: 6, name: 'قالب 6', image: '/Backup-platform/adv6.jpg' },
+    { id: 7, name: 'قالب 7', image: '/Backup-platform/adv7.jpg' },
+    { id: 8, name: 'قالب 8', image: '/Backup-platform/adv8.jpg' },
+    { id: 9, name: 'قالب 9', image: '/Backup-platform/adv9.jpg' },
+    { id: 10, name: 'قالب 10', image: '/Backup-platform/adv10.jpg' },
+    { id: 11, name: 'قالب 11', image: '/Backup-platform/adv11.jpg' },
+    { id: 12, name: 'قالب 12', image: '/Backup-platform/adv12.jpg' }
+  ];
+
+  const [adStep, setAdStep] = useState<'list' | 'create-step1' | 'create-step2'>('list');
+  const [selectedAdTemplate, setSelectedAdTemplate] = useState<number | null>(null);
+  const [adTitle, setAdTitle] = useState('');
+  const [adDescription, setAdDescription] = useState('');
+  const [adPlacement, setAdPlacement] = useState<'banner' | 'between_products'>('banner');
+  const [publishedAds, setPublishedAds] = useState<any[]>([]);
+
+  const handleStartAd = () => {
+    setAdStep('create-step1');
+    setSelectedAdTemplate(null);
+    setAdTitle('');
+    setAdDescription('');
+  };
+
+  const handleSelectTemplate = (templateId: number) => {
+    setSelectedAdTemplate(templateId);
+  };
+
+  const handleSaveAdDraft = () => {
+    if (!adTitle.trim() || !adDescription.trim() || !selectedAdTemplate) {
+      alert('يرجى ملء جميع الحقول واختيار قالب');
+      return;
+    }
+    setAdStep('create-step2');
+  };
+
+  const handlePublishAd = () => {
+    const storeId = storeData?.id || 'default-store';
+    const newAd = {
+      id: Date.now(),
+      templateId: selectedAdTemplate,
+      title: adTitle,
+      description: adDescription,
+      placement: adPlacement,
+      createdAt: new Date().toISOString()
+    };
+
+    const storageKey = `eshro_store_ads_${storeId}`;
+    const existingAds = JSON.parse(localStorage.getItem(storageKey) || '[]');
+    const updatedAds = [...existingAds, newAd];
+    localStorage.setItem(storageKey, JSON.stringify(updatedAds));
+    setPublishedAds(updatedAds);
+
+    setAdStep('list');
+    setSelectedAdTemplate(null);
+    setAdTitle('');
+    setAdDescription('');
+    setAdPlacement('banner');
+  };
+
+  const handleDeleteAd = (adId: number) => {
+    const storeId = storeData?.id || 'default-store';
+    const storageKey = `eshro_store_ads_${storeId}`;
+    const filtered = publishedAds.filter(ad => ad.id !== adId);
+    localStorage.setItem(storageKey, JSON.stringify(filtered));
+    setPublishedAds(filtered);
+  };
+
+  const loadPublishedAds = () => {
+    const storeId = storeData?.id || 'default-store';
+    const storageKey = `eshro_store_ads_${storeId}`;
+    const saved = JSON.parse(localStorage.getItem(storageKey) || '[]');
+    setPublishedAds(saved);
+  };
+
+  useEffect(() => {
+    if (activeTab === 'ads') {
+      loadPublishedAds();
+    }
+  }, [activeTab]);
+
+  const AdsTab: React.FC = () => {
+    if (adStep === 'list') {
+      return (
+        <div className="space-y-6">
+          <div className="flex justify-between items-center">
+            <div>
+              <h2 className="text-2xl font-bold">إدارة الإعلانات</h2>
+              <p className="text-gray-600">أنشئ وأدر إعلانات متجرك بسهولة</p>
+            </div>
+            <Button onClick={handleStartAd} className="bg-green-600 hover:bg-green-700">
+              <Plus className="h-4 w-4 ml-2" />
+              إعلان جديد
             </Button>
           </div>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="flex gap-4">
-              <Button variant="outline" size="sm">الكل</Button>
-              <select className="p-2 border rounded-md text-sm">
-                <option>القيمة</option>
-                <option>الحالة</option>
-              </select>
-              <div className="flex-1">
-                <Input placeholder="البحث في الإعلانات..." />
-              </div>
-              <Button variant="outline" size="sm">
-                <RefreshCw className="h-4 w-4 mr-2" />
-                تحديث
-              </Button>
-            </div>
 
-            <div className="bg-white border rounded-lg">
-              <div className="p-4 border-b bg-gray-50">
-                <div className="grid grid-cols-6 gap-4 text-sm font-medium">
-                  <div>الصورة</div>
-                  <div>الإسم</div>
-                  <div>الزيارات</div>
-                  <div>إنتهاء الصلاحية</div>
-                  <div>الحالة</div>
-                  <div>الخيارات</div>
-                </div>
-              </div>
-              <div className="divide-y">
-                {[
-                  { name: 'دعاية السمعات', visits: 46, expiry: '2027-04-07', status: 'مفعل' },
-                  { name: 'الدعاية الفردية', visits: 52, expiry: '2027-01-04', status: 'مفعل' },
-                  { name: 'الدعاية الثنائية -2-', visits: 35, expiry: '2027-01-04', status: 'مفعل' },
-                  { name: 'الدعاية الثنائية -1-', visits: 60, expiry: '2027-01-04', status: 'مفعل' },
-                  { name: 'الدعاية الثلاثية 3', visits: 43, expiry: '2027-01-04', status: 'مفعل' },
-                  { name: 'أثاث منزللي', visits: 0, expiry: '2027-06-04', status: 'مفعل' }
-                ].map((ad, index) => (
-                  <div key={index} className="p-4 grid grid-cols-6 gap-4 items-center">
-                    <div className="w-12 h-12 bg-gray-200 rounded flex items-center justify-center">
-                      <Image className="h-6 w-6 text-gray-400" />
+          {publishedAds.length === 0 ? (
+            <Card className="border-dashed border-2">
+              <CardContent className="py-12 text-center">
+                <Megaphone className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                <h3 className="text-xl font-semibold mb-2">لا توجد إعلانات منشورة</h3>
+                <p className="text-gray-600 mb-6">ابدأ بإنشاء إعلانك الأول</p>
+                <Button onClick={handleStartAd} className="bg-blue-600 hover:bg-blue-700">
+                  <Plus className="h-4 w-4 ml-2" />
+                  إنشاء إعلان
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {publishedAds.map(ad => {
+                const template = adTemplates.find(t => t.id === ad.templateId);
+                return (
+                  <Card key={ad.id} className="overflow-hidden">
+                    <div className="aspect-video bg-gray-100 overflow-hidden">
+                      <img src={template?.image} alt={ad.title} className="w-full h-full object-cover" />
                     </div>
-                    <div className="font-medium">{ad.name}</div>
-                    <div className="text-sm">{ad.visits}</div>
-                    <div className="text-sm text-muted-foreground">{ad.expiry}</div>
-                    <div>
-                      <Badge variant="default">{ad.status}</Badge>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button variant="ghost" size="icon">
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon">
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon">
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
+                    <CardContent className="p-4">
+                      <h3 className="font-semibold mb-2">{ad.title}</h3>
+                      <p className="text-sm text-gray-600 mb-4 line-clamp-2">{ad.description}</p>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="flex-1 text-red-600 hover:text-red-700"
+                          onClick={() => handleDeleteAd(ad.id)}
+                        >
+                          <Trash2 className="h-4 w-4 ml-1" />
+                          حذف
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    if (adStep === 'create-step1') {
+      return (
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-bold">الخطوة 1: اختيار القالب والنص</h2>
+              <p className="text-gray-600">اختر قالباً وأضف نصوص إعلانك</p>
+            </div>
+            <Button variant="outline" onClick={() => setAdStep('list')}>
+              <X className="h-4 w-4 ml-2" />
+              إلغاء
+            </Button>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2 space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>النصوص الإعلانية</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <label className="block font-semibold mb-2">عنوان الإعلان</label>
+                    <Input
+                      value={adTitle}
+                      onChange={(e) => setAdTitle(e.target.value.slice(0, 100))}
+                      placeholder="أدخل عنوان جذاب..."
+                      maxLength={100}
+                    />
+                    <p className="text-xs text-gray-500 mt-1">{adTitle.length} / 100</p>
                   </div>
-                ))}
-              </div>
+                  <div>
+                    <label className="block font-semibold mb-2">نص الإعلان</label>
+                    <Textarea
+                      value={adDescription}
+                      onChange={(e) => setAdDescription(e.target.value.slice(0, 300))}
+                      placeholder="اكتب نص الإعلان..."
+                      rows={5}
+                      maxLength={300}
+                    />
+                    <p className="text-xs text-gray-500 mt-1">{adDescription.length} / 300</p>
+                  </div>
+                  <div className="flex gap-3">
+                    <Button onClick={handleSaveAdDraft} className="flex-1 bg-green-600 hover:bg-green-700">
+                      <Check className="h-4 w-4 ml-2" />
+                      متابعة
+                    </Button>
+                    <Button variant="outline" onClick={() => setAdStep('list')} className="flex-1">
+                      إلغاء
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
 
-            <div className="flex justify-center gap-2">
-              <span className="text-sm text-muted-foreground">عرض من خلال 1 الى 6 في 6 سجلات</span>
+            <div className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle>اختيار القالب</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2 max-h-96 overflow-y-auto">
+                  {adTemplates.map(template => (
+                    <button
+                      key={template.id}
+                      onClick={() => handleSelectTemplate(template.id)}
+                      className={`w-full p-3 rounded-lg border-2 transition ${
+                        selectedAdTemplate === template.id
+                          ? 'border-blue-500 bg-blue-50'
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                    >
+                      <img src={template.image} alt={template.name} className="w-full h-20 object-cover rounded mb-2" />
+                      <p className="text-sm font-semibold">{template.name}</p>
+                    </button>
+                  ))}
+                </CardContent>
+              </Card>
             </div>
           </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
+        </div>
+      );
+    }
+
+    if (adStep === 'create-step2') {
+      return (
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-bold">الخطوة 2: اختيار مكان الظهور</h2>
+              <p className="text-gray-600">حدد أين سيظهر إعلانك في متجرك</p>
+            </div>
+            <Button variant="outline" onClick={() => setAdStep('create-step1')}>
+              <ChevronLeft className="h-4 w-4 ml-2" />
+              رجوع
+            </Button>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>ملخص الإعلان</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="p-4 bg-gray-50 rounded-lg">
+                  <img src={adTemplates.find(t => t.id === selectedAdTemplate)?.image} alt="preview" className="w-full h-32 object-cover rounded mb-4" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">العنوان</p>
+                  <p className="font-semibold">{adTitle}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">النص</p>
+                  <p className="text-sm text-gray-700">{adDescription}</p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>مكان الظهور</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-3">
+                  <button
+                    onClick={() => setAdPlacement('banner')}
+                    className={`w-full p-4 rounded-lg border-2 transition text-left ${
+                      adPlacement === 'banner'
+                        ? 'border-blue-500 bg-blue-50'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <p className="font-semibold">🎯 إعلان خاطف (شريط أفقي)</p>
+                    <p className="text-sm text-gray-600">يظهر في أعلى الصفحة</p>
+                  </button>
+                  <button
+                    onClick={() => setAdPlacement('between_products')}
+                    className={`w-full p-4 rounded-lg border-2 transition text-left ${
+                      adPlacement === 'between_products'
+                        ? 'border-blue-500 bg-blue-50'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <p className="font-semibold">📦 بين المنتجات</p>
+                    <p className="text-sm text-gray-600">يظهر وسط قائمة المنتجات</p>
+                  </button>
+                </div>
+
+                <div className="pt-4 border-t space-y-3">
+                  <Button onClick={handlePublishAd} className="w-full bg-green-600 hover:bg-green-700">
+                    <Upload className="h-4 w-4 ml-2" />
+                    المزامنة والنشر
+                  </Button>
+                  <Button variant="outline" onClick={() => setAdStep('create-step1')} className="w-full">
+                    إلغاء
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      );
+    }
+
+    return null;
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">

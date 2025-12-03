@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار نظام المفضلة - متجر انديش</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            direction: rtl;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+            text-align: center;
+        }
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+        .section {
+            margin-bottom: 40px;
+            padding: 25px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            border: 2px solid #e9ecef;
+        }
+        .section h2 {
+            color: #495057;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #667eea;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .button-group {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .btn-success {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+        }
+        .btn-danger {
+            background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%);
+            color: white;
+        }
+        .btn-info {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+        }
+        .result {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 15px;
+            border: 2px solid #dee2e6;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        .result pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            color: #212529;
+        }
+        .favorites-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 15px;
+        }
+        .favorite-card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            border: 2px solid #dee2e6;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            transition: all 0.3s ease;
+        }
+        .favorite-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 15px rgba(0,0,0,0.1);
+            border-color: #667eea;
+        }
+        .favorite-card h3 {
+            color: #495057;
+            margin-bottom: 10px;
+            font-size: 1.2em;
+        }
+        .favorite-card .price {
+            color: #667eea;
+            font-size: 1.5em;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        .favorite-card .date {
+            color: #6c757d;
+            font-size: 0.9em;
+            margin-top: 10px;
+        }
+        .stats {
+            display: flex;
+            gap: 20px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+        .stat-card {
+            flex: 1;
+            min-width: 200px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .stat-card .number {
+            font-size: 3em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .stat-card .label {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6c757d;
+        }
+        .empty-state svg {
+            width: 120px;
+            height: 120px;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+        .badge {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+        .badge-success {
+            background: #d4edda;
+            color: #155724;
+        }
+        .badge-warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+        .badge-info {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 اختبار نظام المفضلة</h1>
+        <p class="subtitle">نظام اختبار شامل لميزة المفضلة في متجر انديش</p>
+
+        <!-- إحصائيات -->
+        <div class="stats">
+            <div class="stat-card pulse">
+                <div class="number" id="totalFavorites">0</div>
+                <div class="label">إجمالي المفضلة</div>
+            </div>
+            <div class="stat-card">
+                <div class="number" id="totalValue">0</div>
+                <div class="label">القيمة الإجمالية (د.ل)</div>
+            </div>
+        </div>
+
+        <!-- قسم التحكم -->
+        <div class="section">
+            <h2>
+                ⚙️ التحكم في البيانات
+                <span class="badge badge-info">localStorage</span>
+            </h2>
+            <div class="button-group">
+                <button class="btn-primary" onclick="loadFavorites()">
+                    📥 عرض المفضلة
+                </button>
+                <button class="btn-success" onclick="addTestFavorite()">
+                    ➕ إضافة منتج تجريبي
+                </button>
+                <button class="btn-danger" onclick="clearFavorites()">
+                    🗑️ مسح الكل
+                </button>
+                <button class="btn-info" onclick="checkStorage()">
+                    🔍 فحص التخزين
+                </button>
+            </div>
+            <div class="result" id="controlResult"></div>
+        </div>
+
+        <!-- قسم العرض -->
+        <div class="section">
+            <h2>
+                📦 المنتجات المفضلة
+                <span class="badge badge-success" id="favoriteCount">0 منتج</span>
+            </h2>
+            <div class="favorites-grid" id="favoritesDisplay"></div>
+        </div>
+
+        <!-- قسم الـ Events -->
+        <div class="section">
+            <h2>
+                📡 اختبار المزامنة الفورية
+                <span class="badge badge-warning">Real-time</span>
+            </h2>
+            <div class="button-group">
+                <button class="btn-info" onclick="triggerUpdateEvent()">
+                    🔄 إرسال حدث تحديث
+                </button>
+                <button class="btn-primary" onclick="listenToEvents()">
+                    👂 الاستماع للأحداث
+                </button>
+            </div>
+            <div class="result" id="eventsResult"></div>
+        </div>
+    </div>
+
+    <script>
+        // بيانات منتجات تجريبية
+        const testProducts = [
+            {
+                id: 10001,
+                name: 'كريم مرطب للبشرة الجافة',
+                price: 45.99,
+                originalPrice: 65.99,
+                images: ['/assets/default-product.png'],
+                category: 'العناية بالبشرة'
+            },
+            {
+                id: 10002,
+                name: 'شامبو للشعر التالف',
+                price: 35.50,
+                originalPrice: 50.00,
+                images: ['/assets/default-product.png'],
+                category: 'العناية بالشعر'
+            },
+            {
+                id: 10003,
+                name: 'معطر جو برائحة اللافندر',
+                price: 25.00,
+                images: ['/assets/default-product.png'],
+                category: 'معطرات'
+            }
+        ];
+
+        let eventListenerActive = false;
+
+        // تحميل وعرض المفضلة
+        function loadFavorites() {
+            try {
+                const favorites = JSON.parse(localStorage.getItem('eshro_favorites') || '[]');
+                updateStats(favorites);
+                displayFavorites(favorites);
+                
+                document.getElementById('controlResult').innerHTML = `
+                    <pre style="color: green;">✅ تم تحميل ${favorites.length} منتج من المفضلة بنجاح!</pre>
+                `;
+            } catch (error) {
+                document.getElementById('controlResult').innerHTML = `
+                    <pre style="color: red;">❌ خطأ في التحميل: ${error.message}</pre>
+                `;
+            }
+        }
+
+        // تحديث الإحصائيات
+        function updateStats(favorites) {
+            const total = favorites.length;
+            const totalValue = favorites.reduce((sum, item) => sum + (item.price || 0), 0);
+            
+            document.getElementById('totalFavorites').textContent = total;
+            document.getElementById('totalValue').textContent = totalValue.toFixed(2);
+            document.getElementById('favoriteCount').textContent = `${total} منتج`;
+        }
+
+        // عرض المفضلة في Grid
+        function displayFavorites(favorites) {
+            const container = document.getElementById('favoritesDisplay');
+            
+            if (favorites.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                        </svg>
+                        <h3>لا توجد منتجات مفضلة</h3>
+                        <p>ابدأ بإضافة بعض المنتجات من المتاجر!</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = favorites.map(product => {
+                const discount = product.originalPrice && product.originalPrice > product.price
+                    ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
+                    : 0;
+
+                const date = product.addedDate 
+                    ? new Date(product.addedDate).toLocaleDateString('ar-LY', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    })
+                    : 'غير محدد';
+
+                return `
+                    <div class="favorite-card">
+                        <h3>${product.name}</h3>
+                        <div class="price">
+                            ${product.price} د.ل
+                            ${discount > 0 ? `<span style="font-size: 0.6em; color: #6c757d; text-decoration: line-through;">${product.originalPrice} د.ل</span>` : ''}
+                        </div>
+                        ${discount > 0 ? `<span class="badge badge-warning">خصم ${discount}%</span>` : ''}
+                        <div class="date">📅 ${date}</div>
+                        <button class="btn-danger" style="width: 100%; margin-top: 15px;" onclick="removeFavorite(${product.id})">
+                            إزالة من المفضلة
+                        </button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // إضافة منتج تجريبي
+        function addTestFavorite() {
+            try {
+                const favorites = JSON.parse(localStorage.getItem('eshro_favorites') || '[]');
+                const randomProduct = testProducts[Math.floor(Math.random() * testProducts.length)];
+                
+                // تحقق إذا كان موجود
+                if (favorites.find(f => f.id === randomProduct.id)) {
+                    document.getElementById('controlResult').innerHTML = `
+                        <pre style="color: orange;">⚠️ المنتج "${randomProduct.name}" موجود بالفعل!</pre>
+                    `;
+                    return;
+                }
+
+                const productWithDate = {
+                    ...randomProduct,
+                    addedDate: new Date().toISOString()
+                };
+
+                favorites.push(productWithDate);
+                localStorage.setItem('eshro_favorites', JSON.stringify(favorites));
+                
+                // إرسال حدث التحديث
+                window.dispatchEvent(new Event('favoritesUpdated'));
+
+                document.getElementById('controlResult').innerHTML = `
+                    <pre style="color: green;">✅ تم إضافة "${randomProduct.name}" للمفضلة!</pre>
+                `;
+                
+                loadFavorites();
+            } catch (error) {
+                document.getElementById('controlResult').innerHTML = `
+                    <pre style="color: red;">❌ خطأ: ${error.message}</pre>
+                `;
+            }
+        }
+
+        // إزالة منتج
+        function removeFavorite(productId) {
+            try {
+                let favorites = JSON.parse(localStorage.getItem('eshro_favorites') || '[]');
+                const product = favorites.find(f => f.id === productId);
+                
+                favorites = favorites.filter(f => f.id !== productId);
+                localStorage.setItem('eshro_favorites', JSON.stringify(favorites));
+                
+                window.dispatchEvent(new Event('favoritesUpdated'));
+
+                document.getElementById('controlResult').innerHTML = `
+                    <pre style="color: green;">✅ تم إزالة "${product?.name || productId}" من المفضلة!</pre>
+                `;
+                
+                loadFavorites();
+            } catch (error) {
+                document.getElementById('controlResult').innerHTML = `
+                    <pre style="color: red;">❌ خطأ: ${error.message}</pre>
+                `;
+            }
+        }
+
+        // مسح الكل
+        function clearFavorites() {
+            if (confirm('هل أنت متأكد من مسح جميع المفضلة؟')) {
+                localStorage.removeItem('eshro_favorites');
+                window.dispatchEvent(new Event('favoritesUpdated'));
+                
+                document.getElementById('controlResult').innerHTML = `
+                    <pre style="color: green;">✅ تم مسح جميع المفضلة!</pre>
+                `;
+                
+                loadFavorites();
+            }
+        }
+
+        // فحص التخزين
+        function checkStorage() {
+            try {
+                const keys = Object.keys(localStorage);
+                const eshroKeys = keys.filter(k => k.startsWith('eshro_'));
+                
+                let result = '<h3 style="color: #667eea;">📊 مفاتيح التخزين (eshro_*):</h3>';
+                
+                eshroKeys.forEach(key => {
+                    const value = localStorage.getItem(key);
+                    let parsedValue;
+                    try {
+                        parsedValue = JSON.parse(value);
+                    } catch {
+                        parsedValue = value;
+                    }
+                    
+                    result += `<div style="margin: 15px 0; padding: 15px; background: #f8f9fa; border-radius: 8px;">`;
+                    result += `<strong style="color: #495057;">${key}:</strong><br>`;
+                    result += `<pre style="margin-top: 10px;">${JSON.stringify(parsedValue, null, 2)}</pre>`;
+                    result += `</div>`;
+                });
+
+                if (eshroKeys.length === 0) {
+                    result += '<p style="color: orange;">⚠️ لا توجد مفاتيح eshro_ في التخزين</p>';
+                }
+
+                document.getElementById('controlResult').innerHTML = result;
+            } catch (error) {
+                document.getElementById('controlResult').innerHTML = `
+                    <pre style="color: red;">❌ خطأ: ${error.message}</pre>
+                `;
+            }
+        }
+
+        // إرسال حدث تحديث
+        function triggerUpdateEvent() {
+            window.dispatchEvent(new Event('favoritesUpdated'));
+            document.getElementById('eventsResult').innerHTML = `
+                <pre style="color: green;">✅ تم إرسال حدث "favoritesUpdated"!</pre>
+            `;
+        }
+
+        // الاستماع للأحداث
+        function listenToEvents() {
+            if (eventListenerActive) {
+                document.getElementById('eventsResult').innerHTML = `
+                    <pre style="color: orange;">⚠️ المستمع نشط بالفعل!</pre>
+                `;
+                return;
+            }
+
+            eventListenerActive = true;
+            
+            window.addEventListener('favoritesUpdated', () => {
+                const now = new Date().toLocaleTimeString('ar-LY');
+                document.getElementById('eventsResult').innerHTML = `
+                    <pre style="color: green;">✅ تم استقبال حدث "favoritesUpdated" في ${now}
+♻️ جاري تحديث البيانات...</pre>
+                `;
+                loadFavorites();
+            });
+
+            document.getElementById('eventsResult').innerHTML = `
+                <pre style="color: green;">✅ المستمع نشط الآن! سيتم تحديث البيانات تلقائيًا عند أي تغيير.</pre>
+            `;
+        }
+
+        // تحميل تلقائي عند فتح الصفحة
+        window.addEventListener('DOMContentLoaded', () => {
+            loadFavorites();
+            listenToEvents();
+        });
+    </script>
+</body>
+</html>

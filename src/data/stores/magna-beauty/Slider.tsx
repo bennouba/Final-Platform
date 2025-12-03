@@ -5,11 +5,23 @@ import {
   Sparkles
 } from 'lucide-react';
 interface MagnaBeautySliderProps {
+  products?: any[];
+  sliderImages?: Array<{ id: string | number; image: string; title?: string; subtitle?: string; buttonText?: string }>;
   storeSlug?: string;
+  onProductClick?: (productId: number) => void;
+  onAddToCart?: (product: any) => void;
+  onToggleFavorite?: (productId: number) => void;
+  favorites?: number[];
 }
 
 const MagnaBeautySlider: React.FC<MagnaBeautySliderProps> = ({
-  storeSlug = 'magna-beauty'
+  products = [],
+  sliderImages,
+  storeSlug = 'magna-beauty',
+  onProductClick,
+  onAddToCart,
+  onToggleFavorite,
+  favorites = []
 }) => {
   const [activeSlide, setActiveSlide] = useState(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
@@ -17,8 +29,7 @@ const MagnaBeautySlider: React.FC<MagnaBeautySliderProps> = ({
   const sliderRef = useRef<HTMLDivElement>(null);
   const startX = useRef(0);
 
-  // صور السلايدر لمتجر ماجنا بيوتي
-  const sliderBanners = [
+  const defaultBanners = [
     {
       id: 'magna-beauty-banner1',
       image: '/assets/magna-beauty/slide1.webp',
@@ -46,7 +57,11 @@ const MagnaBeautySlider: React.FC<MagnaBeautySliderProps> = ({
     },
   ];
 
-  const allSlides = sliderBanners;
+  if (sliderImages && sliderImages.length > 0) {
+    void 0;
+  }
+
+  const allSlides = (Array.isArray(sliderImages) && sliderImages.length > 0) ? sliderImages : defaultBanners;
 
   // Precomputed sparkle positions to avoid Math.random() in render
   const sparklePositions = [...Array(20)].map((_, i) => ({
@@ -116,7 +131,7 @@ const MagnaBeautySlider: React.FC<MagnaBeautySliderProps> = ({
   };
 
   return (
-    <div className={`relative h-[600px] md:h-[800px] overflow-hidden bg-gradient-to-br ${storeColors.background}`}>
+    <div className={`relative h-[500px] md:h-[600px] overflow-hidden bg-gradient-to-br ${storeColors.background}`}>
       {/* خلفية متحركة لمتجر ماجنا بيوتي */}
       <div className="absolute inset-0">
         <div className={`absolute inset-0 bg-gradient-to-r ${storeColors.accent}/20 via-current/10 to-current/20`}></div>
@@ -166,7 +181,7 @@ const MagnaBeautySlider: React.FC<MagnaBeautySliderProps> = ({
               <img
                 src={slide.image}
                 alt={slide.title}
-                className="w-full h-full object-cover object-center rounded-lg"
+                className="w-full h-full object-cover object-center"
                 onError={(e) => {
                   const target = e.target as HTMLImageElement;
                   target.style.display = 'none';
@@ -182,6 +197,7 @@ const MagnaBeautySlider: React.FC<MagnaBeautySliderProps> = ({
         <>
           <button
             onClick={prevSlide}
+            title="الشريحة السابقة"
             aria-label="Previous slide"
             className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white/90 backdrop-blur-sm hover:bg-white p-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 border-2 border-blue-200 hover:border-blue-400 z-50"
           >
@@ -189,6 +205,7 @@ const MagnaBeautySlider: React.FC<MagnaBeautySliderProps> = ({
           </button>
           <button
             onClick={nextSlide}
+            title="الشريحة التالية"
             aria-label="Next slide"
             className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white/90 backdrop-blur-sm hover:bg-white p-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 border-2 border-blue-200 hover:border-blue-400 z-50"
           >
@@ -204,6 +221,7 @@ const MagnaBeautySlider: React.FC<MagnaBeautySliderProps> = ({
             <button
               key={index}
               onClick={() => goToSlide(index)}
+              title={`انتقل إلى الشريحة ${index + 1}`}
               aria-label={`Go to slide ${index + 1}`}
               className={`transition-all duration-300 rounded-full ${
                 index === activeSlide

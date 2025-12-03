@@ -213,7 +213,7 @@ const EnhancedCheckoutPage: React.FC<EnhancedCheckoutPageProps> = ({
       try {
         return JSON.parse(raw);
       } catch (e) {
-        console.error('خطأ في قراءة كوبون الترحيب:', e);
+
         return null;
       }
     };
@@ -265,14 +265,14 @@ const EnhancedCheckoutPage: React.FC<EnhancedCheckoutPageProps> = ({
   useEffect(() => {
     if (paymentMethod === 'immediate' && paymentType === 'moamalat') {
       ensureMoamalatScript().catch((error) => {
-        console.error(error);
+
         alert('تعذر تحميل سكربت بوابة معاملات. حاول مرة أخرى.');
       });
     }
   }, [paymentMethod, paymentType]);
 
   async function initializeMoamalatPayment(orderData: OrderData) {
-    console.log('[Moamalat] Initializing payment...');
+
     try {
       await openMoamalatLightbox({
         amountLYD: Number(orderData.finalTotal ?? total),
@@ -284,24 +284,24 @@ const EnhancedCheckoutPage: React.FC<EnhancedCheckoutPageProps> = ({
           CustomerName: orderData.customer?.name,
         },
         onComplete: (data) => {
-          console.log('[Moamalat] Payment complete:', data);
+
           setIsProcessingOrder(false);
           onOrderComplete({ ...orderData, status: 'confirmed', paymentDetails: data });
           setOrderReadyForPayment(null);
           setTimeout(() => alert('تمت عملية الدفع بنجاح! سيتم تجهيز طلبك قريباً.'), 400);
         },
         onError: (err) => {
-          console.error('[Moamalat] Payment error:', err);
+
           setIsProcessingOrder(false);
           alert('حدث خطأ في عملية الدفع: ' + (err?.error || err?.message || 'خطأ غير معروف'));
         },
         onCancel: () => {
-          console.warn('[Moamalat] Payment cancelled by user');
+
           setIsProcessingOrder(false);
         },
       });
     } catch (error: any) {
-      console.error('[Moamalat] Error initializing lightbox:', error);
+
       setIsProcessingOrder(false);
       alert('فشل في تهيئة نظام الدفع: ' + (error?.message || 'خطأ غير معروف'));
     }

@@ -318,49 +318,75 @@ const ProductPage: React.FC<ProductPageProps> = ({
               </div>
             </div>
 
-            {/* الكمية */}
+            {/* الكمية والحالة */}
             <div>
-              <h3 className="font-semibold text-gray-900 mb-3">الكمية</h3>
-              <div className="flex items-center gap-4">
-                <div className="flex items-center border rounded-lg">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                    disabled={quantity <= 1}
-                  >
-                    <Minus className="h-4 w-4" />
-                  </Button>
-                  <span className="px-4 py-2 min-w-[3rem] text-center font-semibold">{quantity}</span>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setQuantity(quantity + 1)}
-                  >
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                </div>
-                <span className="text-sm text-gray-600">قطعة متوفرة</span>
+              <div className="flex items-center gap-3 mb-3">
+                <h3 className="font-semibold text-gray-900">الكمية</h3>
+                {product.inStock && product.quantity && product.quantity > 0 ? (
+                  <Badge className="bg-green-100 text-green-800">متوفر ({product.quantity} قطعة)</Badge>
+                ) : (
+                  <Badge className="bg-red-100 text-red-800">غير متوفر</Badge>
+                )}
               </div>
+              {product.inStock && product.quantity && product.quantity > 0 ? (
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center border rounded-lg">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                      disabled={quantity <= 1}
+                    >
+                      <Minus className="h-4 w-4" />
+                    </Button>
+                    <span className="px-4 py-2 min-w-[3rem] text-center font-semibold">{quantity}</span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setQuantity(Math.min(quantity + 1, product.quantity || 1))}
+                      disabled={quantity >= (product.quantity || 1)}
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <span className="text-sm text-gray-600">من {product.quantity} متاح</span>
+                </div>
+              ) : (
+                <div className="text-sm text-gray-600">المنتج غير متوفر في الوقت الحالي</div>
+              )}
             </div>
 
             {/* الأزرار الرئيسية */}
             <div className="space-y-3">
-              <Button
-                className="w-full bg-white border-2 border-primary text-primary hover:bg-primary hover:text-white h-12 text-lg font-semibold transition-all duration-200"
-                onClick={handleAddToCart}
-              >
-                <ShoppingCart className="h-5 w-5 mr-2" />
-                أضف للسلة
-              </Button>
-              
-              <Button
-                className="w-full bg-red-500 hover:bg-red-600 text-white h-12 text-lg font-semibold"
-                onClick={handleBuyNow}
-              >
-                <Zap className="h-5 w-5 mr-2" />
-                اشتري الآن
-              </Button>
+              {product.inStock && product.quantity && product.quantity > 0 ? (
+                <>
+                  <Button
+                    className="w-full bg-white border-2 border-primary text-primary hover:bg-primary hover:text-white h-12 text-lg font-semibold transition-all duration-200"
+                    onClick={handleAddToCart}
+                  >
+                    <ShoppingCart className="h-5 w-5 mr-2" />
+                    أضف للسلة
+                  </Button>
+                  
+                  <Button
+                    className="w-full bg-red-500 hover:bg-red-600 text-white h-12 text-lg font-semibold"
+                    onClick={handleBuyNow}
+                  >
+                    <Zap className="h-5 w-5 mr-2" />
+                    اشتري الآن
+                  </Button>
+                </>
+              ) : (
+                <Button
+                  className="w-full bg-orange-500 hover:bg-orange-600 text-white h-12 text-lg font-semibold"
+                  onClick={() => {
+                    alert('سيتم إخبارك عند توفر هذا المنتج');
+                  }}
+                >
+                  <Zap className="h-5 w-5 mr-2" />
+                  أخبرني عند التوفر
+                </Button>
+              )}
             </div>
 
             {/* معلومات إضافية */}

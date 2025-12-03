@@ -48,7 +48,7 @@ const ShareMenu: React.FC<ShareMenuProps> = ({
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
-      console.error('فشل في نسخ الرابط:', err);
+
     }
   };
 
@@ -148,11 +148,15 @@ const ShareMenu: React.FC<ShareMenuProps> = ({
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
+      <PopoverTrigger asChild onClick={(e: React.MouseEvent) => e.stopPropagation()}>
         <Button
           variant={variant}
           size={size}
           className={`${className} ${showLabel ? 'gap-2' : 'w-8 h-8 p-0'}`}
+          onClick={(e) => {
+            e.stopPropagation();
+            e.preventDefault();
+          }}
         >
           <Share2 className="h-4 w-4" />
           {showLabel && "مشاركة"}

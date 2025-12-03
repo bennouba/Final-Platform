@@ -31,7 +31,10 @@ const AnimatedBackground = () => {
             height: `${Math.random() * 10 + 6}px`,
             left: `${Math.random() * 100}%`,
             top: `${Math.random() * 100}%`,
-            animation: `discount-slider-float ${Math.random() * 12 + 18}s ease-in-out infinite`,
+            animationName: 'discount-slider-float',
+            animationDuration: `${Math.random() * 12 + 18}s`,
+            animationTimingFunction: 'ease-in-out',
+            animationIterationCount: 'infinite',
             animationDelay: `${i * 0.6}s`,
           }}
         />

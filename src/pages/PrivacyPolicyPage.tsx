@@ -108,7 +108,6 @@ const PrivacyPolicyPage: React.FC<PrivacyPolicyPageProps> = ({ onBack }) => {
 **الإصدار:** 4.3 - منصة إشرو للتجارة الإلكترونية`);
       }
     } catch (error) {
-      console.error('Error loading document:', error);
       setError('حدث خطأ في تحميل المستند');
     } finally {
       setLoading(false);

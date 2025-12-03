@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>أدوات الإدارة</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+            direction: rtl;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 50px;
+        }
+        
+        .header h1 {
+            font-size: 48px;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+        
+        .header p {
+            font-size: 18px;
+            opacity: 0.9;
+        }
+        
+        .tools-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 30px;
+            margin-bottom: 50px;
+        }
+        
+        .tool-card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            transition: all 0.3s;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            text-decoration: none;
+            color: inherit;
+        }
+        
+        .tool-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+        }
+        
+        .tool-icon {
+            font-size: 48px;
+        }
+        
+        .tool-title {
+            font-size: 22px;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .tool-description {
+            font-size: 14px;
+            color: #666;
+            flex: 1;
+        }
+        
+        .tool-features {
+            font-size: 12px;
+            color: #999;
+            padding: 10px 0;
+            border-top: 1px solid #eee;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        
+        .feature {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .tool-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 14px;
+            transition: all 0.3s;
+            text-align: center;
+            text-decoration: none;
+            display: block;
+        }
+        
+        .tool-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .status {
+            font-size: 12px;
+            padding: 8px 12px;
+            border-radius: 5px;
+            text-align: center;
+            background: #d4edda;
+            color: #155724;
+            font-weight: bold;
+        }
+        
+        .footer {
+            text-align: center;
+            color: white;
+            padding: 30px;
+            border-top: 1px solid rgba(255,255,255,0.2);
+            margin-top: 30px;
+        }
+        
+        .footer p {
+            margin: 10px 0;
+            font-size: 14px;
+        }
+        
+        .quick-tips {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        .quick-tips h2 {
+            color: #333;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .tips-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        
+        .tip {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 8px;
+            border-right: 4px solid #667eea;
+        }
+        
+        .tip-title {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        
+        .tip-text {
+            font-size: 13px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎛️ أدوات الإدارة</h1>
+            <p>إدارة المتاجر والمستخدمين والبيانات بسهولة</p>
+        </div>
+        
+        <div class="quick-tips">
+            <h2>💡 نصائح سريعة</h2>
+            <div class="tips-list">
+                <div class="tip">
+                    <div class="tip-title">✏️ تحرير شامل</div>
+                    <div class="tip-text">استخدم أداة التحرير لتعديل شعار المتجر وبيانات المالك وكلمة المرور</div>
+                </div>
+                <div class="tip">
+                    <div class="tip-title">🚀 البدء السريع</div>
+                    <div class="tip-text">استخدم لوحة التحكم الرئيسية لإدارة جميع المتاجر من مكان واحد</div>
+                </div>
+                <div class="tip">
+                    <div class="tip-title">🔍 البحث والتصفية</div>
+                    <div class="tip-text">ابحث عن أي متجر بسهولة باستخدام اسمه أو البريد الإلكتروني</div>
+                </div>
+                <div class="tip">
+                    <div class="tip-title">🗑️ حذف آمن</div>
+                    <div class="tip-text">قم بحذف متجر واحد أو عدة متاجر معاً مع تأكيدات الأمان</div>
+                </div>
+                <div class="tip">
+                    <div class="tip-title">🔐 إدارة كلمات المرور</div>
+                    <div class="tip-text">غير كلمات المرور مباشرة من أداة التحرير</div>
+                </div>
+                <div class="tip">
+                    <div class="tip-title">📊 إحصائيات فورية</div>
+                    <div class="tip-text">اعرض عدد المتاجر النشطة والمتاجر غير النشطة</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="tools-grid">
+            <!-- Edit Stores -->
+            <div class="tool-card">
+                <div class="tool-icon">✏️</div>
+                <div class="tool-title">تحرير بيانات المتاجر</div>
+                <div class="tool-description">
+                    تعديل جميع بيانات المتجر والمالك في مكان واحد
+                </div>
+                <div class="tool-features">
+                    <div class="feature">🏪 تعديل شعار المتجر</div>
+                    <div class="feature">📝 تعديل البيانات الأساسية</div>
+                    <div class="feature">👤 تحديث بيانات المالك</div>
+                    <div class="feature">🔐 تغيير كلمة المرور</div>
+                </div>
+                <div class="status">✅ نشط</div>
+                <a href="edit-stores.html" class="tool-button">فتح المحرر</a>
+            </div>
+            
+            <!-- Main Dashboard -->
+            <div class="tool-card">
+                <div class="tool-icon">🏪</div>
+                <div class="tool-title">لوحة إدارة المتاجر</div>
+                <div class="tool-description">
+                    الأداة الرئيسية الشاملة لإدارة جميع متاجرك
+                </div>
+                <div class="tool-features">
+                    <div class="feature">✅ عرض جميع المتاجر</div>
+                    <div class="feature">🔍 بحث متقدم</div>
+                    <div class="feature">🗑️ حذف فردي أو متعدد</div>
+                    <div class="feature">📊 إحصائيات مباشرة</div>
+                </div>
+                <div class="status">✅ نشط</div>
+                <a href="store-management-dashboard.html" class="tool-button">فتح اللوحة</a>
+            </div>
+            
+            <!-- Store Inspection -->
+            <div class="tool-card">
+                <div class="tool-icon">🔍</div>
+                <div class="tool-title">فحص المتاجر</div>
+                <div class="tool-description">
+                    فحص تفصيلي لكل المتاجر المخزنة محلياً وفي الخادم
+                </div>
+                <div class="tool-features">
+                    <div class="feature">📱 عرض localStorage</div>
+                    <div class="feature">🗄️ عرض قاعدة البيانات</div>
+                    <div class="feature">📋 عرض JSON خام</div>
+                    <div class="feature">🧹 تنظيف البيانات</div>
+                </div>
+                <div class="status">✅ نشط</div>
+                <a href="check-stores.html" class="tool-button">فتح أداة الفحص</a>
+            </div>
+            
+            <!-- Advanced Store Deletion -->
+            <div class="tool-card">
+                <div class="tool-icon">🗑️</div>
+                <div class="tool-title">حذف المتاجر</div>
+                <div class="tool-description">
+                    أداة متقدمة لحذف المتاجر مع خيارات تفصيلية
+                </div>
+                <div class="tool-features">
+                    <div class="feature">☑️ اختيار متعدد</div>
+                    <div class="feature">⚠️ تأكيدات الأمان</div>
+                    <div class="feature">👥 حذف المالكين</div>
+                    <div class="feature">🔄 تحديث فوري</div>
+                </div>
+                <div class="status">✅ نشط</div>
+                <a href="delete-store-from-server.html" class="tool-button">فتح أداة الحذف</a>
+            </div>
+            
+            <!-- Clear Local Stores -->
+            <div class="tool-card">
+                <div class="tool-icon">🧹</div>
+                <div class="tool-title">تنظيف localStorage</div>
+                <div class="tool-description">
+                    حذف المتاجر المحلية من متصفحك (localStorage)
+                </div>
+                <div class="tool-features">
+                    <div class="feature">🏪 حذف بيانات المتاجر</div>
+                    <div class="feature">📁 حذف ملفات المتاجر</div>
+                    <div class="feature">📦 حذف المنتجات</div>
+                    <div class="feature">🖼️ حذف الشرائح</div>
+                </div>
+                <div class="status">✅ نشط</div>
+                <a href="clear-local-stores.html" class="tool-button">فتح أداة التنظيف</a>
+            </div>
+            
+            <!-- Storage Diagnosis -->
+            <div class="tool-card">
+                <div class="tool-icon">🏥</div>
+                <div class="tool-title">تشخيص التخزين</div>
+                <div class="tool-description">
+                    تشخيص متقدم للمشاكل المتعلقة بالتخزين والبيانات
+                </div>
+                <div class="tool-features">
+                    <div class="feature">🔬 فحص عميق</div>
+                    <div class="feature">⚕️ اكتشاف المشاكل</div>
+                    <div class="feature">🛠️ إصلاح تلقائي</div>
+                    <div class="feature">📈 تقارير التشخيص</div>
+                </div>
+                <div class="status">✅ نشط</div>
+                <a href="diagnose-storage.html" class="tool-button">فتح التشخيص</a>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>💻 <strong>تم تطويره خصيصاً لمنصة Eishro</strong></p>
+            <p>آخر تحديث: ${new Date().toLocaleDateString('ar-EG')}</p>
+            <p style="opacity: 0.7; margin-top: 20px;">جميع العمليات محمية برسائل تأكيد أمان</p>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,68 +1,49 @@
 {
-  "name": "eishro-backend",
+  "name": "eshro-backend",
   "version": "1.0.0",
-  "description": "EISHRO E-commerce Platform Backend API - Production Ready",
-  "main": "dist/index.js",
+  "description": "EISHRO Platform Backend Server",
+  "main": "server.js",
   "scripts": {
-    "dev": "ts-node-dev --respawn src/index.ts",
-    "start": "node dist/index.js",
-    "build": "tsc",
-    "typecheck": "tsc --noEmit",
-    "lint": "eslint src --ext .ts",
-    "test": "jest",
-    "db:migrate": "ts-node src/database/migrate.ts",
-    "db:seed": "ts-node src/database/seed.ts",
-    "db:backup": "ts-node src/database/backup.ts backup",
-    "db:restore": "ts-node src/database/backup.ts restore",
-    "db:list": "ts-node src/database/backup.ts list",
-    "db:clean": "ts-node src/database/backup.ts clean"
+    "start": "node --require ts-node/register src/index.ts",
+    "dev": "nodemon --exec ts-node src/index.ts",
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
-    "eishro",
     "ecommerce",
-    "api",
-    "backend"
+    "platform",
+    "libya",
+    "backend",
+    "api"
   ],
   "author": "EISHRO Team",
   "license": "MIT",
   "dependencies": {
-    "axios": "^1.6.2",
-    "bcryptjs": "^2.4.3",
-    "body-parser": "^1.20.2",
+    "bcryptjs": "^3.0.3",
     "cors": "^2.8.5",
-    "dotenv": "^16.3.1",
+    "dotenv": "^17.2.3",
     "express": "^4.18.2",
     "express-rate-limit": "^7.1.5",
-    "express-validator": "^7.0.0",
     "helmet": "^7.1.0",
-    "joi": "^17.11.0",
-    "jsonwebtoken": "^9.0.0",
-    "mysql2": "^3.6.5",
-    "sequelize": "^6.35.2",
-    "uuid": "^9.0.1",
-    "winston": "^3.11.0"
+    "joi": "^18.0.2",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^1.4.5-lts.1",
+    "mysql2": "^3.15.3",
+    "sequelize": "^6.37.7",
+    "sqlite3": "^5.1.7",
+    "uuid": "^13.0.0",
+    "winston": "^3.18.3"
   },
   "devDependencies": {
-    "@types/bcryptjs": "^2.4.6",
     "@types/cors": "^2.8.19",
-    "@types/express": "^4.17.21",
-    "@types/express-rate-limit": "^5.1.3",
-    "@types/istanbul-lib-coverage": "^2.0.6",
-    "@types/jest": "^29.5.8",
-    "@types/jsonwebtoken": "^9.0.7",
-    "@types/node": "^20.10.0",
-    "@types/uuid": "^10.0.0",
-    "@typescript-eslint/eslint-plugin": "^6.13.2",
-    "@typescript-eslint/parser": "^6.13.2",
-    "eslint": "^8.54.0",
-    "jest": "^29.7.0",
-    "ts-jest": "^29.1.1",
+    "@types/express": "^5.0.5",
+    "@types/multer": "^2.0.0",
+    "@types/node": "^24.10.1",
+    "nodemon": "^3.0.2",
     "ts-node": "^10.9.2",
-    "ts-node-dev": "^2.0.0",
-    "typescript": "^5.3.3"
+    "tsconfig-paths": "^4.2.0",
+    "typescript": "^5.9.3"
   },
   "engines": {
-    "node": ">=18.0.0",
-    "npm": ">=9.0.0"
+    "node": ">=14.0.0"
   }
 }

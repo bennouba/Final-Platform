@@ -17,6 +17,9 @@ import {
   AlertCircle,
   Briefcase
 } from 'lucide-react';
+import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from 'react-leaflet';
+import { LatLng } from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 import { storeBusinessCategories } from '@/data/storeBusinessCategories';
 
 interface StoreWizardData {
@@ -254,6 +257,8 @@ const CreateStoreWizard: React.FC<CreateStoreWizardProps> = ({
                       <button
                         onClick={() => setFormData(prev => ({ ...prev, logo: null, logoFile: null }))}
                         className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                        title="إزالة الشعار"
+                        aria-label="إزالة الشعار"
                       >
                         <X className="h-4 w-4" />
                       </button>
@@ -265,6 +270,8 @@ const CreateStoreWizard: React.FC<CreateStoreWizardProps> = ({
                         accept="image/*"
                         onChange={handleLogoUpload}
                         className="absolute inset-0 opacity-0 cursor-pointer"
+                        aria-label="تحميل شعار المتجر"
+                        title="اختر صورة الشعار"
                       />
                       <Upload className="h-8 w-8 text-primary mx-auto mb-2" />
                       <p className="text-gray-700 font-semibold">اسحب الصورة هنا أو انقر لتحديد</p>
@@ -355,7 +362,7 @@ const CreateStoreWizard: React.FC<CreateStoreWizardProps> = ({
                         </Button>
 
                         {showMap && (
-                          <SimpleMapPicker onSelectLocation={handleCoordinatesSet} />
+                          <OpenStreetMapPicker onSelectLocation={handleCoordinatesSet} />
                         )}
                       </div>
                     )}
@@ -438,50 +445,94 @@ const CreateStoreWizard: React.FC<CreateStoreWizardProps> = ({
   );
 };
 
-// مكون منتقي الخريطة البسيط
-const SimpleMapPicker: React.FC<{ onSelectLocation: (lat: number, lng: number) => void }> = ({ onSelectLocation }) => {
-  const defaultLat = 32.8872;
-  const defaultLng = 13.1913;
-  const [lat, setLat] = useState(defaultLat);
-  const [lng, setLng] = useState(defaultLng);
+// مكون الخريطة التفاعلية باستخدام OpenStreetMap
+const OpenStreetMapPicker: React.FC<{ onSelectLocation: (lat: number, lng: number) => void }> = ({ onSelectLocation }) => {
+  const defaultCenter: [number, number] = [32.8872, 13.1913]; // Tripoli, Libya
+  const [selectedPosition, setSelectedPosition] = useState<[number, number] | null>(null);
+
+  // مكون للتعامل مع النقر على الخريطة
+  const LocationMarker = () => {
+    const map = useMapEvents({
+      click(e) {
+        setSelectedPosition([e.latlng.lat, e.latlng.lng]);
+      },
+    });
+
+    return selectedPosition === null ? null : (
+      <Marker position={selectedPosition}>
+        <Popup>
+          <div className="text-center">
+            <p className="font-semibold">الموقع المحدد</p>
+            <p className="text-sm">خط العرض: {selectedPosition[0].toFixed(4)}</p>
+            <p className="text-sm">خط الطول: {selectedPosition[1].toFixed(4)}</p>
+            <Button
+              onClick={() => onSelectLocation(selectedPosition[0], selectedPosition[1])}
+              size="sm"
+              className="mt-2 w-full"
+            >
+              <CheckCircle className="h-3 w-3 ml-1" />
+              تأكيد هذا الموقع
+            </Button>
+          </div>
+        </Popup>
+      </Marker>
+    );
+  };
 
   return (
-    <div className="space-y-3 bg-blue-50 p-4 rounded-lg border border-blue-200">
-      <p className="text-sm font-semibold text-gray-900">أدخل إحداثيات الموقع</p>
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <Label htmlFor="lat" className="text-xs">خط العرض (Latitude)</Label>
-          <Input
-            id="lat"
-            type="number"
-            step="0.0001"
-            value={lat}
-            onChange={(e) => setLat(parseFloat(e.target.value))}
-            placeholder="32.8872"
-            className="mt-1 text-sm"
-          />
-        </div>
-        <div>
-          <Label htmlFor="lng" className="text-xs">خط الطول (Longitude)</Label>
-          <Input
-            id="lng"
-            type="number"
-            step="0.0001"
-            value={lng}
-            onChange={(e) => setLng(parseFloat(e.target.value))}
-            placeholder="13.1913"
-            className="mt-1 text-sm"
-          />
-        </div>
+    <div className="space-y-3">
+      <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
+        <p className="text-sm font-semibold text-gray-900 mb-2">اختر موقعك على الخريطة</p>
+        <p className="text-xs text-gray-600">انقر على الموقع المطلوب على الخريطة لتحديده</p>
       </div>
-      <Button
-        onClick={() => onSelectLocation(lat, lng)}
-        className="w-full bg-primary hover:bg-primary/90 text-sm"
-      >
-        <CheckCircle className="h-4 w-4 ml-2" />
-        تأكيد الموقع
-      </Button>
-      <p className="text-xs text-gray-600">طريقة تطبيق إحداثيات: تريبولي 32.8872, 13.1913</p>
+
+      <div className="h-64 rounded-lg overflow-hidden border border-gray-300">
+        <MapContainer
+          center={defaultCenter}
+          zoom={10}
+          style={{ height: '100%', width: '100%' }}
+          className="leaflet-container"
+        >
+          <TileLayer
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          />
+          <LocationMarker />
+        </MapContainer>
+      </div>
+
+      {selectedPosition && (
+        <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+          <div className="flex items-center gap-2 mb-2">
+            <CheckCircle className="h-4 w-4 text-green-600" />
+            <p className="text-sm font-semibold text-green-800">تم تحديد الموقع</p>
+          </div>
+          <div className="grid grid-cols-2 gap-2 text-xs">
+            <div>
+              <span className="text-gray-600">خط العرض:</span>
+              <span className="font-mono ml-1">{selectedPosition[0].toFixed(4)}</span>
+            </div>
+            <div>
+              <span className="text-gray-600">خط الطول:</span>
+              <span className="font-mono ml-1">{selectedPosition[1].toFixed(4)}</span>
+            </div>
+          </div>
+          <Button
+            onClick={() => onSelectLocation(selectedPosition[0], selectedPosition[1])}
+            size="sm"
+            className="w-full mt-2 bg-primary hover:bg-primary/90"
+          >
+            <CheckCircle className="h-3 w-3 ml-1" />
+            تأكيد الموقع النهائي
+          </Button>
+        </div>
+      )}
+
+      <div className="bg-gray-50 p-3 rounded-lg">
+        <p className="text-xs text-gray-600">
+          💡 <strong>نصيحة:</strong> تأكد من تحديد الموقع بدقة لتسهيل عملية التوصيل
+        </p>
+      </div>
     </div>
   );
 };

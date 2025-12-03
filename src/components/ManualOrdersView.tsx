@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   AlertCircle,
@@ -40,35 +40,46 @@ import { Badge } from './ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { libyanCities } from '@/data/libya';
 
+const API_BASE_URL = import.meta.env.VITE_APP_API_URL || '/api';
+
 interface ManualOrder {
   id: string;
   orderNumber: string;
-  customerName: string;
+  customerFirstName: string;
+  customerLastName: string;
   customerEmail: string;
   customerPhone: string;
-  status: 'new' | 'paid' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
+  status: string;
   paymentMethod: string;
-  paymentStatus: 'pending' | 'paid' | 'failed' | 'refunded';
-  shippingMethod: string;
-  shippingAddress: string;
+  paymentStatus: string;
+  shippingType?: string;
+  shippingAddress?: string;
   items: OrderItem[];
   subtotal: number;
   shipping: number;
   tax: number;
   total: number;
-  notes: string;
-  internalNotes: string;
+  notes?: string;
   createdAt: string;
   updatedAt: string;
 }
 
 interface OrderItem {
   id: string;
+  productId?: number;
   productName: string;
-  sku: string;
+  sku?: string;
   quantity: number;
   price: number;
   total: number;
+}
+
+interface ProductOption {
+  id: number;
+  name: string;
+  sku?: string;
+  price: number;
+  quantity?: number;
 }
 
 interface ManualOrdersViewProps {
@@ -77,60 +88,185 @@ interface ManualOrdersViewProps {
   onSave: () => void;
 }
 
+const buildInitialForm = () => ({
+  orderNumber: `ORD-${Date.now()}`,
+  customerFirstName: '',
+  customerLastName: '',
+  customerEmail: '',
+  customerPhone: '',
+  customerCity: '',
+  customerArea: '',
+  shippingAddress: '',
+  paymentMethod: 'onDelivery',
+  paymentPlan: 'immediate',
+  bankName: '',
+  accountHolder: '',
+  transactionStatus: 'pending',
+  shippingType: 'normal',
+  expectedDelivery: '',
+  identityNumber: '',
+  deliveryAgent: '',
+  deliveryNote: '',
+  customerNotes: '',
+  internalNotes: '',
+  items: [] as OrderItem[],
+});
+
+const normalizeOrderItems = (items: any[] = []): OrderItem[] =>
+  items.map((item) => {
+    const price = Number(item.productPrice ?? item.price ?? 0);
+    const quantity = Number(item.quantity ?? 0);
+    return {
+      id: String(item.id ?? `${item.orderId ?? 'order'}-${item.productId ?? Date.now()}`),
+      productId: item.productId,
+      productName: item.productName ?? 'عنصر',
+      sku: item.sku ?? item.size ?? item.color ?? '',
+      quantity,
+      price,
+      total: Number(item.lineTotal ?? price * quantity),
+    };
+  });
+
+const normalizeOrderRecord = (record: any): ManualOrder => {
+  const fallbackName = typeof record.customerName === 'string' ? record.customerName.trim().split(' ') : [];
+  const firstFromFallback = fallbackName.shift() || '';
+  const lastFromFallback = fallbackName.join(' ');
+
+  return {
+    id: record.id ?? record.orderId ?? String(Date.now()),
+    orderNumber: record.orderNumber ?? 'ORD',
+    customerFirstName: record.customerFirstName ?? firstFromFallback,
+    customerLastName: record.customerLastName ?? lastFromFallback,
+    customerEmail: record.customerEmail ?? '',
+    customerPhone: record.customerPhone ?? '',
+    status: record.orderStatus ?? 'pending',
+    paymentMethod: record.paymentMethod ?? '',
+    paymentStatus: record.paymentStatus ?? 'pending',
+    shippingType: record.shippingType,
+    shippingAddress: record.customerAddress,
+    items: normalizeOrderItems(record.items ?? []),
+    subtotal: Number(record.subtotal ?? 0),
+    shipping: Number(record.shippingCost ?? 0),
+    tax: 0,
+    total: Number(record.finalTotal ?? 0),
+    notes: record.notes,
+    createdAt: record.createdAt ?? new Date().toISOString(),
+    updatedAt: record.updatedAt ?? record.createdAt ?? new Date().toISOString(),
+  };
+};
+
 const ManualOrdersView: React.FC<ManualOrdersViewProps> = ({ storeData, setStoreData, onSave }) => {
   const [activeTab, setActiveTab] = useState('orders');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Form states
-  const [orderForm, setOrderForm] = useState({
-    orderNumber: `ORD-${Date.now()}`,
-    customerName: '',
-    customerEmail: '',
-    customerPhone: '',
-    customerCity: '',
-    customerArea: '',
-    shippingAddress: '',
-    paymentMethod: '',
-    bankName: '',
-    accountHolder: '',
-    transactionStatus: 'pending',
-    shippingMethod: '',
-    expectedDelivery: '',
-    customerNotes: '',
-    internalNotes: '',
-    items: [] as OrderItem[],
+  const [orderForm, setOrderForm] = useState<ReturnType<typeof buildInitialForm>>(buildInitialForm);
+  const [orders, setOrders] = useState<ManualOrder[]>(storeData?.manualOrders || []);
+  const [isLoadingOrders, setIsLoadingOrders] = useState(false);
+  const [isSavingOrder, setIsSavingOrder] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [submitSuccess, setSubmitSuccess] = useState<string | null>(null);
+  const [productCatalog, setProductCatalog] = useState<ProductOption[]>([]);
+  const [catalogLoading, setCatalogLoading] = useState(false);
+  const [selectedProductId, setSelectedProductId] = useState<string>('');
+  const [selectedQuantity, setSelectedQuantity] = useState<number>(1);
+
+  const availableProducts = useMemo<ProductOption[]>(() => {
+    if (productCatalog.length > 0) {
+      return productCatalog;
+    }
+    if (Array.isArray(storeData?.products)) {
+      return storeData.products.map((product: any, index: number) => ({
+        id: Number(product.id ?? index + 1),
+        name: product.name ?? `منتج ${index + 1}`,
+        sku: product.sku,
+        price: Number(product.price ?? 0),
+        quantity: Number(product.quantity ?? product.stock ?? 0),
+      }));
+    }
+    return [];
+  }, [productCatalog, storeData?.products]);
+
+  const itemsTotal = useMemo(() => orderForm.items.reduce((sum, item) => sum + item.total, 0), [orderForm.items]);
+
+  const filteredOrders = orders.filter((order: ManualOrder) => {
+    const fullName = `${order.customerFirstName ?? ''} ${order.customerLastName ?? ''}`.trim();
+    return (
+      fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      order.orderNumber.toLowerCase().includes(searchTerm.toLowerCase())
+    );
   });
 
-  const orders = storeData?.manualOrders || [];
-  const filteredOrders = orders.filter((order: ManualOrder) =>
-    order.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    order.orderNumber.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
   const handleCreateOrder = () => {
-    setOrderForm({
-      orderNumber: `ORD-${Date.now()}`,
-      customerName: '',
-      customerEmail: '',
-      customerPhone: '',
-      customerCity: '',
-      customerArea: '',
-      shippingAddress: '',
-      paymentMethod: '',
-      bankName: '',
-      accountHolder: '',
-      transactionStatus: 'pending',
-      shippingMethod: '',
-      expectedDelivery: '',
-      customerNotes: '',
-      internalNotes: '',
-      items: [],
-    });
+    setOrderForm(buildInitialForm());
+    setFormError(null);
+    setSubmitSuccess(null);
     setCurrentStep(1);
     setShowCreateModal(true);
   };
+
+  useEffect(() => {
+    if (storeData?.manualOrders) {
+      setOrders(storeData.manualOrders);
+    }
+  }, [storeData?.manualOrders]);
+
+  const fetchManualOrders = useCallback(async () => {
+    setIsLoadingOrders(true);
+    setFormError(null);
+    try {
+      const response = await fetch(`${API_BASE_URL}/orders?type=manual&limit=100`, {
+        method: 'GET',
+        credentials: 'include',
+      });
+      const result = await response.json();
+      if (!response.ok || result.success === false) {
+        throw new Error(result.error || 'تعذر تحميل الطلبات');
+      }
+      const normalized = Array.isArray(result.data)
+        ? result.data.map((record: any) => normalizeOrderRecord(record))
+        : [];
+      setOrders(normalized);
+    } catch (error) {
+      setFormError(error instanceof Error ? error.message : 'تعذر تحميل الطلبات');
+    } finally {
+      setIsLoadingOrders(false);
+    }
+  }, []);
+
+  const fetchProductCatalog = useCallback(async () => {
+    setCatalogLoading(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/products?limit=200`, {
+        method: 'GET',
+        credentials: 'include',
+      });
+      const result = await response.json();
+      if (!response.ok || result.success === false) {
+        throw new Error(result.error || 'تعذر تحميل المنتجات');
+      }
+      const normalized: ProductOption[] = Array.isArray(result.data)
+        ? result.data.map((product: any) => ({
+            id: product.id,
+            name: product.name,
+            sku: product.sku,
+            price: Number(product.price ?? 0),
+            quantity: Number(product.quantity ?? 0),
+          }))
+        : [];
+      setProductCatalog(normalized);
+    } catch (error) {
+
+    } finally {
+      setCatalogLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchManualOrders();
+    fetchProductCatalog();
+  }, [fetchManualOrders, fetchProductCatalog]);
 
   const handleNextStep = () => {
     if (currentStep < 4) {
@@ -144,44 +280,119 @@ const ManualOrdersView: React.FC<ManualOrdersViewProps> = ({ storeData, setStore
     }
   };
 
-  const handleSaveOrder = () => {
-    if (!storeData) return;
+  const handleAddItem = () => {
+    const product = availableProducts.find((p) => String(p.id) === selectedProductId);
+    if (!product) {
+      setFormError('اختر منتجاً صالحاً');
+      return;
+    }
+    if (selectedQuantity <= 0) {
+      setFormError('الكمية يجب أن تكون أكبر من صفر');
+      return;
+    }
+    const price = Number(product.price ?? 0);
+    const quantity = Number(selectedQuantity);
+    const newItem: OrderItem = {
+      id: `${product.id}-${Date.now()}`,
+      productId: product.id,
+      productName: product.name,
+      quantity,
+      price,
+      total: price * quantity,
+    };
+    if (product.sku) {
+      newItem.sku = product.sku;
+    }
+    setOrderForm((prev) => ({ ...prev, items: [...prev.items, newItem] }));
+    setSelectedProductId('');
+    setSelectedQuantity(1);
+    setFormError(null);
+  };
 
-    const newOrder: ManualOrder = {
-      id: Date.now().toString(),
-      orderNumber: orderForm.orderNumber,
-      customerName: orderForm.customerName,
-      customerEmail: orderForm.customerEmail,
-      customerPhone: orderForm.customerPhone,
-      status: 'new',
-      paymentMethod: orderForm.paymentMethod,
-      paymentStatus: orderForm.transactionStatus as any,
-      shippingMethod: orderForm.shippingMethod,
-      shippingAddress: `${orderForm.shippingAddress}, ${orderForm.customerArea}, ${orderForm.customerCity}`,
-      items: orderForm.items,
-      subtotal: orderForm.items.reduce((sum, item) => sum + item.total, 0),
-      shipping: 0,
-      tax: 0,
-      total: orderForm.items.reduce((sum, item) => sum + item.total, 0),
-      notes: orderForm.customerNotes,
-      internalNotes: orderForm.internalNotes,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+  const handleRemoveItem = (index: number) => {
+    setOrderForm((prev) => ({ ...prev, items: prev.items.filter((_, idx) => idx !== index) }));
+  };
+
+  const handleSaveOrder = async () => {
+    if (!orderForm.customerFirstName.trim() || !orderForm.customerLastName.trim()) {
+      setFormError('يرجى إدخال الاسم الأول واسم العائلة');
+      return;
+    }
+
+    if (!orderForm.customerPhone.trim()) {
+      setFormError('يرجى إدخال رقم الهاتف');
+      return;
+    }
+
+    if (orderForm.items.length === 0) {
+      setFormError('أضف منتجاً واحداً على الأقل إلى الطلب');
+      return;
+    }
+
+    if (orderForm.items.some((item) => !item.productId)) {
+      setFormError('كل عنصر يجب أن يرتبط بمنتج من الكتالوج');
+      return;
+    }
+
+    const addressFallback = [orderForm.shippingAddress, orderForm.customerArea, orderForm.customerCity]
+      .filter(Boolean)
+      .join(', ');
+
+    const payload = {
+      customerFirstName: orderForm.customerFirstName.trim(),
+      customerLastName: orderForm.customerLastName.trim(),
+      customerPhone: orderForm.customerPhone.trim(),
+      customerEmail: orderForm.customerEmail.trim(),
+      customerAddress: addressFallback,
+      customerCity: orderForm.customerCity.trim(),
+      customerArea: orderForm.customerArea.trim(),
+      shippingType: orderForm.shippingType === 'express' ? 'express' : 'normal',
+      paymentMethod: orderForm.paymentMethod || 'onDelivery',
+      paymentPlan: orderForm.paymentPlan,
+      identityNumber: orderForm.identityNumber || undefined,
+      deliveryAgent: orderForm.deliveryAgent || undefined,
+      deliveryNote: orderForm.deliveryNote || undefined,
+      notes: orderForm.internalNotes || orderForm.customerNotes || undefined,
+      storeId: storeData?.storeId ?? storeData?.id,
+      items: orderForm.items.map((item) => ({
+        productId: item.productId,
+        quantity: item.quantity,
+        price: item.price,
+      })),
     };
 
-    const updatedOrders = [...orders, newOrder];
-    setStoreData({
-      ...storeData,
-      manualOrders: updatedOrders,
-    });
+    setIsSavingOrder(true);
+    setFormError(null);
+    setSubmitSuccess(null);
 
-    setShowCreateModal(false);
-    onSave();
+    try {
+      const response = await fetch(`${API_BASE_URL}/orders/manual`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const result = await response.json();
+      if (!response.ok || result.success === false) {
+        throw new Error(result.error || 'تعذر حفظ الطلب');
+      }
+      await fetchManualOrders();
+      setSubmitSuccess('تم حفظ الطلب اليدوي بنجاح');
+      setShowCreateModal(false);
+      setOrderForm(buildInitialForm());
+      onSave();
+    } catch (error) {
+      setFormError(error instanceof Error ? error.message : 'تعذر حفظ الطلب');
+    } finally {
+      setIsSavingOrder(false);
+    }
   };
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
       new: { variant: 'default' as const, label: 'جديد', color: 'bg-blue-100 text-blue-800' },
+      pending: { variant: 'default' as const, label: 'قيد المراجعة', color: 'bg-blue-100 text-blue-800' },
+      confirmed: { variant: 'default' as const, label: 'مؤكد', color: 'bg-indigo-100 text-indigo-800' },
       paid: { variant: 'default' as const, label: 'مدفوع', color: 'bg-green-100 text-green-800' },
       processing: { variant: 'secondary' as const, label: 'قيد المعالجة', color: 'bg-yellow-100 text-yellow-800' },
       shipped: { variant: 'secondary' as const, label: 'مشحون', color: 'bg-purple-100 text-purple-800' },
@@ -196,6 +407,12 @@ const ManualOrdersView: React.FC<ManualOrdersViewProps> = ({ storeData, setStore
         {config.label}
       </Badge>
     );
+  };
+
+  const getPaymentLabel = (method: string) => {
+    if (method === 'onDelivery') return 'عند الاستلام';
+    if (method === 'immediate') return 'دفع فوري';
+    return method;
   };
 
   const renderStep1 = () => (
@@ -218,12 +435,21 @@ const ManualOrdersView: React.FC<ManualOrdersViewProps> = ({ storeData, setStore
           />
         </div>
         <div>
-          <Label htmlFor="customerName">اسم العميل الكامل *</Label>
+          <Label htmlFor="customerFirstName">الاسم الأول *</Label>
           <Input
-            id="customerName"
-            value={orderForm.customerName}
-            onChange={(e) => setOrderForm({ ...orderForm, customerName: e.target.value })}
-            placeholder="أدخل اسم العميل الكامل"
+            id="customerFirstName"
+            value={orderForm.customerFirstName}
+            onChange={(e) => setOrderForm({ ...orderForm, customerFirstName: e.target.value })}
+            placeholder="أدخل الاسم الأول"
+          />
+        </div>
+        <div>
+          <Label htmlFor="customerLastName">اسم العائلة *</Label>
+          <Input
+            id="customerLastName"
+            value={orderForm.customerLastName}
+            onChange={(e) => setOrderForm({ ...orderForm, customerLastName: e.target.value })}
+            placeholder="أدخل اسم العائلة"
           />
         </div>
         <div>
@@ -260,18 +486,31 @@ const ManualOrdersView: React.FC<ManualOrdersViewProps> = ({ storeData, setStore
       </div>
 
       <div className="space-y-4">
-        <div className="flex gap-2">
-          <Select>
+        <div className="flex flex-col gap-3 md:flex-row">
+          <Select value={selectedProductId} onValueChange={(value) => setSelectedProductId(value)}>
             <SelectTrigger className="flex-1">
-              <SelectValue placeholder="اختر منتج لإضافته" />
+              <SelectValue placeholder={catalogLoading ? 'جاري تحميل المنتجات...' : 'اختر منتج لإضافته'} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="product1">عطر Hugo Intense 100ml</SelectItem>
-              <SelectItem value="product2">فستان سهرة أنيق</SelectItem>
-              <SelectItem value="product3">حقيبة يد جلدية</SelectItem>
+              {availableProducts.length === 0 && <SelectItem value="">لا توجد منتجات متاحة</SelectItem>}
+              {availableProducts.map((product) => (
+                <SelectItem key={product.id} value={String(product.id)}>
+                  {product.name} {product.sku ? `(${product.sku})` : ''}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
-          <Button>إضافة</Button>
+          <Input
+            type="number"
+            min={1}
+            value={selectedQuantity}
+            onChange={(e) => setSelectedQuantity(Math.max(1, Number(e.target.value) || 1))}
+            className="md:w-32"
+            placeholder="الكمية"
+          />
+          <Button onClick={handleAddItem} disabled={!selectedProductId || availableProducts.length === 0}>
+            إضافة
+          </Button>
         </div>
 
         <div className="border rounded-lg p-4">
@@ -281,14 +520,16 @@ const ManualOrdersView: React.FC<ManualOrdersViewProps> = ({ storeData, setStore
           ) : (
             <div className="space-y-2">
               {orderForm.items.map((item, index) => (
-                <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                <div key={item.id} className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 p-2 bg-gray-50 rounded">
                   <div>
                     <p className="font-medium">{item.productName}</p>
-                    <p className="text-sm text-gray-600">SKU: {item.sku}</p>
+                    <p className="text-sm text-gray-600">
+                      {item.sku ? `SKU: ${item.sku} • ` : ''}كمية: {item.quantity}
+                    </p>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="font-semibold">{item.total} د.ل</span>
-                    <Button variant="outline" size="sm">
+                    <span className="font-semibold">{item.total.toFixed(2)} د.ل</span>
+                    <Button variant="outline" size="sm" onClick={() => handleRemoveItem(index)}>
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
@@ -376,14 +617,24 @@ const ManualOrdersView: React.FC<ManualOrdersViewProps> = ({ storeData, setStore
                   <SelectValue placeholder="اختر طريقة الدفع" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="bank_transfer">تحويل مصرفي</SelectItem>
-                  <SelectItem value="cash_on_delivery">عند الاستلام</SelectItem>
-                  <SelectItem value="installments">أقساط</SelectItem>
-                  <SelectItem value="wallet">محفظة</SelectItem>
+                  <SelectItem value="onDelivery">عند الاستلام</SelectItem>
+                  <SelectItem value="immediate">دفع فوري</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-            {orderForm.paymentMethod === 'bank_transfer' && (
+            <div>
+              <Label>خطة الدفع</Label>
+              <Select value={orderForm.paymentPlan} onValueChange={(value) => setOrderForm({ ...orderForm, paymentPlan: value })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="اختر خطة الدفع" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="immediate">فوري</SelectItem>
+                  <SelectItem value="qasatli">قسطلتي</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {orderForm.paymentMethod === 'immediate' && (
               <>
                 <div>
                   <Label>المصرف</Label>
@@ -431,15 +682,13 @@ const ManualOrdersView: React.FC<ManualOrdersViewProps> = ({ storeData, setStore
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <Label>طريقة الشحن</Label>
-              <Select value={orderForm.shippingMethod} onValueChange={(value) => setOrderForm({ ...orderForm, shippingMethod: value })}>
+              <Select value={orderForm.shippingType} onValueChange={(value) => setOrderForm({ ...orderForm, shippingType: value as 'normal' | 'express' })}>
                 <SelectTrigger>
                   <SelectValue placeholder="اختر طريقة الشحن" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="no_shipping">لا يتطلب شحن</SelectItem>
-                  <SelectItem value="standard">شحن توصيل عادي</SelectItem>
-                  <SelectItem value="express">شحن وتوصيل سريع</SelectItem>
-                  <SelectItem value="pickup">الاستلام من الموقع</SelectItem>
+                  <SelectItem value="normal">شحن عادي</SelectItem>
+                  <SelectItem value="express">شحن سريع</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -463,7 +712,7 @@ const ManualOrdersView: React.FC<ManualOrdersViewProps> = ({ storeData, setStore
               <div className="space-y-3">
                 <div className="flex justify-between">
                   <span>قيمة المنتجات</span>
-                  <span>{orderForm.items.reduce((sum, item) => sum + item.total, 0)} د.ل</span>
+                  <span>{itemsTotal.toFixed(2)} د.ل</span>
                 </div>
                 <div className="flex justify-between">
                   <span>رسوم الشحن</span>
@@ -475,11 +724,38 @@ const ManualOrdersView: React.FC<ManualOrdersViewProps> = ({ storeData, setStore
                 </div>
                 <div className="flex justify-between font-bold text-lg border-t pt-2">
                   <span>المجموع الكلي</span>
-                  <span>{orderForm.items.reduce((sum, item) => sum + item.total, 0)} د.ل</span>
+                  <span>{itemsTotal.toFixed(2)} د.ل</span>
                 </div>
               </div>
             </CardContent>
           </Card>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div>
+              <Label>رقم الهوية / السجل</Label>
+              <Input
+                value={orderForm.identityNumber}
+                onChange={(e) => setOrderForm({ ...orderForm, identityNumber: e.target.value })}
+                placeholder="مثال: 123456789"
+              />
+            </div>
+            <div>
+              <Label>مندوب التوصيل</Label>
+              <Input
+                value={orderForm.deliveryAgent}
+                onChange={(e) => setOrderForm({ ...orderForm, deliveryAgent: e.target.value })}
+                placeholder="اسم المندوب"
+              />
+            </div>
+            <div>
+              <Label>ملاحظة التوصيل</Label>
+              <Input
+                value={orderForm.deliveryNote}
+                onChange={(e) => setOrderForm({ ...orderForm, deliveryNote: e.target.value })}
+                placeholder="تعليمات خاصة"
+              />
+            </div>
+          </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
@@ -605,6 +881,7 @@ const ManualOrdersView: React.FC<ManualOrdersViewProps> = ({ storeData, setStore
           </div>
         </CardHeader>
         <CardContent>
+          {isLoadingOrders && <p className="text-sm text-gray-500 mb-3">جاري تحميل الطلبات...</p>}
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
@@ -629,18 +906,20 @@ const ManualOrdersView: React.FC<ManualOrdersViewProps> = ({ storeData, setStore
                     </td>
                     <td className="p-3">
                       <div>
-                        <p className="font-semibold">{order.customerName}</p>
-                        <p className="text-sm text-gray-600">{order.customerPhone}</p>
+                        <p className="font-semibold">
+                          {`${order.customerFirstName ?? ''} ${order.customerLastName ?? ''}`.trim() || 'بدون اسم'}
+                        </p>
+                        <p className="text-sm text-gray-600">{order.customerPhone || '---'}</p>
                       </div>
                     </td>
                     <td className="p-3">
                       {getStatusBadge(order.status)}
                     </td>
                     <td className="p-3">
-                      <p className="font-semibold">{order.total} د.ل</p>
+                      <p className="font-semibold">{order.total.toFixed(2)} د.ل</p>
                     </td>
                     <td className="p-3">
-                      <Badge variant="outline">{order.paymentMethod}</Badge>
+                      <Badge variant="outline">{getPaymentLabel(order.paymentMethod)}</Badge>
                     </td>
                     <td className="p-3">
                       <p className="text-sm">{new Date(order.createdAt).toLocaleDateString('ar')}</p>
@@ -699,6 +978,16 @@ const ManualOrdersView: React.FC<ManualOrdersViewProps> = ({ storeData, setStore
                 </Button>
               </div>
 
+              {(formError || submitSuccess) && (
+                <div
+                  className={`mb-4 rounded-lg border p-3 text-sm ${
+                    formError ? 'border-red-200 bg-red-50 text-red-700' : 'border-green-200 bg-green-50 text-green-700'
+                  }`}
+                >
+                  {formError ?? submitSuccess}
+                </div>
+              )}
+
               {/* Step Indicators */}
               <div className="flex items-center justify-center gap-4 mb-8">
                 {[1, 2, 3, 4].map((step) => (
@@ -747,10 +1036,11 @@ const ManualOrdersView: React.FC<ManualOrdersViewProps> = ({ storeData, setStore
                   ) : (
                     <Button
                       onClick={handleSaveOrder}
-                      className="bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600"
+                      disabled={isSavingOrder}
+                      className="bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 disabled:opacity-70"
                     >
                       <Save className="h-4 w-4 ml-2" />
-                      حفظ الطلب
+                      {isSavingOrder ? 'جارٍ الحفظ...' : 'حفظ الطلب'}
                     </Button>
                   )}
                 </div>

@@ -170,7 +170,7 @@ const ReviewsView: React.FC<ReviewsViewProps> = ({ storeData, setStoreData, onSa
 
   const handleStatusChange = (reviewId: string, newStatus: ProductReview['status']) => {
     // In real app, this would update the backend
-    console.log('Updating review status:', reviewId, newStatus);
+
     onSave();
   };
 
@@ -183,7 +183,7 @@ const ReviewsView: React.FC<ReviewsViewProps> = ({ storeData, setStoreData, onSa
     if (!selectedReview) return;
 
     // In real app, this would save the response to backend
-    console.log('Saving response for review:', selectedReview.id, response);
+
     setShowResponseModal(false);
     setSelectedReview(null);
     onSave();

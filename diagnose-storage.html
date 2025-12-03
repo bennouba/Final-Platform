@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تشخيص التخزين</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            direction: rtl;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        
+        .header h1 {
+            color: #333;
+            font-size: 28px;
+        }
+        
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 14px;
+            transition: all 0.3s;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-success {
+            background: #51cf66;
+        }
+        
+        .btn-danger {
+            background: #ff6b6b;
+        }
+        
+        .diagnostic-section {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        .section-title {
+            color: #333;
+            font-size: 20px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .check-item {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            border-left: 4px solid;
+        }
+        
+        .check-item.success {
+            background: #c8e6c9;
+            border-left-color: #4caf50;
+            color: #2e7d32;
+        }
+        
+        .check-item.error {
+            background: #ffcdd2;
+            border-left-color: #f44336;
+            color: #c62828;
+        }
+        
+        .check-item.warning {
+            background: #fff3cd;
+            border-left-color: #ffc107;
+            color: #856404;
+        }
+        
+        .check-item.info {
+            background: #e3f2fd;
+            border-left-color: #2196f3;
+            color: #1565c0;
+        }
+        
+        .check-icon {
+            font-size: 20px;
+            min-width: 20px;
+        }
+        
+        .check-text {
+            flex: 1;
+        }
+        
+        .check-value {
+            font-weight: bold;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+        
+        .btn-action {
+            padding: 10px 16px;
+            font-size: 12px;
+        }
+        
+        .message {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 8px;
+            color: white;
+            font-weight: bold;
+            z-index: 1000;
+            animation: slideIn 0.3s ease-out;
+        }
+        
+        .message.success {
+            background: #51cf66;
+        }
+        
+        .message.error {
+            background: #ff6b6b;
+        }
+        
+        .message.info {
+            background: #667eea;
+        }
+        
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal.active {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            max-width: 400px;
+            width: 90%;
+        }
+        
+        .modal-header {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #333;
+        }
+        
+        .modal-footer {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏥 تشخيص التخزين</h1>
+            <button onclick="window.location.href='admin-tools.html'">← العودة</button>
+        </div>
+        
+        <div class="diagnostic-section">
+            <div class="section-title">📊 ملخص سريع</div>
+            <div class="stats-grid" id="quickStats"></div>
+        </div>
+        
+        <div class="diagnostic-section">
+            <div class="section-title">🔍 فحص المتاجر</div>
+            <div id="storesCheck"></div>
+            <div class="action-buttons">
+                <button class="btn-action" onclick="runDiagnostics()">🔄 إعادة الفحص</button>
+                <button class="btn-action btn-success" onclick="fixStores()" id="fixBtn" style="display:none;">🛠️ إصلاح تلقائي</button>
+            </div>
+        </div>
+        
+        <div class="diagnostic-section">
+            <div class="section-title">💾 فحص البيانات</div>
+            <div id="dataCheck"></div>
+        </div>
+        
+        <div class="diagnostic-section">
+            <div class="section-title">⚙️ إجراءات الصيانة</div>
+            <div class="action-buttons" style="margin-top:0;">
+                <button class="btn-action" onclick="validateAllData()">✓ التحقق من البيانات</button>
+                <button class="btn-action" onclick="rebuildIndices()">🔨 إعادة بناء الفهارس</button>
+                <button class="btn-action" onclick="optimizeStorage()">⚡ تحسين التخزين</button>
+                <button class="btn-action btn-danger" onclick="clearCorrupted()">🗑️ حذف البيانات التالفة</button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="modal" id="confirmModal">
+        <div class="modal-content">
+            <div class="modal-header" id="confirmTitle"></div>
+            <p id="confirmText" style="margin-bottom:15px;color:#666;"></p>
+            <div class="modal-footer">
+                <button onclick="closeConfirm()">إلغاء</button>
+                <button class="btn-success" onclick="confirmAction()">تأكيد</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const API_URL = 'http://localhost:5000/api/stores';
+        let pendingAction = null;
+        
+        function runDiagnostics() {
+            checkStores();
+            checkData();
+            updateStats();
+        }
+        
+        function updateStats() {
+            let stats = {
+                totalItems: localStorage.length,
+                eishroItems: 0,
+                storeCount: 0,
+                fileCount: 0,
+                totalSize: 0
+            };
+            
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key.startsWith('eshro_')) {
+                    stats.eishroItems++;
+                    const size = localStorage.getItem(key).length;
+                    stats.totalSize += size;
+                    
+                    if (key === 'eshro_stores') {
+                        try {
+                            const stores = JSON.parse(localStorage.getItem(key) || '[]');
+                            stats.storeCount = Array.isArray(stores) ? stores.length : 0;
+                        } catch (e) {}
+                    } else if (key.startsWith('eshro_store_files_')) {
+                        stats.fileCount++;
+                    }
+                }
+            }
+            
+            document.getElementById('quickStats').innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-number">${stats.eishroItems}</div>
+                    <div class="stat-label">عناصر Eishro</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${stats.storeCount}</div>
+                    <div class="stat-label">متاجر في القائمة</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${stats.fileCount}</div>
+                    <div class="stat-label">ملفات المتاجر</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${(stats.totalSize / 1024).toFixed(2)}</div>
+                    <div class="stat-label">الحجم (KB)</div>
+                </div>
+            `;
+        }
+        
+        function checkStores() {
+            const container = document.getElementById('storesCheck');
+            const checks = [];
+            let hasIssues = false;
+            
+            let storesArray = null;
+            let storeFiles = [];
+            
+            try {
+                storesArray = JSON.parse(localStorage.getItem('eshro_stores') || '[]');
+                if (Array.isArray(storesArray) && storesArray.length > 0) {
+                    checks.push({
+                        icon: '✅',
+                        type: 'success',
+                        text: `وجدت <span class="check-value">${storesArray.length}</span> متجر في قائمة eshro_stores`
+                    });
+                } else {
+                    checks.push({
+                        icon: '⚠️',
+                        type: 'warning',
+                        text: 'قائمة eshro_stores فارغة أو لا توجد'
+                    });
+                    hasIssues = true;
+                }
+            } catch (e) {
+                checks.push({
+                    icon: '❌',
+                    type: 'error',
+                    text: 'خطأ في قراءة eshro_stores: بيانات تالفة'
+                });
+                hasIssues = true;
+            }
+            
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key.startsWith('eshro_store_files_')) {
+                    try {
+                        const data = JSON.parse(localStorage.getItem(key) || '{}');
+                        if (data.storeData && data.storeData.setupComplete === true) {
+                            storeFiles.push(key);
+                        }
+                    } catch (e) {
+                        checks.push({
+                            icon: '❌',
+                            type: 'error',
+                            text: `ملف متجر تالف: <span class="check-value">${key}</span>`
+                        });
+                        hasIssues = true;
+                    }
+                }
+            }
+            
+            if (storeFiles.length > 0) {
+                checks.push({
+                    icon: '✅',
+                    type: 'success',
+                    text: `وجدت <span class="check-value">${storeFiles.length}</span> ملف متجر صالح`
+                });
+            } else if (!hasIssues) {
+                checks.push({
+                    icon: '⚠️',
+                    type: 'warning',
+                    text: 'لا توجد ملفات متاجر منفصلة (eshro_store_files_*)'
+                });
+            }
+            
+            if (storesArray && storesArray.length !== storeFiles.length && storeFiles.length > 0) {
+                checks.push({
+                    icon: '⚠️',
+                    type: 'warning',
+                    text: `عدم تطابق: ${storesArray.length} في القائمة و ${storeFiles.length} ملف منفصل`
+                });
+                hasIssues = true;
+            }
+            
+            if (hasIssues) {
+                document.getElementById('fixBtn').style.display = 'inline-block';
+            } else {
+                document.getElementById('fixBtn').style.display = 'none';
+            }
+            
+            container.innerHTML = checks.map(check => `
+                <div class="check-item ${check.type}">
+                    <span class="check-icon">${check.icon}</span>
+                    <span class="check-text">${check.text}</span>
+                </div>
+            `).join('');
+        }
+        
+        function checkData() {
+            const container = document.getElementById('dataCheck');
+            const checks = [];
+            
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key.startsWith('eshro_store_files_')) {
+                    try {
+                        const data = JSON.parse(localStorage.getItem(key) || '{}');
+                        const name = data.storeData?.nameAr || data.storeData?.name || 'بدون اسم';
+                        
+                        if (data.storeData?.setupComplete === true) {
+                            checks.push({
+                                icon: '✅',
+                                type: 'success',
+                                text: `<strong>${name}</strong> - بيانات صحيحة`
+                            });
+                        } else {
+                            checks.push({
+                                icon: '⚠️',
+                                type: 'warning',
+                                text: `<strong>${name}</strong> - الإعداد غير مكتمل`
+                            });
+                        }
+                    } catch (e) {
+                        checks.push({
+                            icon: '❌',
+                            type: 'error',
+                            text: `<strong>${key}</strong> - بيانات تالفة`
+                        });
+                    }
+                }
+            }
+            
+            if (checks.length === 0) {
+                checks.push({
+                    icon: 'ℹ️',
+                    type: 'info',
+                    text: 'لا توجد بيانات متاجر للفحص'
+                });
+            }
+            
+            container.innerHTML = checks.map(check => `
+                <div class="check-item ${check.type}">
+                    <span class="check-icon">${check.icon}</span>
+                    <span class="check-text">${check.text}</span>
+                </div>
+            `).join('');
+        }
+        
+        function validateAllData() {
+            showMessage('جاري التحقق من البيانات...', 'info');
+            
+            try {
+                let validated = 0;
+                let errors = [];
+                
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (key.startsWith('eshro_')) {
+                        try {
+                            const value = localStorage.getItem(key);
+                            JSON.parse(value);
+                            validated++;
+                        } catch (e) {
+                            errors.push(key);
+                        }
+                    }
+                }
+                
+                showMessage(`✅ تم التحقق: ${validated} عنصر صحيح${errors.length > 0 ? `, ${errors.length} خطأ` : ''}`, 'success');
+            } catch (error) {
+                showMessage(`❌ خطأ: ${error.message}`, 'error');
+            }
+        }
+        
+        function rebuildIndices() {
+            pendingAction = 'rebuildIndices';
+            document.getElementById('confirmTitle').textContent = 'إعادة بناء الفهارس';
+            document.getElementById('confirmText').textContent = 'سيتم إعادة بناء فهرس المتاجر من الملفات المنفصلة. هل تريد المتابعة؟';
+            document.getElementById('confirmModal').classList.add('active');
+        }
+        
+        function optimizeStorage() {
+            pendingAction = 'optimizeStorage';
+            document.getElementById('confirmTitle').textContent = 'تحسين التخزين';
+            document.getElementById('confirmText').textContent = 'سيتم تحسين حجم التخزين بحذف البيانات المكررة. هل تريد المتابعة؟';
+            document.getElementById('confirmModal').classList.add('active');
+        }
+        
+        function clearCorrupted() {
+            pendingAction = 'clearCorrupted';
+            document.getElementById('confirmTitle').textContent = 'حذف البيانات التالفة';
+            document.getElementById('confirmText').textContent = 'سيتم حذف البيانات التالفة من localStorage. هل أنت متأكد؟';
+            document.getElementById('confirmModal').classList.add('active');
+        }
+        
+        function fixStores() {
+            pendingAction = 'fixStores';
+            document.getElementById('confirmTitle').textContent = 'إصلاح تلقائي';
+            document.getElementById('confirmText').textContent = 'سيتم إصلاح المشاكل المكتشفة تلقائياً. هل تريد المتابعة؟';
+            document.getElementById('confirmModal').classList.add('active');
+        }
+        
+        function confirmAction() {
+            closeConfirm();
+            
+            try {
+                if (pendingAction === 'rebuildIndices') {
+                    rebuildFromFiles();
+                } else if (pendingAction === 'optimizeStorage') {
+                    removeDuplicates();
+                } else if (pendingAction === 'clearCorrupted') {
+                    deleteCorruptedData();
+                } else if (pendingAction === 'fixStores') {
+                    autoFix();
+                }
+                
+                showMessage('✅ اكتمل بنجاح', 'success');
+                runDiagnostics();
+            } catch (error) {
+                showMessage(`❌ خطأ: ${error.message}`, 'error');
+            }
+            
+            pendingAction = null;
+        }
+        
+        function rebuildFromFiles() {
+            const stores = [];
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key.startsWith('eshro_store_files_')) {
+                    try {
+                        const data = JSON.parse(localStorage.getItem(key) || '{}');
+                        if (data.storeData) {
+                            stores.push(data.storeData);
+                        }
+                    } catch (e) {}
+                }
+            }
+            localStorage.setItem('eshro_stores', JSON.stringify(stores));
+        }
+        
+        function removeDuplicates() {
+            const stores = [];
+            const seen = new Set();
+            
+            try {
+                const arr = JSON.parse(localStorage.getItem('eshro_stores') || '[]');
+                for (let store of arr) {
+                    const id = store.subdomain || store.id;
+                    if (!seen.has(id)) {
+                        stores.push(store);
+                        seen.add(id);
+                    }
+                }
+                localStorage.setItem('eshro_stores', JSON.stringify(stores));
+            } catch (e) {}
+        }
+        
+        function deleteCorruptedData() {
+            for (let i = localStorage.length - 1; i >= 0; i--) {
+                const key = localStorage.key(i);
+                if (key.startsWith('eshro_')) {
+                    try {
+                        JSON.parse(localStorage.getItem(key) || '');
+                    } catch (e) {
+                        localStorage.removeItem(key);
+                    }
+                }
+            }
+        }
+        
+        function autoFix() {
+            rebuildFromFiles();
+            removeDuplicates();
+            deleteCorruptedData();
+        }
+        
+        function closeConfirm() {
+            document.getElementById('confirmModal').classList.remove('active');
+        }
+        
+        function showMessage(text, type) {
+            const msg = document.createElement('div');
+            msg.className = `message ${type}`;
+            msg.textContent = text;
+            document.body.appendChild(msg);
+            setTimeout(() => msg.remove(), 3000);
+        }
+        
+        runDiagnostics();
+    </script>
+</body>
+</html>

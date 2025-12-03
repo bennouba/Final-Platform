@@ -23,7 +23,10 @@ interface UserAttributes {
   lastLogin?: Date;
 }
 
-interface UserCreationAttributes extends Optional<UserAttributes, 'id' | 'createdAt' | 'updatedAt' | 'lastLogin' | 'merchantVerified'> {}
+type UserCreationAttributes = Optional<
+  UserAttributes,
+  'id' | 'createdAt' | 'updatedAt' | 'lastLogin' | 'merchantVerified'
+>;
 
 class User extends Model<UserAttributes, UserCreationAttributes> implements UserAttributes {
   declare id: string;
@@ -78,7 +81,7 @@ User.init(
       allowNull: false,
     },
     role: {
-      type: DataTypes.ENUM(...Object.values(UserRole)),
+      type: DataTypes.ENUM(...(Object.values(UserRole) as string[])),
       defaultValue: UserRole.CUSTOMER,
     },
     storeName: {

@@ -114,7 +114,7 @@ const MoamalatPaymentGateway: React.FC<MoamalatPaymentGatewayProps> = ({
       }, 3000); // زيادة وقت المعالجة لمحاكاة عملية حقيقية
       
     } catch (error) {
-      console.error('Payment initiation error:', error);
+
       setIsLoading(false);
       onPaymentError('فشل في بدء عملية الدفع. يرجى المحاولة مرة أخرى.');
     }

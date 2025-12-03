@@ -17,7 +17,7 @@ import {
   X
 } from "lucide-react";
 import ShareMenu from '@/components/ShareMenu';
-import NotifyWhenAvailable, { NotificationRequest } from '@/components/NotifyWhenAvailable';
+import NotifyWhenAvailable from '@/components/NotifyWhenAvailable';
 
 interface Order {
   id: string;
@@ -57,7 +57,6 @@ const OrdersPage: React.FC<OrdersPageProps> = ({
         const saved = JSON.parse(localStorage.getItem('eshro_unavailable') || '[]');
         setLocalUnavailableItems(saved);
       } catch (error) {
-        console.error('      localStorage:', error);
         setLocalUnavailableItems([]);
       }
     };
@@ -100,13 +99,6 @@ const OrdersPage: React.FC<OrdersPageProps> = ({
       date: date.toLocaleDateString('ar-LY'),
       time: date.toLocaleTimeString('ar-LY', { hour: '2-digit', minute: '2-digit' })
     };
-  };
-
-  const handleNotificationSubmit = (notificationData: NotificationRequest) => {
-    console.log('Notification request submitted:', notificationData);
-    // Here you would typically save to localStorage or send to backend
-    // For now, we'll just close the modal
-    setNotificationModal({ isOpen: false, product: null });
   };
 
   const openNotificationModal = (product: any) => {
@@ -235,7 +227,8 @@ const OrdersPage: React.FC<OrdersPageProps> = ({
           product={notificationModal.product}
           isOpen={notificationModal.isOpen}
           onClose={() => setNotificationModal({ isOpen: false, product: null })}
-          onSubmit={handleNotificationSubmit}
+          storeSlug={notificationModal.product?.storeSlug}
+          storeName={notificationModal.product?.storeName}
         />
       )}
 

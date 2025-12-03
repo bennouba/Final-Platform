@@ -35,21 +35,13 @@ const MoamalatLightboxSDK: React.FC<MoamalatLightboxProps> = ({
     if (api && typeof api.pay === 'function') {
       try {
         const reference = `ESHRO_${Date.now()}_${orderData?.id || Math.random().toString(36).substr(2, 9)}`;
-        const amountInDirhams = Math.round(amount * 1000); // 1 LYD = 1000 dirhams
-
-        console.log('Initiating Moamalat payment:', {
-          amount: amountInDirhams,
-          reference,
-          orderData
-        });
+        const amountInDirhams = Math.round(amount * 1000);
 
         api.pay(amountInDirhams, reference);
       } catch (error) {
-        console.error('Error initiating Moamalat payment:', error);
         onPaymentError('خطأ في بدء عملية الدفع');
       }
     } else {
-      console.error('Moamalat SDK not available');
       onPaymentError('نظام الدفع غير متاح حالياً');
     }
   }, [amount, orderData, onPaymentError]);
@@ -69,7 +61,7 @@ const MoamalatLightboxSDK: React.FC<MoamalatLightboxProps> = ({
           });
         }
       } catch (e) {
-        console.warn('MoamalatPay.init failed or unavailable, proceeding if API exists', e);
+        void e;
       }
       initiatePay();
       return;
@@ -95,19 +87,19 @@ const MoamalatLightboxSDK: React.FC<MoamalatLightboxProps> = ({
           });
         }
       } catch (e) {
-        console.warn('Moamalat init threw:', e);
+        void e;
       }
 
       if (w2._moamalatPay || w2.MoamalatPay) {
         initiatePay();
       } else {
-        console.error('Moamalat SDK loaded but API not found');
+
         onPaymentError('نظام الدفع غير متاح حالياً');
       }
     };
 
     script.onerror = () => {
-      console.error('Failed to load Moamalat SDK');
+
       onPaymentError('فشل في تحميل نظام الدفع. يرجى المحاولة لاحقاً.');
     };
 
@@ -125,7 +117,7 @@ const MoamalatLightboxSDK: React.FC<MoamalatLightboxProps> = ({
     if (typeof window !== 'undefined') {
       // Official Moamalat Events as per documentation
       const handleCompleted = (e: any) => {
-        console.log('Moamalat Payment Completed:', e.detail);
+
 
         const transactionData = {
           transactionId: e.detail.SystemReference || 'MOAMALAT_' + Date.now(),
@@ -151,13 +143,13 @@ const MoamalatLightboxSDK: React.FC<MoamalatLightboxProps> = ({
       };
 
       const handleError = (e: any) => {
-        console.error('Moamalat Payment Error:', e.detail);
+
         const errorMessage = e.detail?.error || 'حدث خطأ في عملية الدفع';
         onPaymentError(errorMessage);
       };
 
       const handleCancel = () => {
-        console.log('Moamalat Payment Cancelled');
+
         onClose();
       };
 

@@ -17,7 +17,7 @@ interface CouponAttributes {
   expiresAt?: Date;
 }
 
-interface CouponCreationAttributes extends Optional<CouponAttributes, 'id' | 'createdAt' | 'currentUses' | 'isActive' | 'maxUsesPerUser'> {}
+type CouponCreationAttributes = Optional<CouponAttributes, 'id' | 'createdAt' | 'currentUses' | 'isActive' | 'maxUsesPerUser'>;
 
 class Coupon extends Model<CouponAttributes, CouponCreationAttributes> implements CouponAttributes {
   declare id: number;

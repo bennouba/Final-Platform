@@ -14,6 +14,7 @@ import FinancialDashboard from "@/components/admin/FinancialDashboard";
 import AnalyticsDashboard from "@/components/admin/AnalyticsDashboard";
 import OrdersManagement from "@/components/admin/OrdersManagement";
 import ProductsManagement from "@/components/admin/ProductsManagement";
+import CrmManagement from "@/components/admin/CrmManagement";
 import {
   Activity,
   AlertCircle,
@@ -2202,7 +2203,7 @@ const AdminPortal = ({ onLogout }: { onLogout?: () => void }) => {
             {activeTab === "risk" && <RiskDashboard />}
             {activeTab === "settings" && <SettingsDashboard />}
             {activeTab === "notifications" && <NotificationsDashboard />}
-            {activeTab === "crm" && <CrmDashboard />}
+            {activeTab === "crm" && <CrmManagement />}
             {activeTab === "tickets" && <TicketsDashboard />}
             {activeTab === "support" && <SupportDashboard />}
           </main>

@@ -42,7 +42,7 @@ const MoamalatRealLightbox: React.FC<MoamalatRealLightboxProps> = ({
   const sdkLoadedRef = useRef<boolean>(false);
 
   const handlePaymentSuccess = useCallback((transactionData: any) => {
-    console.log('Payment successful:', transactionData);
+
     // Clean up
     if (lightboxRef.current) {
       lightboxRef.current.innerHTML = '';
@@ -67,7 +67,7 @@ const MoamalatRealLightbox: React.FC<MoamalatRealLightboxProps> = ({
   }, [amount, onClose, onPaymentSuccess]);
 
   const handlePaymentError = useCallback((error: string) => {
-    console.error('Payment error:', error);
+
     if (lightboxRef.current) {
       lightboxRef.current.innerHTML = '';
     }
@@ -75,7 +75,7 @@ const MoamalatRealLightbox: React.FC<MoamalatRealLightboxProps> = ({
   }, [onPaymentError]);
 
   const handlePaymentCancel = useCallback(() => {
-    console.log('Payment cancelled');
+
     if (lightboxRef.current) {
       lightboxRef.current.innerHTML = '';
     }
@@ -99,7 +99,7 @@ const MoamalatRealLightbox: React.FC<MoamalatRealLightboxProps> = ({
         }
       }
     } catch (error) {
-      console.error('Error handling iframe message:', error);
+
     }
   }, [handlePaymentCancel, handlePaymentError, handlePaymentSuccess]);
 
@@ -139,7 +139,7 @@ const MoamalatRealLightbox: React.FC<MoamalatRealLightboxProps> = ({
           createLightboxIframe(lightboxParams);
         }
       } catch (error) {
-        console.error('Error initializing Moamalat Lightbox:', error);
+
         onPaymentError('خطأ في تهيئة نظام الدفع');
       }
     };
@@ -153,12 +153,12 @@ const MoamalatRealLightbox: React.FC<MoamalatRealLightboxProps> = ({
       script.id = 'moamalat-sdk';
       script.src = MOAMALAT_CONFIG.isProduction ? MOAMALAT_CONFIG.productionSDK : MOAMALAT_CONFIG.testSDK;
       script.onload = () => {
-        console.log('Moamalat SDK loaded successfully');
+
         sdkLoadedRef.current = true;
         initializeLightbox();
       };
       script.onerror = () => {
-        console.error('Failed to load Moamalat SDK');
+
         onPaymentError('فشل في تحميل نظام الدفع. يرجى المحاولة لاحقاً.');
       };
       document.head.appendChild(script);

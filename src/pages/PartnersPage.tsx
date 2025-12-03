@@ -74,7 +74,6 @@ export default function PartnersPage({ onBack }: { onBack: () => void }) {
   // معالج الأخطاء
   useEffect(() => {
     const errorHandler = (error: ErrorEvent) => {
-      console.error('PartnersPage Error:', error);
       setHasError(true);
     };
     

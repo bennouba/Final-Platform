@@ -40,6 +40,13 @@ export default tseslint.config(
       "no-var": "warn",
 
       "react-hooks/exhaustive-deps": "off",
+      "no-console": "error",
+      "no-empty": ["error", { allowEmptyCatch: true }],
+    },
+  },
+  {
+    files: ["scripts/**/*.{ts,tsx}", "docs/**/*.{ts,tsx}", "backend/**/*.{ts,tsx}"],
+    rules: {
       "no-console": "off",
     },
   }

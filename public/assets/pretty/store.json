@@ -1,0 +1,32 @@
+{
+  "id": 1763895960003,
+  "storeId": 3,
+  "slug": "pretty",
+  "name": "Pretty",
+  "subdomain": "pretty",
+  "storeSlug": "pretty",
+  "nameAr": "Pretty",
+  "nameEn": "Pretty",
+  "description": "متجر الأزياء والإكسسوارات الأنيقة",
+  "icon": "🌸",
+  "color": "from-rose-400 to-pink-600",
+  "logo": "/assets/stores/pretty.webp",
+  "categories": [
+    "ملابس نسائية",
+    "فساتين",
+    "إكسسوارات",
+    "أحذية"
+  ],
+  "products": [],
+  "sliderImages": [
+    {
+      "id": "pretty-banner1",
+      "title": "أزياء نسائية أنيقة وعصرية",
+      "subtitle": "",
+      "buttonText": "تسوق الآن",
+      "image": "/assets/stores/pretty.webp"
+    }
+  ],
+  "status": "active",
+  "createdAt": "2025-11-24T10:45:00.000Z"
+}

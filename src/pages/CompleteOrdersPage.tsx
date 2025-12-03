@@ -159,10 +159,10 @@ const CompleteOrdersPage: React.FC<CompleteOrdersPageProps> = ({
     const loadUnavailableItems = () => {
       try {
         const saved = JSON.parse(localStorage.getItem('eshro_unavailable') || '[]');
-        console.log('🔄 تحميل البيانات من localStorage:', saved.length, 'طلب');
+
         setLocalUnavailableItems(saved);
       } catch (error) {
-        console.error('❌ خطأ في قراءة البيانات من localStorage:', error);
+
         setLocalUnavailableItems([]);
       }
     };
@@ -206,15 +206,15 @@ const CompleteOrdersPage: React.FC<CompleteOrdersPageProps> = ({
 
   // تتبع البيانات المحملة من localStorage وقراءتها مباشرة إذا لزم الأمر
   React.useEffect(() => {
-    console.log('📊 بيانات الطلبات غير المتوفرة المستلمة:', unavailableItems.length, 'طلب');
+
 
     // التحقق من البيانات في localStorage مباشرة وقراءتها إذا لم تكن متوفرة من props
     const directCheck = JSON.parse(localStorage.getItem('eshro_unavailable') || '[]');
-    console.log('💾 البيانات في localStorage مباشرة:', directCheck.length, 'طلب');
+
 
     // إذا كانت البيانات من props أقل من البيانات في localStorage، استخدم البيانات من localStorage
     if (directCheck.length > unavailableItems.length) {
-      console.log('🔄 تحديث البيانات من localStorage لأنها تحتوي على طلبات أحدث');
+
       // هنا يمكن إضافة منطق لتحديث البيانات إذا لزم الأمر
     }
   }, [unavailableItems]);
@@ -931,8 +931,12 @@ const CompleteOrdersPage: React.FC<CompleteOrdersPageProps> = ({
           <div className="max-w-4xl w-full max-h-[90vh] overflow-y-auto">
             <InvoiceGenerator
               invoice={selectedInvoice}
-              onPrint={() => console.log('طباعة الفاتورة')}
-              onDownload={() => console.log('تحميل الفاتورة')}
+              onPrint={() => {
+                void 0;
+              }}
+              onDownload={() => {
+                void 0;
+              }}
               onClose={() => {
                 setShowInvoiceModal(false);
                 setSelectedInvoice(null);

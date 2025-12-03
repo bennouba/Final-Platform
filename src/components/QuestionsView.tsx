@@ -155,7 +155,7 @@ const QuestionsView: React.FC<QuestionsViewProps> = ({ storeData, setStoreData, 
     if (!selectedQuestion) return;
 
     // In real app, this would save the answer to backend
-    console.log('Saving answer for question:', selectedQuestion.id, answerForm);
+
     setShowAnswerModal(false);
     setSelectedQuestion(null);
     onSave();
@@ -163,7 +163,7 @@ const QuestionsView: React.FC<QuestionsViewProps> = ({ storeData, setStoreData, 
 
   const handleStatusChange = (questionId: string, newStatus: ProductQuestion['status']) => {
     // In real app, this would update the question status
-    console.log('Updating question status:', questionId, newStatus);
+
     onSave();
   };
 

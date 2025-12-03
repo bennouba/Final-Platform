@@ -1,7 +1,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
-import SharedWishlist from '@/components/SharedWishlist';
+import SharedWishlists from '@/components/SharedWishlists';
 
 interface WishlistPageProps {
   onBack: () => void;
@@ -37,9 +37,8 @@ const WishlistPage: React.FC<WishlistPageProps> = ({
 
       {/* محتوى الصفحة */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <SharedWishlist
+        <SharedWishlists
           onAddToCart={onAddToCart}
-          onViewProduct={onViewProduct}
         />
       </div>
     </div>

@@ -34,6 +34,7 @@ import {
   Users,
   X,
   XCircle,
+  Bell,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
@@ -43,7 +44,9 @@ import { Textarea } from './ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Badge } from './ui/badge';
 import { Checkbox } from './ui/checkbox';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { libyanCities } from '@/data/libya/cities/cities';
+import { InventoryAlertsSystem } from './InventoryAlertsSystem';
 
 interface Warehouse {
   id: string;
@@ -68,6 +71,19 @@ interface Warehouse {
   };
 }
 
+interface Product {
+  id: string;
+  name: string;
+  image?: string;
+  quantity: number;
+  minimumStock: number;
+  warehouse: string;
+  lastUpdated: string;
+  storeSlug: string;
+  storeName: string;
+  sku: string;
+}
+
 interface InventoryViewProps {
   storeData: any;
   setStoreData: (data: any) => void;
@@ -79,6 +95,7 @@ const InventoryView: React.FC<InventoryViewProps> = ({ storeData, setStoreData, 
   const [statusFilter, setStatusFilter] = useState('all');
   const [showWarehouseModal, setShowWarehouseModal] = useState(false);
   const [editingWarehouse, setEditingWarehouse] = useState<Warehouse | null>(null);
+  const [activeTab, setActiveTab] = useState('warehouses');
 
   // Form state
   const [warehouseForm, setWarehouseForm] = useState({
@@ -187,6 +204,82 @@ const InventoryView: React.FC<InventoryViewProps> = ({ storeData, setStoreData, 
     },
   ];
 
+  // Sample product inventory data for testing alerts
+  const productInventory: Product[] = [
+    {
+      id: '1',
+      name: 'فستان كريستال عصري سهرية',
+      image: 'https://images.unsplash.com/photo-1515372039744-b8f02a3ae446?w=300',
+      quantity: 3,
+      minimumStock: 5,
+      warehouse: 'مخزن غوط الشعال',
+      lastUpdated: new Date().toISOString(),
+      storeSlug: 'fashion-store',
+      storeName: 'متجر الأزياء العصرية',
+      sku: 'ESHRO-FSH-001'
+    },
+    {
+      id: '2',
+      name: 'حذاء نسائي ZARA',
+      image: 'https://images.unsplash.com/photo-1543163521-1bf539c55dd2?w=300',
+      quantity: 0,
+      minimumStock: 10,
+      warehouse: 'مخزن طريق المطار',
+      lastUpdated: new Date().toISOString(),
+      storeSlug: 'shoes-store',
+      storeName: 'متجر الأحذية العصرية',
+      sku: 'ESHRO-SHO-002'
+    },
+    {
+      id: '3',
+      name: 'بوركيني بحر جديد',
+      image: 'https://images.unsplash.com/photo-1571907480495-d07d121b21c8?w=300',
+      quantity: 8,
+      minimumStock: 5,
+      warehouse: 'مخزن الكريمية',
+      lastUpdated: new Date().toISOString(),
+      storeSlug: 'swimwear-store',
+      storeName: 'متجر أزياء البحر',
+      sku: 'ESHRO-SWM-003'
+    },
+    {
+      id: '4',
+      name: 'عطر نسائي AZARO',
+      image: 'https://images.unsplash.com/photo-1549298901-2ec2b4571f1d?w=300',
+      quantity: 0,
+      minimumStock: 8,
+      warehouse: 'مخزن شهداء الشط',
+      lastUpdated: new Date().toISOString(),
+      storeSlug: 'beauty-store',
+      storeName: 'متجر العطور والجمال',
+      sku: 'ESHRO-PER-004'
+    },
+    {
+      id: '5',
+      name: 'فستان صيفي أنيق',
+      image: 'https://images.unsplash.com/photo-1583496661160-fb5886a0aaaa?w=300',
+      quantity: 15,
+      minimumStock: 5,
+      warehouse: 'مخزن غوط الشعال',
+      lastUpdated: new Date().toISOString(),
+      storeSlug: 'fashion-store',
+      storeName: 'متجر الأزياء العصرية',
+      sku: 'ESHRO-FSH-005'
+    },
+    {
+      id: '6',
+      name: 'حقيبة يد جلدية',
+      image: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=300',
+      quantity: 1,
+      minimumStock: 5,
+      warehouse: 'مخزن طريق المطار',
+      lastUpdated: new Date().toISOString(),
+      storeSlug: 'accessories-store',
+      storeName: 'متجر الإكسسوارات',
+      sku: 'ESHRO-ACC-006'
+    },
+  ];
+
   const filteredWarehouses = warehouses.filter(warehouse => {
     const matchesSearch =
       warehouse.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -199,7 +292,7 @@ const InventoryView: React.FC<InventoryViewProps> = ({ storeData, setStoreData, 
   });
 
   const handleAddWarehouse = () => {
-    console.log('Opening add warehouse modal...');
+
     setEditingWarehouse(null);
     setWarehouseForm({
       name: '',
@@ -213,7 +306,7 @@ const InventoryView: React.FC<InventoryViewProps> = ({ storeData, setStoreData, 
       priority: warehouses.length + 1,
     });
     setShowWarehouseModal(true);
-    console.log('Modal state set to:', true);
+
   };
 
   const handleEditWarehouse = (warehouse: Warehouse) => {
@@ -233,14 +326,14 @@ const InventoryView: React.FC<InventoryViewProps> = ({ storeData, setStoreData, 
   };
 
   const handleSaveWarehouse = () => {
-    console.log('Saving warehouse...', warehouseForm);
+
     if (!storeData) {
-      console.log('No store data available');
+
       return;
     }
 
     if (!warehouseForm.name.trim() || !warehouseForm.city) {
-      console.log('Missing required fields');
+
       const missingFields: string[] = [];
       if (!warehouseForm.name.trim()) missingFields.push('• اسم المخزن');
       if (!warehouseForm.city) missingFields.push('• المدينة');
@@ -478,13 +571,14 @@ const InventoryView: React.FC<InventoryViewProps> = ({ storeData, setStoreData, 
                 <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                 <Input
                   placeholder="البحث في المخازن..."
+                  aria-label="البحث في قائمة المخازن"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10 w-64"
                 />
               </div>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-48">
+                <SelectTrigger className="w-48" aria-label="تصفية حالة المخزن">
                   <SelectValue placeholder="حالة المخزن" />
                 </SelectTrigger>
                 <SelectContent>
@@ -634,7 +728,7 @@ const InventoryView: React.FC<InventoryViewProps> = ({ storeData, setStoreData, 
             className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]"
             onClick={(e) => {
               if (e.target === e.currentTarget) {
-                console.log('Closing modal via backdrop click...');
+
                 setWarehouseForm({
                   name: '',
                   phone: '',
@@ -665,7 +759,7 @@ const InventoryView: React.FC<InventoryViewProps> = ({ storeData, setStoreData, 
                   variant="ghost"
                   size="sm"
                   onClick={() => {
-                    console.log('Closing modal via X button...');
+
                     setWarehouseForm({
                       name: '',
                       phone: '',
@@ -797,7 +891,7 @@ const InventoryView: React.FC<InventoryViewProps> = ({ storeData, setStoreData, 
                 <Button
                   variant="outline"
                   onClick={() => {
-                    console.log('Canceling warehouse creation...');
+
                     setWarehouseForm({
                       name: '',
                       phone: '',

@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 
 const AuthCallbackPage: React.FC = () => {
   const [status, setStatus] = useState<"loading" | "success" | "error">(
@@ -16,7 +16,7 @@ const AuthCallbackPage: React.FC = () => {
 
         if (!token || provider !== "google") {
           setStatus("error");
-          setError("بيانات المصادقة غير صحيحة");
+          setError("?????? ???????? ??? ?????");
           window.location.href = "/";
           return;
         }
@@ -31,9 +31,9 @@ const AuthCallbackPage: React.FC = () => {
         // Redirect to home immediately
         window.location.href = "/";
       } catch (err) {
-        console.error("Error processing auth callback:", err);
+
         setStatus("error");
-        setError("حدث خطأ في معالجة بيانات المصادقة");
+        setError("??? ??? ?? ?????? ?????? ????????");
         window.location.href = "/";
       }
     };

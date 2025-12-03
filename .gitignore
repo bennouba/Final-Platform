@@ -85,6 +85,7 @@ jspm_packages/
 # Temporary folders
 tmp/
 temp/
+.tmp-uploads/
 
 # Parcel-bundler cache
 .cache
@@ -127,3 +128,4 @@ temp/
 *.bak
 *.backup
 *.old
+

@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -39,13 +39,11 @@ const WelcomePopup: React.FC<WelcomePopupProps> = ({
   const [copied, setCopied] = useState(false);
 
   const generateCouponCode = () => {
-    // توليد كود ديناميكي يتغير كل مرة
     const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     const prefix = 'ESHRO-';
     const suffix = '-WLC' + Date.now().toString().slice(-4);
     let randomPart = '';
     
-    // توليد الجزء الأوسط عشوائياً
     for (let i = 0; i < 8; i++) {
       randomPart += characters.charAt(Math.floor(Math.random() * characters.length));
     }
@@ -65,7 +63,7 @@ const WelcomePopup: React.FC<WelcomePopupProps> = ({
 
     const phoneRegex = /^09\d{8}$/;
     if (!phoneRegex.test(normalizedPhone)) {
-      alert('يرجى إدخال رقم الهاتف بالصيغة الصحيحة: 09XXXXXXXX');
+      alert('رقم الهاتف يجب أن يبدأ بـ 09 ويتكون من 10 أرقام: 09XXXXXXXX');
       return;
     }
 
@@ -103,12 +101,11 @@ const WelcomePopup: React.FC<WelcomePopupProps> = ({
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
-      console.error('فشل في نسخ الكوبون:', err);
+      void 0;
     }
   };
 
   const handleStartShopping = () => {
-    console.log('handleStartShopping called - closing welcome popup');
     if (typeof window !== 'undefined') {
       localStorage.setItem('eshro_logged_in_as_visitor', 'false');
       sessionStorage.setItem('eshro_logged_in_as_visitor', 'false');
@@ -116,20 +113,10 @@ const WelcomePopup: React.FC<WelcomePopupProps> = ({
     onClose();
   };
 
-  // دالة إرسال البريد الإلكتروني (محاكاة)
   const sendWelcomeEmail = async (userData: any, couponCode: string) => {
     try {
-      // محاكاة إرسال البريد الإلكتروني
-      console.log('إرسال بريد إلكتروني إلى:', userData.email);
-      console.log('الكوبون:', couponCode);
-      console.log('البيانات:', userData);
-      
-      // هنا يمكن إضافة تكامل مع خدمة إرسال البريد الإلكتروني
-      // مثل EmailJS أو خدمة أخرى
-      
       return true;
     } catch (error) {
-      console.error('فشل في إرسال البريد الإلكتروني:', error);
       return false;
     }
   };
@@ -180,7 +167,7 @@ const WelcomePopup: React.FC<WelcomePopupProps> = ({
         localStorage.setItem(COUPON_DATA_KEY, serialized);
         setCouponCode(newCode);
       } catch (error) {
-        console.error('فشل في إعداد بيانات الكوبون:', error);
+        void 0;
       }
     };
 
@@ -193,7 +180,6 @@ const WelcomePopup: React.FC<WelcomePopupProps> = ({
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-gradient-to-br from-green-50 via-blue-50 to-primary/10 rounded-3xl max-w-md w-full max-h-[90vh] overflow-hidden shadow-2xl relative border-2 border-primary/20">
         
-        {/* زر الإغلاق */}
         <button
           onClick={onClose}
           title="إغلاق"
@@ -203,25 +189,22 @@ const WelcomePopup: React.FC<WelcomePopupProps> = ({
         </button>
 
         {currentStep === 1 ? (
-          /* الواجهة الأولى - الترحيب والتسجيل */
           <div className="relative p-6 flex flex-col items-center justify-center text-center gap-6">
-            {/* العنوان والرموز */}
             <div className="w-full flex flex-col items-center justify-center gap-3">
               <h2 className="flex items-center justify-center text-2xl font-black text-primary leading-relaxed text-center">
-                 مرحبا في عالم إشرو السحري!🎉
+                 أهلاً وسهلاً بك في عائلة إشرو!
               </h2>
               <p className="flex items-center justify-center text-lg text-purple-600 font-semibold leading-relaxed text-center">
-                ✨تجربة لا تُنسى مع عروض ومكافآت مذهلة ✨
+                احصل على خصم 50% على أول عملية شراء من معنا؟
               </p>
             </div>
 
-            {/* نموذج التسجيل */}
             <div className="w-full space-y-4">
               <div className="relative">
                 <User className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                 <Input
                   type="text"
-                  placeholder="الاسم بالكامل"
+                  placeholder="الاسم الكامل"
                   value={formData.name}
                   onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                   className="text-right pr-10 bg-white border-2 border-primary/20 focus:border-primary rounded-xl py-3"
@@ -232,7 +215,7 @@ const WelcomePopup: React.FC<WelcomePopupProps> = ({
                 <Mail className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                 <Input
                   type="email"
-                  placeholder="البريد الالكتروني"
+                  placeholder="البريد الإلكتروني"
                   value={formData.email}
                   onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
                   className="text-right pr-10 bg-white border-2 border-primary/20 focus:border-primary rounded-xl py-3"
@@ -243,7 +226,7 @@ const WelcomePopup: React.FC<WelcomePopupProps> = ({
                 <Phone className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                 <Input
                   type="tel"
-                  placeholder="رقم الموبايل (09XXXXXXXX)"
+                  placeholder="رقم الهاتف (09XXXXXXXX)"
                   value={formData.phone}
                   maxLength={10}
                   onChange={(e) => {
@@ -254,17 +237,15 @@ const WelcomePopup: React.FC<WelcomePopupProps> = ({
                 />
               </div>
 
-              {/* زر اشترك الآن */}
               <Button
                 onClick={handleRegistration}
                 className="w-full bg-gradient-to-r from-primary to-green-500 hover:from-primary/90 hover:to-green-600 text-white font-bold py-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 text-lg mt-6"
               >
-                اشترك الآن
+                احصل على الخصم
               </Button>
             </div>
           </div>
         ) : (
-          /* الواجهة الثانية - المبروك والكوبون */
           <div className="relative p-6 space-y-6 bg-gradient-to-br from-purple-100 via-amber-50 to-pink-100 flex flex-col items-center justify-center text-center max-h-[78vh] overflow-y-auto scrollbar-thin scrollbar-thumb-primary/40 scrollbar-track-white/40">
             <div className="absolute inset-x-0 top-0 h-16 bg-gradient-to-r from-pink-400/30 via-amber-300/30 to-purple-400/30 blur-3xl" />
 
@@ -273,19 +254,19 @@ const WelcomePopup: React.FC<WelcomePopupProps> = ({
                 <Gift className="h-10 w-10 text-white" />
               </div>
               <h2 className="flex items-center justify-center text-2xl font-bold text-purple-700">
-                مبروك ! لقد فزت بعضويةإشرو !
+                مبروك ! لقد حصلت على خصمك !
               </h2>
               <h3 className="flex items-center justify-center text-xl font-bold text-orange-500">
-                🎁 مكافأت وهدايا حصرية💸
+                استمتع بخصمك الحصري الآن
               </h3>
             </div>
 
             <div className="relative bg-white/90 border-2 border-dashed border-primary rounded-2xl p-6 text-center shadow-lg flex flex-col items-center gap-4">
               <h4 className="text-xl font-extrabold text-primary">
-                🔥 كوبون خصم خرافي 50% 🔥
+                احصل على خصم 50% على
               </h4>
               <p className="flex items-center justify-center text-sm text-gray-700">
-                صالح لمدة 24 ساعة لجميع المنتجات مع التوصيل المجاني!
+                كود الخصم صالح لمدة 24 ساعة على جميع الفئات والمتاجر!
               </p>
               <div className="bg-gradient-to-r from-primary/10 to-green-100 rounded-xl p-4 w-full">
                 <p className="flex items-center justify-center text-sm font-bold text-gray-700 mb-2">الكود:</p>
@@ -301,7 +282,7 @@ const WelcomePopup: React.FC<WelcomePopupProps> = ({
                   {copied ? (
                     <>
                       <Check className="h-4 w-4 mr-1" />
-                      تم النسخ!
+                      تم نسخه!
                     </>
                   ) : (
                     <>
@@ -314,22 +295,22 @@ const WelcomePopup: React.FC<WelcomePopupProps> = ({
             </div>
 
             <div className="space-y-3 text-center text-sm bg-white/80 rounded-2xl p-4 shadow">
-              <h4 className="text-center font-bold text-gray-700 mb-2">📍 ما ينتظرك الآن</h4>
+              <h4 className="text-center font-bold text-gray-700 mb-2">ما الذي ينتظرك؟</h4>
               <div className="flex items-center gap-3 justify-center">
                 <Mail className="h-4 w-4 text-blue-500" />
-                <span className="text-gray-700">تم إرسال كود الخصم الذهبي إلى بريدك الإلكتروني</span>
+                <span className="text-gray-700">سيصلك الكود عبر بريدك الإلكتروني الآن</span>
               </div>
               <div className="flex items-center gap-3 justify-center">
                 <Bell className="h-4 w-4 text-yellow-500" />
-                <span className="text-gray-700">إشعارات فورية بالعروض الخرافية والمكافآت المذهلة</span>
+                <span className="text-gray-700">تابعنا للحصول على عروض حصرية أسبوعية</span>
               </div>
               <div className="flex items-center gap-3 justify-center">
                 <Trophy className="h-4 w-4 text-yellow-600" />
-                <span className="text-gray-700">دخول تلقائي للسحب الشهري على جوائز بقيمة 10000 د.ل</span>
+                <span className="text-gray-700">كل عملية شراء تدخلك سحب جوائز بقيمة 10000 د.ل</span>
               </div>
               <div className="flex items-center gap-3 justify-center">
                 <Star className="h-4 w-4 text-purple-500" />
-                <span className="text-gray-700">نقاط ولاء ذهبية تتضاعف مع كل عملية شراء</span>
+                <span className="text-gray-700">اجمع نقاط من كل عملية شراء واستبدلها بهدايا</span>
               </div>
             </div>
 
@@ -337,7 +318,7 @@ const WelcomePopup: React.FC<WelcomePopupProps> = ({
               onClick={handleStartShopping}
               className="w-full bg-gradient-to-r from-green-500 to-primary hover:from-green-600 hover:to-primary/90 text-white font-bold py-4 rounded-xl shadow-lg text-base"
             >
-              🛍️ ابدأ رحلة التسوق معنا 🛍️
+              ابدأ التسوق الآن واستمتع بخصمك
             </Button>
           </div>
         )}

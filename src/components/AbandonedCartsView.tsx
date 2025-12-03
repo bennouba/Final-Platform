@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   ShoppingCart,
@@ -21,6 +21,8 @@ import {
   TrendingUp,
   Target,
   Percent,
+  Reply,
+  X,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
@@ -44,6 +46,9 @@ interface AbandonedCart {
   status: 'new' | 'reminded' | 'multiple_reminders' | 'recovered' | 'lost';
   potentialValue: number;
   recoveryChance: 'high' | 'medium' | 'low';
+  discountApplied?: number;
+  reminderScheduled?: string;
+  notes?: string;
 }
 
 interface CartItem {
@@ -64,50 +69,101 @@ interface AbandonedCartsViewProps {
 const AbandonedCartsView: React.FC<AbandonedCartsViewProps> = ({ storeData, setStoreData, onSave }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showReminderModal, setShowReminderModal] = useState(false);
+  const [showActionModal, setShowActionModal] = useState(false);
+  const [selectedCart, setSelectedCart] = useState<AbandonedCart | null>(null);
   const [selectedCarts, setSelectedCarts] = useState<Set<string>>(new Set());
   const [bulkReminderEnabled, setBulkReminderEnabled] = useState(true);
+  const [reminderType, setReminderType] = useState('email');
+  const [reminderMessage, setReminderMessage] = useState('مرحباً! لاحظنا أن سلة تسوقك ما زالت تحتوي على منتجات رائعة. هل تريد إتمام طلبك؟');
+  const [actionReply, setActionReply] = useState('');
+  const [discountPercent, setDiscountPercent] = useState(10);
+  const [abandonedCarts, setAbandonedCarts] = useState<AbandonedCart[]>([]);
 
-  // Sample data - in real app this would come from API
-  const abandonedCarts: AbandonedCart[] = [
-    {
-      id: '1',
-      customerName: 'سارة الطرابلسي',
-      customerEmail: 'sarah.tripoli@gmail.com',
-      customerPhone: '+218945678901',
-      items: [
-        { id: '1', productName: 'حقيبة بحر راقية', sku: 'BAG-001', quantity: 1, price: 260, image: '' },
-        { id: '2', productName: 'شبشب صيفي جلد', sku: 'SHOE-002', quantity: 1, price: 210, image: '' },
-      ],
-      subtotal: 470,
-      abandonedAt: '2024-12-15T14:30:00Z',
-      lastActivity: '2024-12-15T14:30:00Z',
-      reminderCount: 1,
-      status: 'reminded',
-      potentialValue: 470,
-      recoveryChance: 'high',
-    },
-    {
-      id: '2',
-      customerName: 'عمر المصراتي',
-      customerEmail: 'omar.misrata@yahoo.com',
-      customerPhone: '+218956789012',
-      items: [
-        { id: '3', productName: 'فستان صيفي بحرزام جلد', sku: 'DRESS-003', quantity: 1, price: 680, image: '' },
-      ],
-      subtotal: 680,
-      abandonedAt: '2024-12-14T22:15:00Z',
-      lastActivity: '2024-12-14T22:15:00Z',
-      reminderCount: 2,
-      status: 'multiple_reminders',
-      potentialValue: 680,
-      recoveryChance: 'medium',
-    },
-  ];
+  useEffect(() => {
+    const stored = localStorage.getItem('eshro_abandoned_carts');
+    if (stored) {
+      try {
+        setAbandonedCarts(JSON.parse(stored));
+      } catch (e) {
+        loadDefaultCarts();
+      }
+    } else {
+      loadDefaultCarts();
+    }
+  }, []);
 
-  const filteredCarts = abandonedCarts.filter(cart =>
-    cart.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    cart.customerEmail.toLowerCase().includes(searchTerm.toLowerCase())
+  const loadDefaultCarts = () => {
+    const defaultCarts: AbandonedCart[] = [
+      {
+        id: '1',
+        customerName: 'سارة الطرابلسي',
+        customerEmail: 'sarah.tripoli@gmail.com',
+        customerPhone: '+218945678901',
+        items: [
+          { id: '1', productName: 'حقيبة بحر راقية', sku: 'BAG-001', quantity: 1, price: 260, image: '' },
+          { id: '2', productName: 'شبشب صيفي جلد', sku: 'SHOE-002', quantity: 1, price: 210, image: '' },
+        ],
+        subtotal: 470,
+        abandonedAt: '2024-12-15T14:30:00Z',
+        lastActivity: '2024-12-15T14:30:00Z',
+        reminderCount: 1,
+        status: 'reminded',
+        potentialValue: 470,
+        recoveryChance: 'high',
+        discountApplied: 0,
+      },
+      {
+        id: '2',
+        customerName: 'عمر المصراتي',
+        customerEmail: 'omar.misrata@yahoo.com',
+        customerPhone: '+218956789012',
+        items: [
+          { id: '3', productName: 'فستان صيفي بحرزام جلد', sku: 'DRESS-003', quantity: 1, price: 680, image: '' },
+        ],
+        subtotal: 680,
+        abandonedAt: '2024-12-14T22:15:00Z',
+        lastActivity: '2024-12-14T22:15:00Z',
+        reminderCount: 2,
+        status: 'multiple_reminders',
+        potentialValue: 680,
+        recoveryChance: 'medium',
+        discountApplied: 0,
+      },
+      {
+        id: '3',
+        customerName: 'فاطمة سالم',
+        customerEmail: 'fatima.salem@gmail.com',
+        customerPhone: '+218912345678',
+        items: [
+          { id: '4', productName: 'فستان ماكسي كحلي', sku: 'DRESS-004', quantity: 1, price: 450, image: '' },
+          { id: '5', productName: 'حذاء رياضي برتقالي', sku: 'SHOE-005', quantity: 1, price: 320, image: '' },
+        ],
+        subtotal: 770,
+        abandonedAt: '2024-12-13T10:15:00Z',
+        lastActivity: '2024-12-13T10:15:00Z',
+        reminderCount: 0,
+        status: 'new',
+        potentialValue: 770,
+        recoveryChance: 'high',
+        discountApplied: 0,
+      },
+    ];
+    setAbandonedCarts(defaultCarts);
+    localStorage.setItem('eshro_abandoned_carts', JSON.stringify(defaultCarts));
+  };
+
+  const filteredCarts = useMemo(() => 
+    abandonedCarts.filter(cart =>
+      cart.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      cart.customerEmail.toLowerCase().includes(searchTerm.toLowerCase())
+    ),
+    [abandonedCarts, searchTerm]
   );
+
+  const updateLocalStorage = (newCarts: AbandonedCart[]) => {
+    setAbandonedCarts(newCarts);
+    localStorage.setItem('eshro_abandoned_carts', JSON.stringify(newCarts));
+  };
 
   const handleSelectCart = (cartId: string, checked: boolean) => {
     const newSelected = new Set(selectedCarts);
@@ -132,10 +188,69 @@ const AbandonedCartsView: React.FC<AbandonedCartsViewProps> = ({ storeData, setS
   };
 
   const handleSendReminder = () => {
-    // In real app, this would send API request
-    console.log('Sending reminders to:', Array.from(selectedCarts));
+    const updatedCarts = abandonedCarts.map(cart => {
+      if (selectedCarts.has(cart.id)) {
+        const nextStatus: AbandonedCart['status'] = cart.reminderCount === 0
+          ? 'reminded'
+          : cart.status === 'reminded'
+            ? 'multiple_reminders'
+            : cart.status;
+
+        return {
+          ...cart,
+          reminderCount: cart.reminderCount + 1,
+          status: nextStatus,
+          lastActivity: new Date().toISOString(),
+        };
+      }
+      return cart;
+    });
+
+    updateLocalStorage(updatedCarts);
+    alert(`✅ تم إرسال التذكيرات بنجاح!\n\n📩 عدد المستلمين: ${selectedCarts.size}\n📧 النوع: ${reminderType === 'email' ? 'بريد إلكتروني' : reminderType === 'whatsapp' ? 'واتساب' : 'رسائل نصية'}`);
     setShowReminderModal(false);
     setSelectedCarts(new Set());
+  };
+
+  const handleOpenAction = (cart: AbandonedCart) => {
+    setSelectedCart(cart);
+    setActionReply('');
+    setShowActionModal(true);
+  };
+
+  const handleReplyToCustomer = () => {
+    if (!selectedCart || !actionReply.trim()) {
+      alert('يرجى إدخال الرد');
+      return;
+    }
+
+    alert(`✅ تم إرسال الرد بنجاح!\n\nإلى: ${selectedCart.customerName}\n📧 ${selectedCart.customerEmail}`);
+    setShowActionModal(false);
+  };
+
+  const handleApplyDiscount = (cartId: string) => {
+    const updatedCarts = abandonedCarts.map(cart => {
+      if (cart.id === cartId) {
+        const discountedValue = cart.potentialValue * (1 - discountPercent / 100);
+        return {
+          ...cart,
+          discountApplied: discountPercent,
+          potentialValue: discountedValue,
+        };
+      }
+      return cart;
+    });
+
+    updateLocalStorage(updatedCarts);
+    alert(`✅ تم تطبيق الخصم بنجاح!\n\n🎁 نسبة الخصم: ${discountPercent}%\n💰 القيمة الأصلية: ${abandonedCarts.find(c => c.id === cartId)?.potentialValue} د.ل\n💵 القيمة بعد الخصم: ${(abandonedCarts.find(c => c.id === cartId)?.potentialValue || 0) * (1 - discountPercent / 100)} د.ل`);
+  };
+
+  const handleDeleteCart = (cartId: string) => {
+    if (confirm('هل أنت متأكد من حذف هذه السلة المتروكة؟')) {
+      const updatedCarts = abandonedCarts.filter(cart => cart.id !== cartId);
+      updateLocalStorage(updatedCarts);
+      alert('✅ تم حذف السلة بنجاح');
+    }
   };
 
   const getStatusBadge = (status: string) => {
@@ -385,15 +500,31 @@ const AbandonedCartsView: React.FC<AbandonedCartsViewProps> = ({ storeData, setS
                       {getRecoveryChanceBadge(cart.recoveryChance)}
                     </td>
                     <td className="p-3">
-                      <div className="flex gap-2">
-                        <Button variant="outline" size="sm">
-                          <Mail className="h-4 w-4" />
+                      <div className="flex gap-2 flex-wrap">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleOpenAction(cart)}
+                          title="الرد على العميل"
+                        >
+                          <Reply className="h-4 w-4" />
                         </Button>
-                        <Button variant="outline" size="sm">
-                          <MessageSquare className="h-4 w-4" />
-                        </Button>
-                        <Button variant="outline" size="sm">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleApplyDiscount(cart.id)}
+                          title="تطبيق خصم"
+                        >
                           <Gift className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleDeleteCart(cart.id)}
+                          title="حذف"
+                          className="hover:bg-red-50 hover:text-red-600"
+                        >
+                          <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
                     </td>
@@ -480,7 +611,7 @@ const AbandonedCartsView: React.FC<AbandonedCartsViewProps> = ({ storeData, setS
                   size="sm"
                   onClick={() => setShowReminderModal(false)}
                 >
-                  <Trash2 className="h-4 w-4" />
+                  <X className="h-4 w-4" />
                 </Button>
               </div>
 
@@ -502,7 +633,7 @@ const AbandonedCartsView: React.FC<AbandonedCartsViewProps> = ({ storeData, setS
 
                 <div>
                   <Label>نوع التذكير</Label>
-                  <Select defaultValue="email">
+                  <Select value={reminderType} onValueChange={setReminderType}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -519,7 +650,8 @@ const AbandonedCartsView: React.FC<AbandonedCartsViewProps> = ({ storeData, setS
                   <Textarea
                     placeholder="أدخل نص التذكير المخصص..."
                     rows={4}
-                    defaultValue="مرحباً! لاحظنا أن سلة تسوقك ما زالت تحتوي على منتجات رائعة. هل تريد إتمام طلبك؟"
+                    value={reminderMessage}
+                    onChange={(e) => setReminderMessage(e.target.value)}
                   />
                 </div>
               </div>
@@ -536,6 +668,117 @@ const AbandonedCartsView: React.FC<AbandonedCartsViewProps> = ({ storeData, setS
                   إلغاء
                 </Button>
               </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Action Modal - Reply & Discount */}
+      <AnimatePresence>
+        {showActionModal && selectedCart && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+            onClick={() => setShowActionModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-white rounded-2xl p-6 w-full max-w-2xl mx-4"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h3 className="text-xl font-bold text-gray-900">{selectedCart.customerName}</h3>
+                  <p className="text-sm text-gray-600">{selectedCart.customerEmail}</p>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowActionModal(false)}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="border rounded-lg p-4">
+                  <h4 className="font-semibold mb-4 flex items-center gap-2">
+                    <Gift className="h-4 w-4" /> تطبيق خصم
+                  </h4>
+                  <div className="space-y-4">
+                    <div>
+                      <Label>نسبة الخصم (%)</Label>
+                      <div className="flex gap-2 mt-2">
+                        <Input
+                          type="number"
+                          min="0"
+                          max="100"
+                          value={discountPercent}
+                          onChange={(e) => setDiscountPercent(parseInt(e.target.value) || 0)}
+                        />
+                        <Button
+                          onClick={() => handleApplyDiscount(selectedCart.id)}
+                          className="bg-green-500 hover:bg-green-600"
+                        >
+                          تطبيق
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="bg-green-50 p-3 rounded-lg">
+                      <p className="text-sm text-gray-600">القيمة الأصلية</p>
+                      <p className="text-lg font-bold text-green-700">{selectedCart.potentialValue} د.ل</p>
+                      <p className="text-sm text-gray-600 mt-2">بعد الخصم: {selectedCart.discountApplied ? (selectedCart.potentialValue * (100 - selectedCart.discountApplied) / 100).toFixed(2) : selectedCart.potentialValue.toFixed(2)} د.ل</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="border rounded-lg p-4">
+                  <h4 className="font-semibold mb-4 flex items-center gap-2">
+                    <Reply className="h-4 w-4" /> الرد على العميل
+                  </h4>
+                  <div className="space-y-4">
+                    <Textarea
+                      placeholder="أدخل ردك للعميل..."
+                      rows={6}
+                      value={actionReply}
+                      onChange={(e) => setActionReply(e.target.value)}
+                    />
+                    <Button
+                      onClick={handleReplyToCustomer}
+                      className="w-full bg-blue-500 hover:bg-blue-600"
+                    >
+                      <Mail className="h-4 w-4 ml-2" /> إرسال الرد
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-6">
+                <h4 className="font-semibold mb-3">محتويات السلة</h4>
+                <div className="space-y-2">
+                  {selectedCart.items.map(item => (
+                    <div key={item.id} className="flex justify-between items-center p-2 bg-gray-50 rounded">
+                      <div>
+                        <p className="font-medium">{item.productName}</p>
+                        <p className="text-sm text-gray-600">الكمية: {item.quantity}</p>
+                      </div>
+                      <p className="font-semibold">{item.price} د.ل</p>
+                    </div>
+                  ))}
+                  <div className="border-t pt-2 flex justify-between font-bold">
+                    <span>الإجمالي:</span>
+                    <span>{selectedCart.potentialValue} د.ل</span>
+                  </div>
+                </div>
+              </div>
+
+              <Button variant="outline" onClick={() => setShowActionModal(false)} className="w-full mt-6">
+                إغلاق
+              </Button>
             </motion.div>
           </motion.div>
         )}

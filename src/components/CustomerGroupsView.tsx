@@ -338,7 +338,7 @@ const CustomerGroupsView: React.FC<CustomerGroupsViewProps> = ({ storeData, setS
             animate={{ opacity: 1, y: 0 }}
             className="relative"
           >
-            <Card className="hover:shadow-lg transition-all duration-300">
+            <Card className="hover:shadow-lg transition-shadow duration-300">
               <CardContent className="p-6">
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-3">

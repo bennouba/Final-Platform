@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>استعادة متجر شيخة</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            text-align: center;
+            max-width: 500px;
+            width: 100%;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+        .status {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            font-weight: bold;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .warning {
+            background-color: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        .info {
+            background-color: #cce7ff;
+            color: #004085;
+            border: 1px solid #99d1ff;
+        }
+        .btn {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 25px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 10px;
+            text-decoration: none;
+            display: inline-block;
+            transition: transform 0.3s ease;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+        .store-info {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            text-align: right;
+        }
+        .store-name {
+            font-size: 20px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .store-desc {
+            color: #666;
+            margin-bottom: 15px;
+        }
+        .product-count {
+            color: #007bff;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏪 استعادة متجر شيخة</h1>
+        
+        <div class="status success" id="status">
+            ✅ تم العثور على متجر شيخة في النظام!
+        </div>
+        
+        <div class="info">
+            <h3>📋 معلومات المتجر</h3>
+            <div class="store-info">
+                <div class="store-name">🏪 شيخة</div>
+                <div class="store-desc">ملابس نسائية راقية</div>
+                <div class="product-count">📦 عدد المنتجات: 3 منتجات</div>
+                <div class="product-count">📁 الفئة: الأزياء والملابس</div>
+                <div class="product-count">✅ الحالة: نشط</div>
+            </div>
+        </div>
+        
+        <div class="warning">
+            <strong>⚠️ ملاحظة:</strong> بعد مسح localStorage، يجب إعادة تحميل الصفحة لتحديث البيانات
+        </div>
+        
+        <div style="margin-top: 25px;">
+            <a href="http://localhost:5174" class="btn" target="_blank" rel="noopener">
+                🚀 الذهاب للتطبيق
+            </a>
+            <button onclick="refreshPage()" class="btn">
+                🔄 إعادة تحميل الصفحة
+            </button>
+            <button onclick="checkStore()" class="btn">
+                🔍 فحص المتجر
+            </button>
+        </div>
+        
+        <div id="result" style="margin-top: 20px;"></div>
+    </div>
+
+    <script>
+        function refreshPage() {
+            location.reload();
+        }
+        
+        async function checkStore() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<div class="info">جاري الفحص...</div>';
+            
+            try {
+                // فحص فهرس المتاجر
+                const indexResponse = await fetch('http://localhost:4000/assets/stores/index.json');
+                if (indexResponse.ok) {
+                    const stores = await indexResponse.json();
+                    const shikhaStore = stores.find(store => store.slug === 'shikha');
+                    
+                    if (shikhaStore) {
+                        resultDiv.innerHTML = `
+                            <div class="success">
+                                ✅ تم العثور على متجر شيخة في فهرس المتاجر!<br>
+                                الاسم: ${shikhaStore.nameAr}<br>
+                                عدد المنتجات: ${shikhaStore.productsCount}<br>
+                                آخر تحديث: ${new Date(shikhaStore.lastUpdated).toLocaleString('ar')}
+                            </div>
+                        `;
+                    } else {
+                        resultDiv.innerHTML = '<div class="warning">⚠️ متجر شيخة غير موجود في فهرس المتاجر</div>';
+                    }
+                }
+                
+                // فحص بيانات المتجر
+                const storeResponse = await fetch('http://localhost:4000/assets/shikha/store.json');
+                if (storeResponse.ok) {
+                    const storeData = await storeResponse.json();
+                    resultDiv.innerHTML += `
+                        <div class="info" style="margin-top: 10px;">
+                            📊 بيانات المتجر: ${storeData.products?.length || 0} منتج
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="warning">❌ خطأ في الاتصال: ${error.message}</div>`;
+            }
+        }
+        
+        // فحص فوري عند تحميل الصفحة
+        setTimeout(checkStore, 1000);
+        
+        console.log('🏪 تم تحميل أداة استعادة متجر شيخة');
+        console.log('📋 حالة localStorage:', localStorage);
+    </script>
+</body>
+</html>

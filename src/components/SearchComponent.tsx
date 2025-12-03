@@ -80,14 +80,14 @@ const SearchComponent: React.FC = () => {
       });
 
       const analysis = response.choices[0]?.message?.content || '';
-      console.log('AI Analysis:', analysis);
+
 
       // Extract keywords from the analysis
       const keywords = extractKeywordsFromAnalysis(analysis);
       return keywords;
 
     } catch (error) {
-      console.error('Error analyzing image:', error);
+
       return [];
     } finally {
       setIsAnalyzing(false);
@@ -185,7 +185,7 @@ const SearchComponent: React.FC = () => {
       setSearchResults(sortedResults);
 
     } catch (error) {
-      console.error('Error searching products:', error);
+
     } finally {
       setIsSearching(false);
     }

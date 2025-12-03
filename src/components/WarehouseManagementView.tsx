@@ -145,7 +145,7 @@ const WarehouseManagementView: React.FC<WarehouseManagementViewProps> = ({ store
   );
 
   const handleCreateWarehouse = () => {
-    console.log('Opening create warehouse modal...');
+
     setWarehouseForm({
       name: '',
       location: '',
@@ -176,12 +176,12 @@ const WarehouseManagementView: React.FC<WarehouseManagementViewProps> = ({ store
       script.defer = true;
 
       script.onload = () => {
-        console.log('Google Maps script loaded successfully');
+
         resolve();
       };
 
       script.onerror = () => {
-        console.error('Failed to load Google Maps script');
+
         reject(new Error('Failed to load Google Maps'));
       };
 
@@ -252,7 +252,7 @@ const WarehouseManagementView: React.FC<WarehouseManagementViewProps> = ({ store
 
       setMapLoaded(true);
     } catch (error) {
-      console.error('Error initializing map:', error);
+
     } finally {
       setIsMapLoading(false);
     }
@@ -269,7 +269,7 @@ const WarehouseManagementView: React.FC<WarehouseManagementViewProps> = ({ store
         initializeMap();
       }, 1000);
     } catch (error) {
-      console.error('Error loading Google Maps:', error);
+
       setIsMapLoading(false);
     }
   };
@@ -284,14 +284,14 @@ const WarehouseManagementView: React.FC<WarehouseManagementViewProps> = ({ store
   };
 
   const handleSaveWarehouse = async () => {
-    console.log('Saving warehouse...', warehouseForm);
+
     if (!storeData) {
-      console.log('No store data available');
+
       return;
     }
 
     if (!warehouseForm.name.trim() || !warehouseForm.city) {
-      console.log('Missing required fields');
+
       const missingFields: string[] = [];
       if (!warehouseForm.name.trim()) missingFields.push('• اسم المخزن');
       if (!warehouseForm.city) missingFields.push('• المدينة');
@@ -315,10 +315,10 @@ const WarehouseManagementView: React.FC<WarehouseManagementViewProps> = ({ store
         priority: warehouses.length + 1,
       };
 
-      console.log('New warehouse object:', newWarehouse);
+
 
       const updatedWarehouses = [...warehouses, newWarehouse];
-      console.log('Updated warehouses:', updatedWarehouses);
+
 
       setStoreData({
         ...storeData,
@@ -361,7 +361,7 @@ const WarehouseManagementView: React.FC<WarehouseManagementViewProps> = ({ store
       setShowCreateModal(false);
       onSave();
     } catch (error) {
-      console.error('Error saving warehouse:', error);
+
       alert('❌ حدث خطأ أثناء حفظ المخزن!\n\nتأكد من:\n• ملء جميع الحقول المطلوبة\n• اختيار المدينة من القائمة\n• اسم المخزن غير مكرر\n\nإذا استمرت المشكلة، يرجى المحاولة مرة أخرى.');
     } finally {
       setIsLoading(false);
@@ -629,7 +629,7 @@ const WarehouseManagementView: React.FC<WarehouseManagementViewProps> = ({ store
             exit={{ opacity: 0 }}
             className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
             onClick={() => {
-              console.log('Closing modal via backdrop click...');
+
               setWarehouseForm({
                 name: '',
                 location: '',
@@ -654,7 +654,7 @@ const WarehouseManagementView: React.FC<WarehouseManagementViewProps> = ({ store
                   variant="ghost"
                   size="sm"
                   onClick={() => {
-                    console.log('Closing modal via X button...');
+
                     setWarehouseForm({
                       name: '',
                       location: '',
@@ -750,7 +750,7 @@ const WarehouseManagementView: React.FC<WarehouseManagementViewProps> = ({ store
                 <Button
                   variant="outline"
                   onClick={() => {
-                    console.log('Canceling warehouse creation...');
+
                     setWarehouseForm({
                       name: '',
                       location: '',

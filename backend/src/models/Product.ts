@@ -6,35 +6,54 @@ interface ProductAttributes {
   name: string;
   description?: string;
   price: number;
+  originalPrice?: number;
+  discountPercent?: number;
+  discountType?: string;
+  discountStart?: Date;
+  discountEnd?: Date;
   category: string;
   brand?: string;
   image: string;
   thumbnail?: string;
+  images?: string[];
   storeId?: number;
   inStock: boolean;
   quantity: number;
   sku?: string;
+  productCode?: string;
+  barcode?: string;
   rating?: number;
   reviewCount: number;
   createdAt?: Date;
   updatedAt?: Date;
 }
 
-interface ProductCreationAttributes extends Optional<ProductAttributes, 'id' | 'createdAt' | 'updatedAt' | 'reviewCount'> {}
+type ProductCreationAttributes = Optional<
+  ProductAttributes,
+  'id' | 'createdAt' | 'updatedAt' | 'reviewCount'
+>;
 
 class Product extends Model<ProductAttributes, ProductCreationAttributes> implements ProductAttributes {
   declare id: number;
   declare name: string;
   declare description?: string;
   declare price: number;
+  declare originalPrice?: number;
+  declare discountPercent?: number;
+  declare discountType?: string;
+  declare discountStart?: Date;
+  declare discountEnd?: Date;
   declare category: string;
   declare brand?: string;
   declare image: string;
   declare thumbnail?: string;
+  declare images?: string[];
   declare storeId?: number;
   declare inStock: boolean;
   declare quantity: number;
   declare sku?: string;
+  declare productCode?: string;
+  declare barcode?: string;
   declare rating?: number;
   declare reviewCount: number;
   declare createdAt: Date;
@@ -63,6 +82,33 @@ Product.init(
         min: 0,
       },
     },
+    originalPrice: {
+      type: DataTypes.DECIMAL(10, 3),
+      allowNull: true,
+      validate: {
+        min: 0,
+      },
+    },
+    discountPercent: {
+      type: DataTypes.DECIMAL(5, 2),
+      allowNull: true,
+      validate: {
+        min: 0,
+        max: 100,
+      },
+    },
+    discountType: {
+      type: DataTypes.ENUM('season_end', 'eid_al_fitr', 'summer', 'spring', 'new_year', 'store_clearance', 'custom'),
+      allowNull: true,
+    },
+    discountStart: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
+    discountEnd: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
     category: {
       type: DataTypes.STRING(100),
       allowNull: false,
@@ -78,6 +124,11 @@ Product.init(
     thumbnail: {
       type: DataTypes.STRING(500),
       allowNull: true,
+    },
+    images: {
+      type: DataTypes.JSON,
+      allowNull: true,
+      defaultValue: [],
     },
     storeId: {
       type: DataTypes.INTEGER,
@@ -102,6 +153,14 @@ Product.init(
       type: DataTypes.STRING(100),
       allowNull: true,
       unique: true,
+    },
+    productCode: {
+      type: DataTypes.STRING(50),
+      allowNull: true,
+    },
+    barcode: {
+      type: DataTypes.STRING(100),
+      allowNull: true,
     },
     rating: {
       type: DataTypes.DECIMAL(3, 1),
@@ -132,6 +191,18 @@ Product.init(
       },
       {
         fields: ['storeId'],
+      },
+      {
+        fields: ['discountType'],
+      },
+      {
+        fields: ['discountStart', 'discountEnd'],
+      },
+      {
+        fields: ['productCode'],
+      },
+      {
+        fields: ['barcode'],
       },
     ],
   }

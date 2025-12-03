@@ -31,14 +31,20 @@ interface OrderAttributes {
   paymentStatus: PaymentStatus;
   orderStatus: OrderStatus;
   notes?: string;
+  storeId?: number;
+  merchantId?: string;
+  orderType?: 'online' | 'manual' | 'abandoned';
+  paymentPlan?: 'immediate' | 'qasatli';
   createdAt?: Date;
   updatedAt?: Date;
   shippedAt?: Date;
   deliveredAt?: Date;
 }
 
-interface OrderCreationAttributes
-  extends Optional<OrderAttributes, 'id' | 'createdAt' | 'updatedAt' | 'shippedAt' | 'deliveredAt'> {}
+type OrderCreationAttributes = Optional<
+  OrderAttributes,
+  'id' | 'createdAt' | 'updatedAt' | 'shippedAt' | 'deliveredAt'
+>;
 
 class Order extends Model<OrderAttributes, OrderCreationAttributes> implements OrderAttributes {
   declare id: string;
@@ -69,6 +75,10 @@ class Order extends Model<OrderAttributes, OrderCreationAttributes> implements O
   declare paymentStatus: PaymentStatus;
   declare orderStatus: OrderStatus;
   declare notes?: string;
+  declare storeId?: number;
+  declare merchantId?: string;
+  declare orderType?: 'online' | 'manual' | 'abandoned';
+  declare paymentPlan?: 'immediate' | 'qasatli';
   declare createdAt: Date;
   declare updatedAt: Date;
   declare shippedAt?: Date;
@@ -210,6 +220,30 @@ Order.init(
     notes: {
       type: DataTypes.TEXT,
       allowNull: true,
+    },
+    storeId: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: {
+        model: 'stores',
+        key: 'id',
+      },
+    },
+    merchantId: {
+      type: DataTypes.UUID,
+      allowNull: true,
+      references: {
+        model: 'users',
+        key: 'id',
+      },
+    },
+    orderType: {
+      type: DataTypes.ENUM('online', 'manual', 'abandoned'),
+      defaultValue: 'online',
+    },
+    paymentPlan: {
+      type: DataTypes.ENUM('immediate', 'qasatli'),
+      defaultValue: 'immediate',
     },
     shippedAt: {
       type: DataTypes.DATE,

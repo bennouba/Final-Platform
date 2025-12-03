@@ -72,7 +72,7 @@ class ChatHistoryManager {
 
       localStorage.setItem(this.STORAGE_KEY, JSON.stringify(limitedHistory));
     } catch (error) {
-      console.error('Error saving chat session:', error);
+
     }
   }
 
@@ -93,7 +93,7 @@ class ChatHistoryManager {
         }))
       }));
     } catch (error) {
-      console.error('Error loading chat sessions:', error);
+
       return [];
     }
   }
@@ -108,7 +108,7 @@ class ChatHistoryManager {
       const updatedHistory = existingHistory.filter(s => s.id !== sessionId);
       localStorage.setItem(this.STORAGE_KEY, JSON.stringify(updatedHistory));
     } catch (error) {
-      console.error('Error deleting chat session:', error);
+
     }
   }
 

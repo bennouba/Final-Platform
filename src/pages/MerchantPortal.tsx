@@ -9,7 +9,7 @@ import { ManualOrdersView } from '@/components/ManualOrdersView';
 import { ProductsView } from '@/components/ProductsView';
 import { CategoriesView } from '@/components/CategoriesView';
 import { WarehouseManagementView } from '@/components/WarehouseManagementView';
-import { CustomFieldsView } from '@/components/CustomFieldsView';
+
 import { CustomerGroupsView } from '@/components/CustomerGroupsView';
 import { InventoryNotificationsView } from '@/components/InventoryNotificationsView';
 import { MarketingCampaignsView } from '@/components/MarketingCampaignsView';
@@ -179,12 +179,6 @@ const MerchantPortal: React.FC<MerchantPortalProps> = ({ storeData, setStoreData
             إدارة تغيير المخزون
           </button>
 
-          <button
-            onClick={() => { setActiveSection('الحقول المخصصة'); setSidebarOpen(false); }}
-            className={`w-full text-right p-3 rounded-lg transition-colors ${activeSection === 'الحقول المخصصة' ? 'bg-blue-100 text-blue-700' : 'text-gray-700 hover:bg-gray-100'}`}
-          >
-            الحقول المخصصة
-          </button>
 
           <button
             onClick={() => { setActiveSection('العملاء'); setSidebarOpen(false); }}
@@ -521,8 +515,7 @@ const MerchantPortal: React.FC<MerchantPortalProps> = ({ storeData, setStoreData
         return <CategoriesView storeData={storeData} setStoreData={setStoreData} onSave={onSave} />;
       case 'المخزون':
         return <WarehouseManagementView storeData={storeData} setStoreData={setStoreData} onSave={onSave} />;
-      case 'الحقول المخصصة':
-        return <CustomFieldsView storeData={storeData} setStoreData={setStoreData} onSave={onSave} />;
+
       case 'العملاء':
       case 'مجموعة العملاء':
         return <CustomerGroupsView storeData={storeData} setStoreData={setStoreData} onSave={onSave} />;

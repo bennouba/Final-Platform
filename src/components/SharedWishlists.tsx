@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -11,8 +11,20 @@ import {
   Link,
   Copy,
   Mail,
-  MessageCircle
+  MessageCircle,
+  Trash2,
+  ShoppingCart
 } from 'lucide-react';
+
+interface FavoriteProduct {
+  id: number;
+  name: string;
+  price: number;
+  originalPrice?: number;
+  image?: string;
+  images?: string[];
+  addedDate?: string;
+}
 
 interface WishlistItem {
   id: number;
@@ -36,40 +48,39 @@ interface SharedWishlistsProps {
 }
 
 const SharedWishlists: React.FC<SharedWishlistsProps> = ({ onAddToCart }) => {
-  const [wishlists, setWishlists] = useState<SharedWishlist[]>([
-    {
-      id: '1',
-      name: 'قائمة الهدايا للأصدقاء',
-      description: 'مجموعة من الهدايا المثالية للمناسبات',
-      items: [
-        {
-          id: 1,
-          product: {
-            id: 101,
-            name: 'حقيبة ظهر أنيقة',
-            price: 89.99,
-            image: '/api/placeholder/100/100'
-          },
-          addedBy: 'أحمد محمد',
-          addedDate: '2025-01-15'
-        },
-        {
-          id: 2,
-          product: {
-            id: 102,
-            name: 'ساعة ذكية',
-            price: 199.99,
-            image: '/api/placeholder/100/100'
-          },
-          addedBy: 'فاطمة علي',
-          addedDate: '2025-01-16'
+  const [favorites, setFavorites] = useState<FavoriteProduct[]>([]);
+  const [wishlists, setWishlists] = useState<SharedWishlist[]>([]);
+
+  useEffect(() => {
+    const loadFavorites = () => {
+      try {
+        const savedFavorites = localStorage.getItem('eshro_favorites');
+        if (savedFavorites) {
+          const parsed = JSON.parse(savedFavorites);
+          if (Array.isArray(parsed)) {
+            setFavorites(parsed);
+          }
         }
-      ],
-      collaborators: ['أحمد محمد', 'فاطمة علي', 'محمد حسن'],
-      isPublic: true,
-      shareUrl: 'https://eishro.com/wishlist/abc123'
-    }
-  ]);
+      } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error('Error loading favorites:', error);
+      }
+    };
+
+    loadFavorites();
+
+    const handleStorageChange = () => {
+      loadFavorites();
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('favoritesUpdated', handleStorageChange);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('favoritesUpdated', handleStorageChange);
+    };
+  }, []);
 
   const [newWishlistName, setNewWishlistName] = useState('');
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -97,14 +108,148 @@ const SharedWishlists: React.FC<SharedWishlistsProps> = ({ onAddToCart }) => {
   };
 
   const handleAddCollaborator = (wishlistId: string, email: string) => {
-    // محاكاة إضافة متعاون
     alert(`تم إرسال دعوة إلى ${email}`);
+  };
+
+  const handleRemoveFavorite = (productId: number) => {
+    try {
+      const updatedFavorites = favorites.filter(f => f.id !== productId);
+      setFavorites(updatedFavorites);
+      localStorage.setItem('eshro_favorites', JSON.stringify(updatedFavorites));
+      window.dispatchEvent(new Event('favoritesUpdated'));
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error('Error removing favorite:', error);
+    }
+  };
+
+  const getProductImage = (product: FavoriteProduct) => {
+    if (product.images && product.images.length > 0) {
+      return product.images[0];
+    }
+    if (product.image) {
+      return product.image;
+    }
+    return '/assets/default-product.png';
+  };
+
+  const formatDate = (dateString?: string) => {
+    if (!dateString) {
+      return 'غير محدد';
+    }
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('ar-LY', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch {
+      return 'غير محدد';
+    }
   };
 
   return (
     <div className="space-y-6">
-      {/* رأس الصفحة */}
-      <div className="flex justify-between items-center">
+      {/* المفضلة الشخصية */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Heart className="h-6 w-6 text-red-500" />
+                طلباتي المفضلة
+              </CardTitle>
+              <p className="text-gray-600 mt-1">
+                المنتجات التي أعجبتني
+              </p>
+            </div>
+            <Badge variant="secondary" className="text-lg">
+              {favorites.length} منتج
+            </Badge>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {favorites.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {favorites.map((product) => (
+                <div 
+                  key={product.id} 
+                  className="border rounded-lg p-4 hover:shadow-lg transition-shadow"
+                >
+                  <div className="flex items-start gap-4">
+                    <img
+                      src={getProductImage(product)}
+                      alt={product.name}
+                      className="w-20 h-20 object-cover rounded-lg flex-shrink-0"
+                      onError={(e) => {
+                        e.currentTarget.src = '/assets/default-product.png';
+                      }}
+                    />
+                    <div className="flex-1 min-w-0">
+                      <h5 className="font-medium text-gray-900 line-clamp-2 mb-2">
+                        {product.name}
+                      </h5>
+                      
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-lg font-bold text-primary">
+                          {product.price} د.ل
+                        </span>
+                        {product.originalPrice && product.originalPrice > product.price && (
+                          <>
+                            <span className="text-sm text-gray-500 line-through">
+                              {product.originalPrice} د.ل
+                            </span>
+                            <Badge className="bg-red-500 text-white text-xs">
+                              -{Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}%
+                            </Badge>
+                          </>
+                        )}
+                      </div>
+
+                      <p className="text-xs text-gray-500 mb-3">
+                        أضيف في: {formatDate(product.addedDate)}
+                      </p>
+
+                      <div className="flex gap-2">
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={() => onAddToCart(product.id)}
+                          className="flex-1"
+                        >
+                          <ShoppingCart className="h-4 w-4 ml-2" />
+                          إضافة للسلة
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleRemoveFavorite(product.id)}
+                          className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12 text-gray-500">
+              <Heart className="h-16 w-16 mx-auto mb-4 opacity-50 text-gray-400" />
+              <p className="text-lg font-medium mb-2">لا توجد منتجات مفضلة</p>
+              <p className="text-sm">ابدأ بإضافة بعض المنتجات المفضلة من المتاجر!</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* رأس القوائم المشتركة */}
+      <div className="flex justify-between items-center pt-8">
         <div>
           <h2 className="text-2xl font-bold flex items-center gap-2">
             <Users className="h-6 w-6" />

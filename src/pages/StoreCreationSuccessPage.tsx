@@ -27,12 +27,14 @@ interface StoreCreationSuccessPageProps {
   storeData: StoreData;
   onNavigateToHome: () => void;
   onNavigateToLogin: () => void;
+  onContinueToProducts?: () => void;
 }
 
 const StoreCreationSuccessPage: React.FC<StoreCreationSuccessPageProps> = ({
   storeData,
   onNavigateToHome,
-  onNavigateToLogin
+  onNavigateToLogin,
+  onContinueToProducts
 }) => {
   const [copied, setCopied] = useState(false);
 
@@ -211,11 +213,11 @@ const StoreCreationSuccessPage: React.FC<StoreCreationSuccessPageProps> = ({
         {/* الأزرار */}
         <div className="flex flex-col sm:flex-row gap-4">
           <Button
-            onClick={onNavigateToLogin}
+            onClick={onContinueToProducts || onNavigateToLogin}
             className="flex-1 bg-primary hover:bg-primary/90 text-white py-6 text-lg font-semibold rounded-xl flex items-center justify-center gap-2"
           >
-            <LogIn className="h-5 w-5" />
-            دخول لوحة التحكم
+            <ArrowRight className="h-5 w-5" />
+            {onContinueToProducts ? 'إضافة المنتجات والصور' : 'دخول لوحة التحكم'}
           </Button>
 
           <Button

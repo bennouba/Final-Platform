@@ -1,0 +1,66 @@
+[
+  {
+    "slug": "nawaem",
+    "name": "نوايم",
+    "nameAr": "نوايم",
+    "description": "متجر نوايم",
+    "logo": "/assets/nawaem/logo.webp",
+    "categories": [],
+    "productsCount": 0,
+    "lastUpdated": "2025-11-23T11:05:59.192Z"
+  },
+  {
+    "slug": "sheirine",
+    "name": "شيرين",
+    "nameAr": "شيرين",
+    "description": "متجر شيرين",
+    "logo": "/assets/sheirine/logo.webp",
+    "categories": [],
+    "productsCount": 0,
+    "lastUpdated": "2025-11-23T11:05:59.192Z"
+  },
+  {
+    "slug": "delta-store",
+    "name": "دلتا",
+    "nameAr": "دلتا",
+    "description": "متجر دلتا",
+    "logo": "/assets/delta-store/logo.webp",
+    "categories": [],
+    "productsCount": 0,
+    "lastUpdated": "2025-11-23T11:05:59.193Z"
+  },
+  {
+    "slug": "pretty",
+    "name": "بريتي",
+    "nameAr": "بريتي",
+    "description": "متجر بريتي",
+    "logo": "/assets/pretty/logo.webp",
+    "categories": [],
+    "productsCount": 0,
+    "lastUpdated": "2025-11-23T11:05:59.193Z"
+  },
+  {
+    "slug": "magna-beauty",
+    "name": "ماجنا بيوتي",
+    "nameAr": "ماجنا بيوتي",
+    "description": "متجر ماجنا بيوتي",
+    "logo": "/assets/magna-beauty/logo.webp",
+    "categories": [],
+    "productsCount": 0,
+    "lastUpdated": "2025-11-23T11:05:59.193Z"
+  },
+  {
+    "id": 1764003948994,
+    "slug": "indeesh",
+    "name": "انديش",
+    "nameAr": "انديش",
+    "nameEn": "indeesh",
+    "description": "مواد تنظيف",
+    "logo": "/assets/indeesh/logo/1764003950471-enmbwu-Indeesh.png",
+    "categories": [
+      "مواد تنظيف"
+    ],
+    "productsCount": 20,
+    "lastUpdated": "2025-11-24T17:05:51.261Z"
+  }
+]

@@ -21,8 +21,8 @@ import MerchantStoreInfo, { StoreInfoData } from "@/pages/MerchantStoreInfo";
 import MerchantStoreSuccess from "@/pages/MerchantStoreSuccess";
 import CreateStoreWizard from "@/pages/CreateStoreWizard";
 import StoreCreationSuccessPage from "@/pages/StoreCreationSuccessPage";
+import MerchantProductManagement from "@/pages/MerchantProductManagement";
 import TermsAndConditionsPage from "@/pages/TermsAndConditionsPage";
-import PrivacyPolicyPage from "@/pages/PrivacyPolicyPage";
 import EnhancedMerchantDashboard from "@/pages/EnhancedMerchantDashboard";
 import MerchantAnalytics from "@/pages/MerchantAnalytics";
 import MerchantFinance from "@/pages/MerchantFinance";
@@ -36,9 +36,387 @@ import OrderSuccessModal from "@/components/OrderSuccessModal";
 import WelcomePopup from "@/components/WelcomePopup";
 import StoreCreatedSuccessModal from "@/components/StoreCreatedSuccessModal";
 import BrandSlider from "@/components/BrandSlider";
-import { partnersData, statsData, storesData, generateOrderId } from "@/data/ecommerceData";
+import EnhancedStoresCarousel from "@/components/StoresCarousel";
+import { partnersData, statsData, storesData, generateOrderId, getStoresData, invalidateStoresCache, cleanupAnonymousStores } from "@/data/ecommerceData";
 import { enhancedSampleProducts } from "@/data/productCategories";
 import { allStoreProducts } from "@/data/allStoreProducts";
+import { loadStoreBySlug, getStoreProducts } from "@/utils/storeLoader";
+
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+
+const canonicalStoreSlug = (value: unknown): string => {
+  const normalized = (value ?? '').toString().trim().toLowerCase().replace(/\s+/g, '-');
+  if (!normalized) {
+    return '';
+  }
+  const aliasMap: Record<string, string> = {
+    sherine: 'sheirine',
+    sheirin: 'sheirine',
+    delta: 'delta-store',
+    details: 'delta-store',
+    detail: 'delta-store',
+    magna: 'magna-beauty',
+    megna: 'magna-beauty',
+    magna_beauty: 'magna-beauty'
+  };
+  return aliasMap[normalized] || normalized;
+};
+
+// دالة لإنشاء ملفات المتجر الجديد
+const createStoreFiles = async (storeData: any) => {
+  const storeSlug = storeData.subdomain || storeData.storeSlug;
+  const storeName = storeData.nameAr || storeData.storeName;
+  const storeId = storeData.id || storeData.storeId;
+
+  if (!storeSlug) {
+    throw new Error('Store slug is missing from storeData');
+  }
+
+  const storeDir = `src/data/stores/${storeSlug}`;
+
+  // Generate products content with actual data
+  const products = storeData.products || [];
+  const productsArray = products.map((product, index) => {
+    const productId = storeId * 1000 + index + 1;
+    const quantity = product.quantity || 0;
+    const isAvailable = quantity > 0;
+    return `  {
+    id: ${productId},
+    storeId: ${storeId},
+    name: "${product.name || ''}",
+    description: "${product.description || ''}",
+    price: ${product.price || 0},
+    originalPrice: ${product.originalPrice || product.price || 0},
+    images: ${JSON.stringify(product.images || [])},
+    sizes: ${JSON.stringify(product.sizes || [])},
+    availableSizes: ${JSON.stringify(product.availableSizes || product.sizes || [])},
+    colors: ${JSON.stringify(product.colors || [])},
+    rating: ${product.rating || 4.5},
+    reviews: ${product.reviews || 0},
+    views: ${product.views || 0},
+    likes: ${product.likes || 0},
+    orders: ${product.orders || 0},
+    category: "${product.category || ''}",
+    inStock: ${isAvailable},
+    isAvailable: ${isAvailable},
+    tags: ${JSON.stringify(product.tags || [])},
+    badge: "${product.badge || ''}",
+    quantity: ${quantity},
+    expiryDate: "${product.expiryDate || ''}",
+    endDate: "${product.endDate || ''}"
+  }`;
+  }).join(',\n');
+
+  const configContent = `// إضافة متجر ${storeName} إلى أيقونات وألوان المتاجر
+export const ${storeSlug}StoreConfig = {
+  storeId: ${storeId},
+  icon: "🏪", // أيقونة متجر عامة
+  logo: "${storeData.logo || '/assets/default-store.png'}", // مسار شعار المتجر
+  color: "from-blue-400 to-blue-600", // ألوان افتراضية
+  name: "${storeName}",
+  description: "${storeData.description || ''}",
+  categories: ${JSON.stringify(storeData.categories || [])}
+};`;
+
+  const productsContent = `// منتجات متجر ${storeName} - منتجات فريدة وحصرية
+import type { Product } from '../../storeProducts';
+
+// منتجات متجر ${storeName} (${storeSlug}.eshro.ly) - storeId: ${storeId}
+export const ${storeSlug}Products: Product[] = [
+${productsArray}
+];
+
+export const getStoreProducts = (): Product[] => {
+  return ${storeSlug}Products;
+};`;
+
+  // Generate slider content with actual images
+  const sliderImages = storeData.sliderImages || [];
+  const slidesArray = sliderImages.map((slide, index) => `    {
+      id: 'banner${index + 1}',
+      image: '${slide.image || ''}',
+      title: '${slide.title || ''}',
+      subtitle: '${slide.subtitle || ''}',
+      buttonText: '${slide.buttonText || 'تسوق الآن'}'
+    }`).join(',\n');
+
+  const sliderContent = `// ${storeSlug.charAt(0).toUpperCase() + storeSlug.slice(1)}Slider component: Image slider for store banners with auto-play and navigation
+import React, { useState, useEffect, useRef } from 'react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import {
+  ArrowLeft,
+  ArrowRight,
+  Star,
+  Crown,
+  Sparkles,
+  Heart,
+  ShoppingCart,
+  Eye
+} from 'lucide-react';
+import type { Product } from '../../storeProducts';
+
+interface ${storeSlug.charAt(0).toUpperCase() + storeSlug.slice(1)}SliderProps {
+  products: Product[];
+  storeSlug?: string;
+  onProductClick: (productId: number) => void;
+  onAddToCart: (product: Product) => void;
+  onToggleFavorite: (productId: number) => void;
+  favorites: number[];
+}
+
+const ${storeSlug.charAt(0).toUpperCase() + storeSlug.slice(1)}Slider: React.FC<${storeSlug.charAt(0).toUpperCase() + storeSlug.slice(1)}SliderProps> = ({
+  products,
+  storeSlug = '${storeSlug}',
+  onProductClick,
+  onAddToCart,
+  onToggleFavorite,
+  favorites = []
+}) => {
+  const [activeSlide, setActiveSlide] = useState(0);
+  const [isAutoPlaying, setIsAutoPlaying] = useState(true);
+  const [isDragging, setIsDragging] = useState(false);
+  const sliderRef = useRef<HTMLDivElement>(null);
+  const startX = useRef(0);
+
+  // صور السلايدر حسب المتجر
+  const getSliderBanners = (store: string) => {
+    if (store === '${storeSlug}') {
+      return [
+${slidesArray}
+      ];
+    }
+    return [];
+  };
+
+  const banners = getSliderBanners(storeSlug);
+
+  useEffect(() => {
+    if (!isAutoPlaying || banners.length === 0) return;
+
+    const interval = setInterval(() => {
+      setActiveSlide((prev) => (prev + 1) % banners.length);
+    }, 5000); // تغيير كل 5 ثواني
+
+    return () => clearInterval(interval);
+  }, [isAutoPlaying, banners.length]);
+
+  const nextSlide = () => {
+    setActiveSlide((prev) => (prev + 1) % banners.length);
+  };
+
+  const prevSlide = () => {
+    setActiveSlide((prev) => (prev - 1 + banners.length) % banners.length);
+  };
+
+  const goToSlide = (index: number) => {
+    setActiveSlide(index);
+  };
+
+  if (banners.length === 0) {
+    return (
+      <div className="w-full h-64 bg-gray-100 rounded-lg flex items-center justify-center">
+        <p className="text-gray-500">لا توجد صور للعرض</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative w-full h-64 md:h-80 lg:h-96 overflow-hidden rounded-lg">
+      {/* الصورة النشطة */}
+      <div className="relative w-full h-full">
+        <img
+          src={banners[activeSlide].image}
+          alt={banners[activeSlide].title}
+          className="w-full h-full object-cover"
+        />
+
+        {/* Overlay مع النص */}
+        <div className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center">
+          <div className="text-center text-white px-4">
+            <h2 className="text-2xl md:text-3xl font-bold mb-2">
+              {banners[activeSlide].title}
+            </h2>
+            <p className="text-lg md:text-xl mb-4">
+              {banners[activeSlide].subtitle}
+            </p>
+            <Button className="bg-white text-black hover:bg-gray-200">
+              {banners[activeSlide].buttonText}
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* أزرار التنقل */}
+      <button
+        onClick={prevSlide}
+        className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white bg-opacity-80 hover:bg-opacity-100 rounded-full p-2 transition-all"
+      >
+        <ArrowLeft className="w-6 h-6 text-gray-800" />
+      </button>
+
+      <button
+        onClick={nextSlide}
+        className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white bg-opacity-80 hover:bg-opacity-100 rounded-full p-2 transition-all"
+      >
+        <ArrowRight className="w-6 h-6 text-gray-800" />
+      </button>
+
+      {/* نقاط التنقل */}
+      <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
+        {banners.map((_, index) => (
+          <button
+            key={index}
+            onClick={() => goToSlide(index)}
+            className={\`w-3 h-3 rounded-full transition-all \${
+              index === activeSlide ? 'bg-white' : 'bg-white bg-opacity-50'
+            }\`}
+          />
+        ))}
+      </div>
+    </div>
+  );
+};
+
+export default ${storeSlug.charAt(0).toUpperCase() + storeSlug.slice(1)}Slider;`;
+
+  const indexContent = `export { ${storeSlug}StoreConfig as storeConfig } from './config';
+export { ${storeSlug}Products as storeProducts, getStoreProducts } from './products';
+export { default as ${storeSlug.charAt(0).toUpperCase() + storeSlug.slice(1)}Slider } from './Slider';`;
+
+  const normalizedStoreData = {
+    id: storeId,
+    storeId: storeId,
+    nameAr: storeName,
+    nameEn: storeData.nameEn || storeData.storeNameEn || '',
+    subdomain: storeSlug,
+    storeSlug: storeSlug,
+    description: storeData.description || '',
+    categories: storeData.categories || [],
+    logo: storeData.logo || '/assets/default-store.png',
+    email: storeData.email || '',
+    phone: storeData.phone || '',
+    ownerName: storeData.ownerName || '',
+    password: storeData.password || '',
+    commercialRegister: storeData.commercialRegister || '',
+    practiceLicense: storeData.practiceLicense || '',
+    products: storeData.products || [],
+    sliderImages: storeData.sliderImages || [],
+    createdAt: storeData.createdAt || new Date().toISOString(),
+    status: storeData.status || 'active'
+  };
+
+  // Save products to localStorage in the format expected by ModernStorePage
+  localStorage.setItem(`store_products_${storeSlug}`, JSON.stringify(products));
+
+  // Save slider images to localStorage
+  localStorage.setItem(`store_sliders_${storeSlug}`, JSON.stringify(sliderImages));
+
+  // Also save to localStorage for backward compatibility
+  const storeFiles = {
+    config: configContent,
+    products: productsContent,
+    slider: sliderContent,
+    index: indexContent,
+    storeData: normalizedStoreData
+  };
+
+  localStorage.setItem(`eshro_store_files_${storeSlug}`, JSON.stringify(storeFiles));
+};
+
+// جعل الدالة متاحة عالمياً للاستخدام من CreateStorePage
+(window as any).createStoreFiles = createStoreFiles;
+
+const postStoreToApi = async (rawStoreData: any, normalizedStore: any) => {
+  const fd = new FormData();
+  fd.append('storeId', String(normalizedStore.storeId));
+  fd.append('storeSlug', normalizedStore.storeSlug);
+  fd.append('storeName', normalizedStore.nameAr || normalizedStore.storeName);
+  fd.append('storeNameEn', normalizedStore.nameEn || normalizedStore.storeNameEn || '');
+  fd.append('description', normalizedStore.description || '');
+  fd.append('icon', '🏪');
+  fd.append('color', 'from-purple-400 to-pink-600');
+  fd.append('categories', JSON.stringify(normalizedStore.categories || []));
+
+  const ownerName =
+    normalizedStore.ownerName ||
+    normalizedStore.owner ||
+    rawStoreData.ownerName ||
+    rawStoreData.owner ||
+    normalizedStore.nameAr ||
+    normalizedStore.storeName ||
+    'مالك المتجر';
+  const ownerEmail = (normalizedStore.email || rawStoreData.email || '').toString();
+  const secondaryEmail = (rawStoreData.alternateEmail || rawStoreData.ownerSecondEmail || '').toString();
+  const ownerPhone = (normalizedStore.phone || rawStoreData.phone || '').toString();
+  const ownerPassword = (rawStoreData.password || normalizedStore.password || '').toString();
+
+  fd.append('ownerName', ownerName);
+  if (ownerEmail) {
+    fd.append('ownerEmail', ownerEmail);
+    fd.append('email', ownerEmail);
+  }
+  if (secondaryEmail) {
+    fd.append('ownerSecondEmail', secondaryEmail);
+  }
+  if (ownerPhone) {
+    fd.append('ownerPhone', ownerPhone);
+    fd.append('phone', ownerPhone);
+  }
+  if (ownerPassword) {
+    fd.append('ownerPassword', ownerPassword);
+    fd.append('password', ownerPassword);
+  }
+
+  const products = (normalizedStore.products || []).map((p: any) => ({
+    id: p.id,
+    name: p.name,
+    description: p.description,
+    price: p.price,
+    originalPrice: p.originalPrice || p.price,
+    sizes: p.sizes || [],
+    availableSizes: p.availableSizes || p.sizes || [],
+    colors: p.colors || [],
+    category: p.category || 'عام',
+    quantity: p.quantity || 0,
+    inStock: (p.quantity || 0) > 0,
+    tags: p.tags || []
+  }));
+  fd.append('products', JSON.stringify(products));
+
+  const sliders = (normalizedStore.sliderImages || []).map((s: any, i: number) => ({
+    id: s.id || `banner${i+1}`,
+    title: s.title || '',
+    subtitle: s.subtitle || '',
+    buttonText: s.buttonText || 'تسوق الآن'
+  }));
+  fd.append('sliderImages', JSON.stringify(sliders));
+
+  const uploadFiles = rawStoreData.uploadFiles || {};
+  const productImages: File[] = uploadFiles.productImages || [];
+  const productsImageCounts: number[] = uploadFiles.productsImageCounts || [];
+  const sliderImages: File[] = uploadFiles.sliderImages || [];
+  const storeLogo: File | null = uploadFiles.storeLogo || null;
+
+  if (productsImageCounts.length) {
+    fd.append('productsImageCounts', JSON.stringify(productsImageCounts));
+  }
+
+  productImages.forEach((f) => fd.append('productImages', f));
+  sliderImages.forEach((f) => fd.append('sliderImages', f));
+  if (storeLogo) fd.append('storeLogo', storeLogo);
+
+  const res = await fetch(`${API_BASE}/stores/create-with-images`, { method: 'POST', body: fd });
+  if (!res.ok) {
+    const text = await res.text();
+
+    throw new Error(`API ${res.status}`);
+  }
+  const json = await res.json();
+
+  return json;
+};
+
 import {
   AlertCircle,
   ArrowLeft,
@@ -73,23 +451,66 @@ const MERCHANT_LOGIN_CREDENTIALS: Record<string, { email: string; password: stri
   sherine: { email: "salem@gmail.com", password: "salem123", phone: "218910000002" },
   delta: { email: "majed@gmail.com", password: "majed123", phone: "218910000003" },
   pretty: { email: "kamel@gmail.com", password: "kamel123", phone: "218910000004" },
-  magna: { email: "hasan@gmail.com", password: "hasan123", phone: "218910000005" }
+  magna: { email: "hasan@gmail.com", password: "hasan123", phone: "218910000005" },
+  indeesh: { email: "salem.masgher@gmail.com", password: "salem1234", phone: "218910000006" }
+};
+
+const PRESERVED_MERCHANT_FIELDS = [
+  "email",
+  "password",
+  "phone",
+  "owner",
+  "ownerName",
+  "ownerEmail",
+  "ownerPhone",
+  "merchantEmail",
+  "merchantPhone",
+  "contactEmail",
+  "contactPhone",
+  "stats"
+];
+
+const mergeMerchantSeedData = (seedStore: any, existingStore?: any) => {
+  if (!existingStore) {
+    return { ...seedStore };
+  }
+  const mergedStore = {
+    ...existingStore,
+    ...seedStore
+  };
+  PRESERVED_MERCHANT_FIELDS.forEach((field) => {
+    if (existingStore[field]) {
+      mergedStore[field] = existingStore[field];
+    }
+  });
+  if (Array.isArray(existingStore.disabled)) {
+    mergedStore.disabled = existingStore.disabled;
+  } else if (Array.isArray(seedStore?.disabled)) {
+    mergedStore.disabled = seedStore.disabled;
+  } else if (!Array.isArray(mergedStore.disabled)) {
+    mergedStore.disabled = [];
+  }
+  return mergedStore;
 };
 
 // FloatingCubes component: Renders animated floating cubes for background decoration
 // مكون المكعبات المتحركة
+const floatingCubeClassNames = [
+  "floating-cube-pos-0",
+  "floating-cube-pos-1",
+  "floating-cube-pos-2",
+  "floating-cube-pos-3",
+  "floating-cube-pos-4",
+  "floating-cube-pos-5"
+];
+
 const FloatingCubes = () => {
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none">
-      {[...Array(6)].map((_, i) => (
+      {floatingCubeClassNames.map((cubeClass) => (
         <div
-          key={i}
-          className={`absolute w-4 h-4 bg-primary/20 floating-cube`}
-          style={{
-            left: `${Math.random() * 100}%`,
-            top: `${Math.random() * 100}%`,
-            animationDelay: `${i * 0.5}s`,
-          }}
+          key={cubeClass}
+          className={`absolute w-4 h-4 bg-primary/20 floating-cube ${cubeClass}`}
         />
       ))}
     </div>
@@ -199,13 +620,13 @@ const Header = ({
              variant="ghost"
              size="sm"
              onClick={() => {
-               console.log('🔍 Dashboard button clicked - Context Analysis:');
-               console.log('isLoggedInAsVisitor:', isLoggedInAsVisitor);
-               console.log('currentVisitor:', currentVisitor);
-               console.log('🚀 Navigating to customer-dashboard');
+               
+               
+               
+               
                onNavigate('customer-dashboard');
              }}
-             className="relative shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-r from-green-600 to-emerald-600 text-white hover:from-green-700 hover:to-emerald-700"
+             className="relative shadow-lg hover:shadow-xl transition-shadow transition-colors duration-300 bg-gradient-to-r from-green-600 to-emerald-600 text-white hover:from-green-700 hover:to-emerald-700"
              title="لوحة تحكم المستخدم"
            >
              <User className="h-5 w-5" />
@@ -365,7 +786,7 @@ const Header = ({
                  <button
                    onClick={() => {
                      document.getElementById('user-dropdown')?.classList.add('hidden');
-                     console.log('Logout clicked');
+                     
                      setCurrentVisitor(null);
                      setIsLoggedInAsVisitor(false);
                      localStorage.removeItem('eshro_visitor_user');
@@ -523,7 +944,7 @@ const ServicesSection = ({ onNavigate }: { onNavigate: (page: string) => void })
           {services.map((service, index) => (
             <Card 
               key={index}
-              className="group bg-white border border-emerald-200 hover:bg-emerald-600 hover:border-emerald-600 hover:shadow-2xl transition-all duration-300 cursor-pointer overflow-hidden transform hover:scale-105"
+              className="group bg-white border border-emerald-200 hover:bg-emerald-600 hover:border-emerald-600 hover:shadow-2xl transition-colors transition-shadow transition-transform duration-300 cursor-pointer overflow-hidden transform hover:scale-105"
               style={{ animationDelay: `${index * 0.05}s` }}
             >
               <CardContent className="p-8 text-center">
@@ -545,122 +966,6 @@ const ServicesSection = ({ onNavigate }: { onNavigate: (page: string) => void })
         </div>
 
 
-      </div>
-    </section>
-  );
-};
-
-// StoresCarousel component: Animated carousel displaying available stores
-// مكون شريط المتاجر المتحرك
-const StoresCarousel = ({ onStoreClick }: { onStoreClick: (storeSlug: string) => void }) => {
-  const featuredSlugs = ['nawaem','sheirine','pretty','delta-store','magna-beauty'];
-  const logoOverrides: Record<string, string> = {
-    'nawaem': '/assets/stores/nawaem.webp',
-    'sheirine': '/assets/stores/sheirine.webp',
-    'pretty': '/assets/stores/pretty.webp',
-    'delta-store': '/assets/stores/delta-store.webp',
-    'magna-beauty': '/assets/stores/magna-beauty.webp',
-  };
-
-  const getDynamicStores = () => {
-    try {
-      const stored = localStorage.getItem('eshro_stores');
-      if (!stored) return [];
-
-      const newStores = JSON.parse(stored);
-      return newStores.map((store: any) => ({
-        id: store.id || Date.now(),
-        name: store.nameAr,
-        slug: store.subdomain,
-        description: store.description,
-        logo: store.logo || '/assets/default-store.png',
-        categories: store.categories || [],
-        url: `/${store.subdomain}`,
-        endpoints: {},
-        social: {},
-        isActive: true
-      }));
-    } catch (error) {
-      console.error('Error loading dynamic stores:', error);
-      return [];
-    }
-  };
-
-  const allStores = [...storesData, ...getDynamicStores()];
-  // Show all stores: first the featured ones, then all dynamic stores
-  const featured = allStores.filter(s => featuredSlugs.includes(s.slug))
-    .concat(allStores.filter(s => !featuredSlugs.includes(s.slug)));
-
-  return (
-    <section className="stores-carousel py-16 bg-gradient-to-br from-gray-50 to-white relative overflow-hidden">
-      <FloatingCubes />
-      
-      <div className="w-full px-4 mx-auto max-w-7xl relative z-10">
-        <h2 className="flex items-center justify-center text-2xl md:text-4xl font-bold mb-12 fade-in-up">
-          <span className="text-primary">متاجر على منصة إشرو</span>
-        </h2>
-        
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6 justify-items-center">
-          {featured.map((store, index) => (
-            <div
-              key={index}
-              className="w-64 h-56 bg-white rounded-2xl border border-gray-200 hover:border-primary hover:shadow-2xl transition-all duration-500 cursor-pointer p-6 flex flex-col items-center justify-center group relative overflow-hidden"
-              onClick={() => onStoreClick(store.slug)}
-              >
-                {/* خلفية متدرجة */}
-                <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-primary/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                
-                <div className="w-24 h-24 mb-4 group-hover:scale-110 transition-transform duration-300 rounded-xl overflow-hidden bg-white">
-                  <img 
-                    src={logoOverrides[store.slug] || store.logo}
-                    alt={store.name}
-                    className="w-full h-full object-contain"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).style.display = 'none';
-                      const parent = (e.target as HTMLElement).parentElement;
-                      if (parent) {
-                        parent.innerHTML = '<div class="w-full h-full bg-primary/20 flex items-center justify-center text-primary font-bold text-2xl">' + store.name.charAt(0) + '</div>';
-                      }
-                    }}
-                  />
-                </div>
-                
-                <h3 className="text-lg font-bold text-center group-hover:text-primary transition-colors mb-1 leading-tight">
-                  {store.name}
-                </h3>
-                
-                <p className="text-sm text-gray-500 mb-4 text-center leading-tight">{store.description}</p>
-                
-                <div className="flex gap-3 text-gray-400">
-                  <Users className="h-4 w-4 group-hover:text-primary transition-colors" />
-                  <Globe className="h-4 w-4 group-hover:text-primary transition-colors" />
-                  <ShoppingCart className="h-4 w-4 group-hover:text-primary transition-colors" />
-                </div>
-                
-                {/* مؤشر الحالة */}
-                <div className="absolute top-4 right-4">
-                  <div className="w-3 h-3 bg-green-500 rounded-full pulse-animation"></div>
-                </div>
-                
-                {/* أيقونة متجر إشرو المخفية */}
-                <div className="absolute bottom-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                  <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center">
-                    <Store className="h-3 w-3 text-white" />
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-        {/* إحصائيات المتاجر */}
-        <div className="mt-16 grid grid-cols-1 md:grid-cols-4 gap-6 justify-items-center">
-          {statsData.map((stat, index) => (
-            <div key={index} className="text-center p-6 bg-white/80 backdrop-blur-sm rounded-2xl border border-primary/10 hover:border-primary/30 transition-colors">
-              <div className="text-3xl font-bold text-primary mb-2">{stat.value}</div>
-              <div className="text-muted-foreground">{stat.label}</div>
-            </div>
-          ))}
-        </div>
       </div>
     </section>
   );
@@ -723,7 +1028,7 @@ const PartnersSection = ({ onNavigate }: { onNavigate: (page: string) => void })
                 {[...partnersData.banks, ...partnersData.banks].map((bank, index) => (
                   <div
                     key={index}
-                    className="flex-shrink-0 w-48 h-32 bg-transparent rounded-2xl transition-all duration-500 p-4 flex flex-col items-center justify-center"
+                    className="flex-shrink-0 w-48 h-32 bg-transparent rounded-2xl transition-colors duration-500 p-4 flex flex-col items-center justify-center"
                   >
                     <img
                       src={bank.logo}
@@ -760,7 +1065,7 @@ const PartnersSection = ({ onNavigate }: { onNavigate: (page: string) => void })
                 {[...partnersData.payment, ...partnersData.payment].map((payment, index) => (
                   <div
                     key={index}
-                    className="flex-shrink-0 w-48 h-32 bg-transparent rounded-2xl transition-all duration-500 p-4 flex flex-col items-center justify-center"
+                    className="flex-shrink-0 w-48 h-32 bg-transparent rounded-2xl transition-colors duration-500 p-4 flex flex-col items-center justify-center"
                   >
                     <img
                       src={payment.logo}
@@ -797,7 +1102,7 @@ const PartnersSection = ({ onNavigate }: { onNavigate: (page: string) => void })
                 {[...partnersData.transport, ...partnersData.transport].map((company, index) => (
                   <div
                     key={index}
-                    className="flex-shrink-0 w-48 h-32 bg-transparent rounded-2xl transition-all duration-500 p-4 flex flex-col items-center justify-center"
+                    className="flex-shrink-0 w-48 h-32 bg-transparent rounded-2xl transition-colors duration-500 p-4 flex flex-col items-center justify-center"
                   >
                     <img
                       src={company.logo}
@@ -903,6 +1208,7 @@ export default function Home() {
   const [currentPage, setCurrentPage] = useState('home');
   const [currentStore, setCurrentStore] = useState<string | null>(null);
   const [currentProduct, setCurrentProduct] = useState<number | null>(null);
+  const [currentStoreProducts, setCurrentStoreProducts] = useState<any[]>([]);
   
   // حالة السلة والطلبات
   const [cartItems, setCartItems] = useState<any[]>([]);
@@ -923,7 +1229,7 @@ export default function Home() {
   const [isLoggedInAsVisitor, setIsLoggedInAsVisitor] = useState(false);
   const [allStores, setAllStores] = useState<any[]>([]);
   const [merchantSubPage, setMerchantSubPage] = useState('analytics');
-  const [merchantFlowStep, setMerchantFlowStep] = useState<'terms' | 'personal' | 'store' | null>(null);
+  const [merchantFlowStep, setMerchantFlowStep] = useState<'terms' | 'personal' | 'store' | 'products' | null>(null);
   const [merchantFlowData, setMerchantFlowData] = useState<{
     personalInfo?: PersonalInfoData;
     storeInfo?: StoreInfoData;
@@ -943,6 +1249,8 @@ export default function Home() {
       return;
     }
 
+    cleanupAnonymousStores();
+
     const savedOrders = localStorage.getItem('eshro_orders');
     const savedCartItems = localStorage.getItem('eshro_cart');
     const savedFavorites = localStorage.getItem('eshro_favorites');
@@ -956,7 +1264,7 @@ export default function Home() {
           setOrders(parsedOrders.filter((order: any) => order && order.id));
         }
       } catch (error) {
-        console.error('Failed to parse saved orders:', error);
+        // Error handling for orders parsing
       }
     }
 
@@ -964,7 +1272,7 @@ export default function Home() {
       try {
         setCartItems(JSON.parse(savedCartItems));
       } catch (error) {
-        console.error('Failed to parse saved cart items:', error);
+        // Error handling for orders parsing
       }
     }
 
@@ -1009,7 +1317,7 @@ export default function Home() {
           setFavorites(normalizedFavorites as any[]);
         }
       } catch (error) {
-        console.error('Failed to parse saved favorites:', error);
+        // Error handling for orders parsing
       }
     }
 
@@ -1017,7 +1325,7 @@ export default function Home() {
       try {
         setCurrentMerchant(JSON.parse(savedCurrentMerchant));
       } catch (error) {
-        console.error('Failed to parse saved current merchant:', error);
+        // Error handling for orders parsing
       }
     }
 
@@ -1042,7 +1350,7 @@ export default function Home() {
           }
           setCurrentVisitor(parsedVisitor);
         } catch (error) {
-          console.error('Failed to parse saved visitor data:', error);
+          // Silent error handling for visitor login
         }
       }
     }
@@ -1052,7 +1360,7 @@ export default function Home() {
       try {
         setUnavailableItems(JSON.parse(savedUnavailable));
       } catch (error) {
-        console.error('Failed to parse saved unavailable items:', error);
+        // Error handling for orders parsing
       }
     }
 
@@ -1110,20 +1418,16 @@ export default function Home() {
 
       seeds.forEach((store) => {
         const storeKey = `store_${store.subdomain}`;
-        let normalizedStore = store;
+        let existingStoreData: any = null;
         const existingRaw = localStorage.getItem(storeKey);
         if (existingRaw) {
           try {
-            const existing = JSON.parse(existingRaw);
-            normalizedStore = {
-              ...existing,
-              ...store,
-              disabled: Array.isArray(existing?.disabled) ? existing.disabled : store.disabled ?? []
-            };
+            existingStoreData = JSON.parse(existingRaw);
           } catch {
-            normalizedStore = store;
+            existingStoreData = null;
           }
         }
+        const normalizedStore = mergeMerchantSeedData(store, existingStoreData || undefined);
         localStorage.setItem(storeKey, JSON.stringify(normalizedStore));
 
         const variants = [
@@ -1145,7 +1449,7 @@ export default function Home() {
         });
 
         if (existingIndex >= 0) {
-          mergedList[existingIndex] = { ...mergedList[existingIndex], ...normalizedStore };
+          mergedList[existingIndex] = mergeMerchantSeedData(normalizedStore, mergedList[existingIndex]);
         } else {
           mergedList.push(normalizedStore);
         }
@@ -1159,6 +1463,114 @@ export default function Home() {
 
       localStorage.setItem('eshro_stores', JSON.stringify(mergedList));
       return mergedList;
+    };
+
+    const syncPermanentStores = async () => {
+      try {
+        let indexResponse = await fetch('/assets/stores/index.json', { cache: 'no-store' });
+        if (!indexResponse.ok) {
+          indexResponse = await fetch('/index.json', { cache: 'no-store' });
+        }
+        if (!indexResponse.ok) {
+          return;
+        }
+        const payload = await indexResponse.json().catch(() => ([]));
+        const storeSummaries = Array.isArray(payload)
+          ? payload
+          : (Array.isArray((payload as any)?.stores) ? (payload as any).stores : []);
+        if (storeSummaries.length === 0) {
+          return;
+        }
+
+        let existingStores: any[] = [];
+        try {
+          const raw = localStorage.getItem('eshro_stores');
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed)) {
+              existingStores = parsed;
+            }
+          }
+        } catch {
+          existingStores = [];
+        }
+
+        const storeMap = new Map<string, any>();
+        existingStores.forEach((store) => {
+          const slug = canonicalStoreSlug(store?.subdomain || store?.storeSlug || store?.id);
+          if (!slug) {
+            return;
+          }
+          storeMap.set(slug, store);
+        });
+
+        for (const summary of storeSummaries) {
+          const slug = canonicalStoreSlug(summary.slug || (summary as any).subdomain || summary.name);
+          if (!slug) {
+            continue;
+          }
+
+          let storeDetail: any = null;
+          try {
+            const detailResponse = await fetch(`/assets/${slug}/store.json`, { cache: 'no-store' });
+            if (detailResponse.ok) {
+              storeDetail = await detailResponse.json();
+            }
+          } catch (error) {
+            // Silent error handling for storage change
+          }
+
+          const normalizedEntry = {
+            id: storeDetail?.id || summary.id || slug,
+            storeId: storeDetail?.storeId || summary.storeId || summary.id || slug,
+            nameAr: storeDetail?.nameAr || summary.nameAr || summary.name || slug,
+            nameEn: storeDetail?.nameEn || summary.nameEn || summary.name || slug,
+            description: storeDetail?.description || summary.description || '',
+            categories: storeDetail?.categories || summary.categories || [],
+            logo: storeDetail?.logo || summary.logo || '/assets/default-store.png',
+            subdomain: slug,
+            storeSlug: slug,
+            setupComplete: true,
+            status: storeDetail?.status || summary.status || 'active',
+            source: 'permanent'
+          };
+
+          const existingEntry = storeMap.get(slug);
+          const mergedEntry = mergeMerchantSeedData(normalizedEntry, existingEntry || undefined);
+
+          storeMap.set(slug, mergedEntry);
+
+          if (storeDetail) {
+            const storeKey = `store_${slug}`;
+            let existingStoreRecord: any = null;
+            const existingStoreRaw = localStorage.getItem(storeKey);
+            if (existingStoreRaw) {
+              try {
+                existingStoreRecord = JSON.parse(existingStoreRaw);
+              } catch {
+                existingStoreRecord = null;
+              }
+            }
+
+            const mergedStoreRecord = mergeMerchantSeedData(
+              {
+                ...storeDetail,
+                subdomain: slug,
+                storeSlug: slug
+              },
+              existingStoreRecord || undefined
+            );
+
+            localStorage.setItem(storeKey, JSON.stringify(mergedStoreRecord));
+          }
+        }
+
+        const mergedStores = Array.from(storeMap.values());
+        localStorage.setItem('eshro_stores', JSON.stringify(mergedStores));
+        window.dispatchEvent(new Event('storeCreated'));
+      } catch (error) {
+        // Error handling for orders parsing
+      }
     };
 
     const seededStores = seedMerchantStores();
@@ -1201,7 +1613,7 @@ export default function Home() {
             const parsed = JSON.parse(raw);
             pushStore(parsed);
           } catch (error) {
-            console.error('Failed to parse store data:', error);
+            // Silent error handling for orders parsing
           }
         }
       }
@@ -1215,20 +1627,27 @@ export default function Home() {
           }
         }
       } catch (error) {
-        console.error('Failed to parse store list:', error);
+        // Error handling for orders parsing
       }
 
       setAllStores(stores);
     };
 
     loadAllStores();
+    syncPermanentStores()
+      .then(() => {
+        loadAllStores();
+      })
+      .catch(() => {
+        // Ignore sync errors; stores will continue using existing cache
+      });
 
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'eshro_unavailable' && e.newValue) {
         try {
           setUnavailableItems(JSON.parse(e.newValue));
         } catch (error) {
-          console.error('Failed to parse updated unavailable items:', error);
+          // Silent error handling for store sync
         }
       }
       if (!e.key) {
@@ -1241,6 +1660,33 @@ export default function Home() {
 
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+    const handleVisitorLoginEvent = (event: Event) => {
+      let visitorData: any = null;
+      if ((event as CustomEvent).detail) {
+        visitorData = (event as CustomEvent).detail;
+      } else {
+        const stored = localStorage.getItem('eshro_visitor_user');
+        if (stored) {
+          try {
+            visitorData = JSON.parse(stored);
+          } catch {
+            visitorData = null;
+          }
+        }
+      }
+      if (visitorData) {
+        setCurrentVisitor(visitorData);
+        setIsLoggedInAsVisitor(true);
+      }
+    };
+    window.addEventListener('eshro:visitor:login', handleVisitorLoginEvent as EventListener);
+    return () => window.removeEventListener('eshro:visitor:login', handleVisitorLoginEvent as EventListener);
   }, []);
 
   // حفظ البيانات في localStorage عند تغييرها
@@ -1301,8 +1747,26 @@ export default function Home() {
     setCurrentProduct(null);
   };
 
-  const handleStoreClick = (storeSlug: string) => {
+  const handleStoreClick = async (storeSlug: string) => {
+    
     setCurrentStore(storeSlug);
+
+    try {
+      const storeData = await loadStoreBySlug(storeSlug);
+      
+      if (storeData?.products && storeData.products.length > 0) {
+        
+        setCurrentStoreProducts(storeData.products);
+      } else {
+        
+        const fallbackProducts = allStoreProducts.filter(p => p.storeId === storeData?.storeId);
+        setCurrentStoreProducts(fallbackProducts);
+      }
+    } catch (error) {
+      
+      setCurrentStoreProducts([]);
+    }
+    
     setCurrentPage('store');
   };
 
@@ -1483,7 +1947,7 @@ export default function Home() {
             localStorage.setItem('eshro_all_visitors', JSON.stringify(updatedList));
           }
         } catch (error) {
-          console.error('Failed to update visitors list', error);
+          // Silent error handling for unavailable items
         }
       }
       const visitorKeys: string[] = [];
@@ -1504,7 +1968,7 @@ export default function Home() {
             localStorage.setItem(key, JSON.stringify({ ...parsed, ...updatedVisitor }));
           }
         } catch (error) {
-          console.error('Failed to sync visitor record', error);
+          // Silent error handling for login
         }
       });
       return updatedVisitor;
@@ -1539,7 +2003,7 @@ export default function Home() {
           localStorage.setItem(key, JSON.stringify({ ...parsed, password: newPassword }));
         }
       } catch (error) {
-        console.error('Failed to sync visitor password', error);
+        // Error handling for orders parsing
       }
     });
   };
@@ -1548,15 +2012,15 @@ export default function Home() {
   const completedOrdersCount = validOrders.length;
 
   // معالج تسجيل الدخول
-  const handleLogin = (credentials: { username: string; password: string; userType?: string }) => {
+  const handleLogin = async (credentials: { username: string; password: string; userType?: string }) => {
     const { username, password, userType = 'merchant' } = credentials;
 
-    console.log('🔐 Login attempt:', { username, password, userType });
-    console.log('📊 Available stores in allStores:', allStores.length);
+    
+    
 
     // إصلاح مشكلة متجر نواعم إذا لم يكن موجود
     if (username === 'mounir@gmail.com' && password === 'mounir123' && allStores.length === 0) {
-      console.log('🔧 Creating Nawaem store data for testing...');
+      
       const nawaemStoreData = {
         nameAr: 'نواعم',
         nameEn: 'Nawaem',
@@ -1575,7 +2039,7 @@ export default function Home() {
       localStorage.setItem(storeKey, JSON.stringify(nawaemStoreData));
       setAllStores([nawaemStoreData]);
 
-      console.log('✅ Nawaem store created successfully');
+      
       alert('تم إنشاء بيانات متجر نواعم بنجاح! جرب تسجيل الدخول الآن.');
       return;
     }
@@ -1583,7 +2047,7 @@ export default function Home() {
     if (userType === 'user') {
       // تسجيل دخول الزائر
       try {
-        console.log('🔐 Attempting visitor login for:', username);
+        
 
         // البحث في جميع مستخدمي الزوار المحفوظين
         const visitors: Array<{ key: string; data: any }> = [];
@@ -1597,12 +2061,12 @@ export default function Home() {
                 visitors.push({ key, data: visitorData });
               }
             } catch (error) {
-              console.error('Error parsing visitor data for key:', key, error);
+              // Silent error handling for store creation
             }
           }
         }
 
-        console.log('📊 Total visitors found:', visitors.length);
+        
 
         // البحث عن المستخدم المناسب
         const matchedVisitor = visitors.find(({ data: visitorData }) => {
@@ -1611,13 +2075,13 @@ export default function Home() {
             `${visitorData.firstName} ${visitorData.lastName}`.toLowerCase() === username.toLowerCase();
           const isPasswordMatch = visitorData.password === password;
 
-          console.log('🔍 Checking visitor:', visitorData.email, '- Email match:', isEmailMatch, 'Name match:', isNameMatch, 'Password match:', isPasswordMatch);
+          
 
           return (isEmailMatch || isNameMatch) && isPasswordMatch;
         });
 
         if (matchedVisitor) {
-          console.log('✅ Visitor login successful:', matchedVisitor.data);
+          
 
           // تحديث بيانات المستخدم للتأكد من اكتمالها
           const storedAvatar = matchedVisitor.data.avatar || localStorage.getItem('userProfileImage');
@@ -1660,16 +2124,16 @@ export default function Home() {
           return;
         }
 
-        console.log('❌ No matching visitor found');
+        
         alert('بيانات تسجيل الدخول غير صحيحة. يرجى التأكد من اسم المستخدم وكلمة المرور.');
       } catch (error) {
-        console.error('Error during visitor login:', error);
+        
         alert('حدث خطأ أثناء تسجيل الدخول. يرجى المحاولة مرة أخرى.');
       }
     } else if (userType === 'admin') {
       // تسجيل دخول مسؤول النظام
       if (username === 'admin@eshro.ly' && password === 'admin123') {
-        console.log('Admin login successful');
+        
         alert('مرحباً بك مسؤول النظام! 🎉');
         // في التطبيق الحقيقي، سيتم توجيه مسؤول النظام للوحة التحكم الرئيسية
         // مؤقتاً سنستخدم نفس نظام التاجر لحين تطوير لوحة التحكم الإدارية الرئيسية
@@ -1680,7 +2144,7 @@ export default function Home() {
     } else {
       // تسجيل دخول التاجر (النظام الحالي)
       const storeInfo = allStores.map(s => ({ email: s.email, subdomain: s.subdomain, name: s.nameAr || s.name }));
-      console.log('🔍 Searching for merchant in allStores:', storeInfo);
+      
 
       let matchingStore = allStores.find(store =>
         (store.email === username || store.subdomain === username || store.phone === username) &&
@@ -1721,6 +2185,23 @@ export default function Home() {
               } as any;
               const storeKey = `store_${profile.id}`;
               localStorage.setItem(storeKey, JSON.stringify(matchingStore));
+
+              const storeFilesKey = `eshro_store_files_${profile.id}`;
+              localStorage.setItem(storeFilesKey, JSON.stringify({ storeData: matchingStore }));
+
+              if (matchingStore.products && Array.isArray(matchingStore.products)) {
+                const productsKey = `store_products_${profile.id}`;
+                localStorage.setItem(productsKey, JSON.stringify(matchingStore.products));
+                // eslint-disable-next-line no-console
+                console.log('[App.tsx] Saved products:', { storeId: profile.id, count: matchingStore.products.length });
+              }
+
+              if (matchingStore.sliderImages && Array.isArray(matchingStore.sliderImages)) {
+                const slidersKey = `store_sliders_${profile.id}`;
+                localStorage.setItem(slidersKey, JSON.stringify(matchingStore.sliderImages));
+                // eslint-disable-next-line no-console
+                console.log('[App.tsx] Saved slider images:', { storeId: profile.id, count: matchingStore.sliderImages.length });
+              }
               let storedList: any[] = [];
               try {
                 const rawList = localStorage.getItem('eshro_stores');
@@ -1758,25 +2239,75 @@ export default function Home() {
       }
 
       if (matchingStore) {
-        console.log('✅ Merchant login successful:', matchingStore);
-        setCurrentMerchant(matchingStore);
+        // eslint-disable-next-line no-console
+        console.log('[App.tsx] Merchant login matched:', {
+          username: username,
+          matchingStore: matchingStore.id || matchingStore.subdomain,
+          email: matchingStore.email,
+          subdomain: matchingStore.subdomain,
+          nameAr: matchingStore.nameAr || matchingStore.name
+        });
+
+        if (!matchingStore.subdomain && !matchingStore.id && !matchingStore.storeSlug) {
+          // eslint-disable-next-line no-console
+          console.error('[App.tsx] ERROR: matchingStore has no valid identifier!', matchingStore);
+        }
+
+        const storeSlug = matchingStore.storeSlug || matchingStore.subdomain || matchingStore.slug || (matchingStore.id ? String(matchingStore.id) : null);
+        // eslint-disable-next-line no-console
+        console.log('[App.tsx] Determined storeSlug:', storeSlug, '| email:', matchingStore.email);
+
+        let liveStoreData: Awaited<ReturnType<typeof loadStoreBySlug>> = null;
+        if (storeSlug) {
+          try {
+            liveStoreData = await loadStoreBySlug(storeSlug);
+            // eslint-disable-next-line no-console
+            console.log('[App.tsx] Live store data loaded:', {
+              slug: liveStoreData?.slug,
+              name: liveStoreData?.nameAr || liveStoreData?.name
+            });
+          } catch (error) {
+            // eslint-disable-next-line no-console
+            console.error('[App.tsx] Error loading store data:', error);
+          }
+        } else {
+          // eslint-disable-next-line no-console
+          console.warn('[App.tsx] WARNING: No storeSlug determined!');
+        }
+
+        const enrichedMerchant = {
+          ...matchingStore,
+          storeSlug: storeSlug || matchingStore.storeSlug,
+          slug: storeSlug || matchingStore.slug,
+          storeData: liveStoreData || matchingStore.storeData,
+          products: liveStoreData?.products || matchingStore.products,
+          sliderImages: liveStoreData?.sliderImages || matchingStore.sliderImages
+        };
+        // eslint-disable-next-line no-console
+        console.log('[App.tsx] Setting currentMerchant:', {
+          id: enrichedMerchant.id,
+          subdomain: enrichedMerchant.subdomain,
+          email: enrichedMerchant.email,
+          nameAr: enrichedMerchant.nameAr
+        });
+        setCurrentMerchant(enrichedMerchant);
         setIsLoggedInAsMerchant(true);
         setCurrentPage('merchant-dashboard');
       } else {
-        console.log('❌ Merchant login failed - no matching store found');
-        console.log('🔍 Debug info:');
-        console.log('- Username:', username);
-        console.log('- Password:', password);
-        console.log('- Available stores:', allStores.length);
-        console.log('- Store emails:', allStores.map(s => s.email));
-        console.log('- Store subdomains:', allStores.map(s => s.subdomain));
+        
+        
+        
+        
+        
+        
+        
 
         const storeWithEmail = allStores.find(store => store.email === username || store.subdomain === username || store.phone === username);
         if (storeWithEmail) {
-          console.log('⚠️ Store found but password incorrect');
+          
           alert('كلمة المرور غير صحيحة. يرجى التأكد من كلمة المرور والمحاولة مرة أخرى.');
         } else {
-          console.log('❓ Store not found with this email/subdomain');
+          
           alert('اسم المستخدم أو البريد الإلكتروني غير موجود. يرجى التأكد من البيانات والمحاولة مرة أخرى.');
         }
       }
@@ -1785,11 +2316,39 @@ export default function Home() {
 
   // معالج إنشاء المتجر
   const handleStoreCreated = (storeData: any) => {
-    console.log('Store created:', storeData);
+    
 
     // حفظ بيانات المتجر في localStorage مع معرف فريد
     const storeKey = `store_${storeData.subdomain || storeData.nameEn}`;
     localStorage.setItem(storeKey, JSON.stringify(storeData));
+
+    // إضافة المتجر إلى قائمة eshro_stores
+    try {
+      const existingStores = JSON.parse(localStorage.getItem('eshro_stores') || '[]');
+      const storeEntry = {
+        id: storeData.storeId || storeData.id || Date.now(),
+        nameAr: storeData.nameAr || storeData.storeName,
+        nameEn: storeData.nameEn || storeData.storeNameEn,
+        subdomain: storeData.storeSlug || storeData.subdomain,
+        description: storeData.description,
+        categories: storeData.categories,
+        logo: storeData.logo,
+        setupComplete: true,
+        email: storeData.email,
+        password: storeData.password,
+        phone: storeData.phone,
+        ownerName: storeData.ownerName
+      };
+      
+      // تجنب التكرار
+      const filtered = existingStores.filter((s: any) => 
+        (s.subdomain || s.id) !== (storeEntry.subdomain || storeEntry.id)
+      );
+      filtered.push(storeEntry);
+      localStorage.setItem('eshro_stores', JSON.stringify(filtered));
+    } catch (error) {
+      // Silent error handling for store creation
+    }
 
     // إضافة المتجر للقائمة العامة
     setAllStores(prev => [...prev, storeData]);
@@ -1820,16 +2379,16 @@ export default function Home() {
 
   // عرض لوحة تحكم التاجر المطورة مع الشريط الجانبي العمودي
   if (currentPage === 'merchant-dashboard') {
-    console.log('🔍 Enhanced Merchant Dashboard Context Analysis:');
-    console.log('currentMerchant:', currentMerchant);
-    console.log('isLoggedInAsMerchant:', isLoggedInAsMerchant);
-    console.log('currentPage:', currentPage);
+    
+    
+    
+    
 
     return (
       <EnhancedMerchantDashboard
         currentMerchant={currentMerchant}
         onLogout={() => {
-          console.log('🔓 Enhanced Merchant Dashboard logout clicked');
+          
           setCurrentMerchant(null);
           setIsLoggedInAsMerchant(false);
           localStorage.removeItem('eshro_current_merchant');
@@ -1843,10 +2402,10 @@ export default function Home() {
 
   // عرض لوحة تحكم المستخدم - مقارنة السياقات المختلفة
   if (currentPage === 'customer-dashboard') {
-    console.log('🔍 CustomerDashboard Context Analysis:');
-    console.log('currentVisitor:', currentVisitor);
-    console.log('isLoggedInAsVisitor:', isLoggedInAsVisitor);
-    console.log('currentPage:', currentPage);
+    
+    
+    
+    
 
     // إنشاء بيانات المستخدم مع ضمان اكتمال جميع الحقول المطلوبة
     const createCompleteCustomerData = () => {
@@ -1881,7 +2440,7 @@ export default function Home() {
 
     const customerData = createCompleteCustomerData();
 
-    console.log('📊 Complete customerData being passed:', customerData);
+    
 
     return (
       <CustomerDashboard
@@ -1893,11 +2452,11 @@ export default function Home() {
         onUpdateProfile={handleUpdateVisitorProfile}
         onPasswordChange={handleVisitorPasswordChange}
         onBack={() => {
-          console.log('🔙 Dashboard back button clicked in user login context');
+          
           setCurrentPage('home');
         }}
         onLogout={() => {
-          console.log('🔓 Dashboard logout button clicked in user login context');
+          
           setCurrentVisitor(null);
           setIsLoggedInAsVisitor(false);
           setCurrentPage('home');
@@ -1942,7 +2501,7 @@ export default function Home() {
           setMerchantFlowData({});
           setCurrentPage('account-type-selection');
         }}
-        onAccept={() => setMerchantFlowStep('personal')}
+        onAccept={() => setCurrentPage('create-store-wizard')}
       />
     );
   }
@@ -1970,90 +2529,26 @@ export default function Home() {
           setMerchantFlowData(prev => ({ ...prev, storeInfo }));
           const { personalInfo } = merchantFlowData;
           if (personalInfo && storeInfo) {
-            const newStore = {
-              id: Date.now().toString(),
+            // Prepare store data but don't create the store yet
+            const storeId = Date.now().toString();
+            const storeData = {
+              id: storeId,
+              storeId: storeId,
               nameAr: storeInfo.storeNameAr,
               nameEn: storeInfo.storeNameEn,
-              email: personalInfo.email,
-              phone: personalInfo.phone,
-              password: personalInfo.password,
-              subdomain: storeInfo.subdomain,
               description: storeInfo.description,
               logo: storeInfo.logoPreview,
               category: storeInfo.category,
-              createdAt: new Date().toISOString(),
-              status: 'active',
-              termsAccepted: true,
-              trialEndsAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
-            };
-            const existingStores = JSON.parse(localStorage.getItem('eshro_stores') || '[]');
-            existingStores.push(newStore);
-            localStorage.setItem('eshro_stores', JSON.stringify(existingStores));
-            const merchantCredentials = {
-              email: personalInfo.email,
-              password: personalInfo.password,
-              phone: personalInfo.phone,
-              storeName: storeInfo.storeNameAr,
               subdomain: storeInfo.subdomain,
-              storeId: newStore.id
+              warehouseChoice: 'personal', // Default value since not in StoreInfoData
+              merchantEmail: personalInfo.email,
+              merchantPhone: personalInfo.phone
             };
-            localStorage.setItem(`merchant_${storeInfo.subdomain}`, JSON.stringify(merchantCredentials));
-            const defaultProducts = [
-              {
-                id: 1,
-                name: 'منتج جديد - 1',
-                description: 'وصف المنتج الجديد',
-                price: 50,
-                originalPrice: 75,
-                category: storeInfo.category,
-                images: ['/assets/default-product.png'],
-                colors: [{ name: 'أسود' }, { name: 'أبيض' }],
-                sizes: ['S', 'M', 'L', 'XL'],
-                availableSizes: ['S', 'M', 'L', 'XL'],
-                rating: 4.5,
-                reviews: 0,
-                tags: ['جديد'],
-                storeId: newStore.id,
-                inStock: true,
-                quantity: 100
-              }
-            ];
-            localStorage.setItem(`store_products_${storeInfo.subdomain}`, JSON.stringify(defaultProducts));
 
-            // إنشاء صلاحيات افتراضية للمتجر الجديد
-            const MERCHANT_PERMISSIONS_KEY = "eishro:merchant-permissions";
-            const existingPermissions = JSON.parse(localStorage.getItem(MERCHANT_PERMISSIONS_KEY) || '{}');
+            // Store the prepared data for the success page
+            setStoreCreationData(storeData);
 
-            // قائمة الأقسام الافتراضية (جميع الأقسام مفعلة للمتاجر الجديدة)
-            const defaultSections = [
-              "overview-root",
-              "orders-group", "orders-all", "orders-manual", "orders-abandoned", "orders-unavailable",
-              "catalog-group", "catalog-hub", "catalog-products", "catalog-categories", "catalog-stock",
-              "catalog-stock-adjustments", "catalog-stock-notifications",
-              "customers-group", "customers-all", "customers-groups", "customers-reviews", "customers-questions",
-              "marketing-group", "marketing-hub", "marketing-campaigns", "marketing-coupons", "marketing-loyalty",
-              "analytics-group", "analytics-dashboard", "analytics-live", "analytics-sales", "analytics-stock", "analytics-customers",
-              "finance-group", "finance-overview", "finance-subscriptions",
-              "settings-group", "settings-general", "settings-store", "settings-pages", "settings-menu",
-              "settings-sliders", "settings-ads", "settings-services",
-              "logistics-group", "logistics-overview", "logistics-shipments",
-              "payments-group", "payments-main", "payments-operations", "payments-deposits", "payments-banks",
-              "support-group", "support-customer", "support-technical",
-              "logout-root"
-            ];
-
-            // إنشاء صلاحيات افتراضية (جميع الأقسام مفعلة)
-            const defaultPermissions: Record<string, boolean> = {};
-            defaultSections.forEach(sectionId => {
-              defaultPermissions[sectionId] = true;
-            });
-
-            existingPermissions[newStore.id] = defaultPermissions;
-            localStorage.setItem(MERCHANT_PERMISSIONS_KEY, JSON.stringify(existingPermissions));
-
-            setCurrentMerchant(newStore);
             setMerchantFlowStep(null);
-            setMerchantFlowData({});
             setCurrentPage('merchant-store-success');
           }
         }}
@@ -2085,7 +2580,7 @@ export default function Home() {
       <VisitorRegistrationPage
         onBack={handleBackToHome}
         onRegister={(userData) => {
-          console.log('Visitor registered:', userData);
+          
 
           // حفظ بيانات المستخدم بمفتاح فريد للحفاظ على جميع المستخدمين
           const userKey = `eshro_visitor_user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -2104,104 +2599,107 @@ export default function Home() {
         }}
         onNavigateToLogin={() => setCurrentPage('login')}
         onNavigateToTerms={() => setCurrentPage('terms')}
-        onNavigateToPrivacy={() => setCurrentPage('privacy')}
       />
     );
   }
 
-  // عرض صفحة إنشاء المتجر
+  // عرض صفحة إنشاء المتجر - توجيه للواجهة الجديدة
   if (currentPage === 'register') {
-    return (
-      <CreateStorePage
-        onBack={handleBackToHome}
-        onNavigateToLogin={() => setCurrentPage('login')}
-        onStoreCreated={handleStoreCreated}
-      />
-    );
+    // توجيه تلقائي للواجهة الجديدة بدلاً من القديمة
+    setCurrentPage('create-store-wizard');
+    setMerchantFlowStep('personal');
+    return null;
   }
 
   // عرض صفحة معالج إنشاء المتجر الجديد
   if (currentPage === 'create-store-wizard') {
-    const merchantData = merchantFlowData.personalInfo;
-    if (!merchantData) {
-      return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50">
-          <div className="text-center">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">البيانات غير صحيحة</h2>
-            <Button onClick={handleBackToHome}>العودة للرئيسية</Button>
-          </div>
-        </div>
-      );
-    }
     return (
-      <CreateStoreWizard
-        onBack={() => setMerchantFlowStep('personal')}
-        merchantEmail={merchantData.email}
-        merchantPhone={merchantData.phone}
-        onComplete={(storeData) => {
-          // حفظ بيانات المتجر الكاملة
-          const newStore = {
-            id: Date.now().toString(),
+      <CreateStorePage
+        onBack={() => {
+          setMerchantFlowStep('terms');
+          setCurrentPage('merchant-flow');
+        }}
+        onNavigateToLogin={() => {
+          setIsLoggedInAsMerchant(true);
+          setCurrentPage('merchant-dashboard');
+        }}
+        onStoreCreated={(storeData) => {
+          
+          
+          const storeSlug = storeData.storeSlug || storeData.subdomain;
+          
+
+          const normalizedStore = {
+            id: storeData.id,
+            storeId: storeData.storeId,
             nameAr: storeData.nameAr,
             nameEn: storeData.nameEn,
             description: storeData.description,
-            email: storeData.merchantEmail,
-            phone: storeData.merchantPhone,
-            password: merchantData.password,
-            subdomain: storeData.nameEn.toLowerCase().replace(/\s+/g, '-'),
+            email: storeData.email,
+            phone: storeData.phone,
+            password: storeData.password,
+            subdomain: storeSlug,
+            storeSlug: storeSlug,
             logo: storeData.logo,
-            category: storeData.category,
+            categories: storeData.categories || [],
+            category: storeData.categories,
             latitude: storeData.latitude,
             longitude: storeData.longitude,
-            warehouseChoice: storeData.warehouseChoice,
+            warehouseChoice: storeData.warehouseChoice || 'personal',
+            ownerName: storeData.ownerName || '',
+            commercialRegister: storeData.commercialRegister || '',
+            practiceLicense: storeData.practiceLicense || '',
+            products: storeData.products || [],
+            sliderImages: storeData.sliderImages || [],
             createdAt: new Date().toISOString(),
             status: 'active',
+            setupComplete: true,
             trialEndsAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
           };
 
           const existingStores = JSON.parse(localStorage.getItem('eshro_stores') || '[]');
-          existingStores.push(newStore);
+          existingStores.push(normalizedStore);
           localStorage.setItem('eshro_stores', JSON.stringify(existingStores));
 
-          const merchantCredentials = {
-            email: storeData.merchantEmail,
-            password: merchantData.password,
-            phone: storeData.merchantPhone,
-            storeName: storeData.nameAr,
-            subdomain: newStore.subdomain,
-            storeId: newStore.id,
-            category: storeData.category,
-            warehouseChoice: storeData.warehouseChoice
-          };
-          localStorage.setItem(`merchant_${newStore.subdomain}`, JSON.stringify(merchantCredentials));
+          invalidateStoresCache();
 
-          const defaultProducts = [
-            {
-              id: 1,
-              name: 'منتج جديد - 1',
-              description: 'وصف المنتج الجديد',
-              price: 50,
-              originalPrice: 75,
-              category: storeData.category,
-              images: ['/assets/default-product.png'],
-              colors: [{ name: 'أسود' }, { name: 'أبيض' }],
-              sizes: ['S', 'M', 'L', 'XL'],
-              availableSizes: ['S', 'M', 'L', 'XL'],
-              rating: 0,
-              reviews: 0,
-              tags: [],
-              storeId: newStore.id,
-              inStock: true,
-              quantity: 0,
-              likes: 0,
-              views: 0,
-              orders: 0
-            }
-          ];
-          localStorage.setItem(`store_products_${newStore.subdomain}`, JSON.stringify(defaultProducts));
+          const merchantCredentials = {
+            email: storeData.email,
+            password: storeData.password,
+            phone: storeData.phone,
+            storeName: storeData.nameAr,
+            subdomain: storeSlug,
+            storeId: storeData.id,
+            category: storeData.categories,
+            warehouseChoice: storeData.warehouseChoice || 'personal'
+          };
+          localStorage.setItem(`merchant_${storeSlug}`, JSON.stringify(merchantCredentials));
+
+          
+          
+          
+
+          window.dispatchEvent(new CustomEvent('storeCreated', { detail: normalizedStore }));
 
           setCurrentPage('store-creation-success');
-          setStoreCreationData(storeData);
+          setStoreCreationData({
+            ...normalizedStore,
+            id: normalizedStore.id,
+            subdomain: storeSlug,
+            merchantEmail: storeData.email,
+            merchantPhone: storeData.phone,
+            warehouseChoice: storeData.warehouseChoice || 'personal'
+          });
+
+          setTimeout(() => {
+            try {
+              postStoreToApi(storeData, normalizedStore).catch(() => {
+                createStoreFiles(normalizedStore);
+              });
+            } catch (error) {
+              // Silent error handling for store creation
+            }
+          }, 0);
         }}
       />
     );
@@ -2216,6 +2714,136 @@ export default function Home() {
         onNavigateToLogin={() => {
           setCurrentPage('login');
           setMerchantFlowStep('terms');
+        }}
+        onContinueToProducts={() => {
+          setCurrentPage('merchant-flow');
+          setMerchantFlowStep('products');
+        }}
+      />
+    );
+  }
+
+  // عرض صفحة إدارة المنتجات والصور
+  if (currentPage === 'merchant-flow' && merchantFlowStep === 'products') {
+    // Construct merchantData from flow data
+    const merchantData = merchantFlowData.personalInfo && merchantFlowData.storeInfo ? {
+      email: merchantFlowData.personalInfo.email,
+      password: merchantFlowData.personalInfo.password,
+      phone: merchantFlowData.personalInfo.phone,
+      storeName: merchantFlowData.storeInfo.storeNameAr,
+      subdomain: merchantFlowData.storeInfo.subdomain,
+      storeId: storeCreationData?.id || ''
+    } : null;
+
+    return (
+      <MerchantProductManagement
+        storeData={storeCreationData}
+        merchantData={merchantData}
+        onBack={() => setCurrentPage('store-creation-success')}
+        onComplete={() => {
+          
+
+          // Create the store now that products are added
+          const { personalInfo, storeInfo } = merchantFlowData;
+
+          
+          
+          
+          let storeCreated = false;
+
+          if (personalInfo && storeInfo && storeCreationData) {
+            try {
+              const newStore = {
+                id: storeCreationData.id,
+                nameAr: storeInfo.storeNameAr,
+                nameEn: storeInfo.storeNameEn,
+                email: personalInfo.email,
+                phone: personalInfo.phone,
+                password: personalInfo.password,
+                subdomain: storeInfo.subdomain,
+                description: storeInfo.description,
+                logo: storeInfo.logoPreview,
+                category: storeInfo.category,
+                createdAt: new Date().toISOString(),
+                status: 'active',
+                termsAccepted: true,
+                trialEndsAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+                setupComplete: true
+              };
+
+              const existingStores = JSON.parse(localStorage.getItem('eshro_stores') || '[]');
+              existingStores.push(newStore);
+              localStorage.setItem('eshro_stores', JSON.stringify(existingStores));
+
+              const merchantCredentials = {
+                email: personalInfo.email,
+                password: personalInfo.password,
+                phone: personalInfo.phone,
+                storeName: storeInfo.storeNameAr,
+                subdomain: storeInfo.subdomain,
+                storeId: newStore.id
+              };
+              localStorage.setItem(`merchant_${storeInfo.subdomain}`, JSON.stringify(merchantCredentials));
+
+              // إنشاء صلاحيات افتراضية للمتجر الجديد
+              const MERCHANT_PERMISSIONS_KEY = "eishro:merchant-permissions";
+              const existingPermissions = JSON.parse(localStorage.getItem(MERCHANT_PERMISSIONS_KEY) || '{}');
+
+              // قائمة الأقسام الافتراضية (جميع الأقسام مفعلة للمتاجر الجديدة)
+              const defaultSections = [
+                "overview-root",
+                "orders-group", "orders-all", "orders-manual", "orders-abandoned", "orders-unavailable",
+                "catalog-group", "catalog-hub", "catalog-products", "catalog-categories", "catalog-stock",
+                "catalog-stock-adjustments", "catalog-stock-notifications",
+                "customers-group", "customers-all", "customers-groups", "customers-reviews", "customers-questions",
+                "marketing-group", "marketing-hub", "marketing-campaigns", "marketing-coupons", "marketing-loyalty",
+                "analytics-group", "analytics-dashboard", "analytics-live", "analytics-sales", "analytics-stock", "analytics-customers",
+                "finance-group", "finance-overview", "finance-subscriptions",
+                "settings-group", "settings-general", "settings-store", "settings-pages", "settings-menu",
+                "settings-sliders", "settings-ads", "settings-services",
+                "logistics-group", "logistics-overview", "logistics-shipments",
+                "payments-group", "payments-main", "payments-operations", "payments-deposits", "payments-banks",
+                "support-group", "support-customer", "support-technical",
+                "logout-root"
+              ];
+
+              // إنشاء صلاحيات افتراضية (جميع الأقسام مفعلة)
+              const defaultPermissions: Record<string, boolean> = {};
+              defaultSections.forEach(sectionId => {
+                defaultPermissions[sectionId] = true;
+              });
+
+              existingPermissions[newStore.id] = defaultPermissions;
+              localStorage.setItem(MERCHANT_PERMISSIONS_KEY, JSON.stringify(existingPermissions));
+
+              setCurrentMerchant(newStore);
+              storeCreated = true;
+              
+            } catch (error) {
+              // Silent error handling for store creation
+            }
+          } else {
+            // Store creation failed - continue with flow
+          }
+
+          // التأكد من الانتقال حتى لو فشل إنشاء المتجر
+          if (!storeCreated) {
+            // Store creation failed - continue with flow
+          }
+
+          // الانتقال للصفحة الرئيسية لرؤية المتجر الجديد
+          
+
+          // إعادة تعيين حالة التدفق للتأكد من عدم وجود تداخل
+          setMerchantFlowStep(null);
+          setMerchantFlowData({});
+          setStoreCreationData(null);
+
+          // تأخير قصير للتأكد من معالجة تحديثات الحالة
+          setTimeout(() => {
+            setCurrentPage('home');
+            
+          }, 100);
         }}
       />
     );
@@ -2235,15 +2863,6 @@ export default function Home() {
     );
   }
 
-  // عرض صفحة سياسة الخصوصية
-  if (currentPage === 'privacy') {
-    return (
-      <PrivacyPolicyPage
-        onBack={handleBackToHome}
-      />
-    );
-  }
-
   // عرض صفحة المتجر
   if (currentPage === 'store' && currentStore) {
     return (
@@ -2258,12 +2877,17 @@ export default function Home() {
             if (favorites.find(f => f.id === productId)) {
               setFavorites(prev => prev.filter(f => f.id !== productId));
             } else {
-              setFavorites(prev => [...prev, product]);
+              const productWithDate = {
+                ...product,
+                addedDate: new Date().toISOString()
+              };
+              setFavorites(prev => [...prev, productWithDate]);
             }
+            window.dispatchEvent(new Event('favoritesUpdated'));
           }
         }}
         onNotifyWhenAvailable={(productId) => {
-          console.log('Notification requested for product ID:', productId);
+          
           // النافذة الآن تُعرض محلياً في صفحات المتاجر والمنتجات
         }}
         onSubmitNotification={(product, notificationData) => {
@@ -2281,7 +2905,7 @@ export default function Home() {
           savedUnavailable.push(newUnavailableItem);
           localStorage.setItem('eshro_unavailable', JSON.stringify(savedUnavailable));
           
-          console.log('Notification saved:', notificationData);
+          
         }}
         favorites={favorites.map(f => f.id)}
       />
@@ -2290,7 +2914,13 @@ export default function Home() {
 
   // عرض صفحة المنتج
   if (currentPage === 'product' && currentProduct) {
-    const selectedProduct = allStoreProducts.find(p => p.id === currentProduct);
+    // البحث في المنتجات الحالية للمتجر أولاً (أفضل أداء)
+    let selectedProduct = currentStoreProducts.find(p => p.id === currentProduct);
+
+    // إذا لم يُعثر عليه، البحث في جميع منتجات المتاجر
+    if (!selectedProduct) {
+      selectedProduct = allStoreProducts.find(p => p.id === currentProduct);
+    }
 
     if (!selectedProduct) {
       return (
@@ -2298,7 +2928,7 @@ export default function Home() {
           <div className="text-center space-y-4">
             <p className="text-lg">هذا المنتج غير متوفر حالياً.</p>
             <Button
-              onClick={() => console.log('Notification requested for unavailable product:', currentProduct)}
+              onClick={() => {}}
               className="bg-orange-600 hover:bg-orange-700 text-white"
             >
               <Bell className="h-4 w-4 mr-2" />
@@ -2330,9 +2960,10 @@ export default function Home() {
           }
         }}
         onNotifyWhenAvailable={(productId) => {
-          console.log('Notification requested for product ID:', productId);
+          
           // النافذة الآن تُعرض محلياً في صفحات المتاجر والمنتجات
         }}
+        storeSlug={currentStore || undefined}
         isFavorite={favorites.some(f => f.id === currentProduct)}
       />
     );
@@ -2397,7 +3028,7 @@ export default function Home() {
           setFavorites(prev => prev.filter(p => p.id !== productId));
         }}
         onNotifyWhenAvailable={(productId) => {
-          console.log('Notification requested for product ID:', productId);
+          
         }}
         onDeleteOrder={(orderId) => {
           setOrders(prev => prev.filter(order => order?.id && order.id !== orderId));
@@ -2546,7 +3177,7 @@ export default function Home() {
       />
       <HeroSection />
       <ServicesSection onNavigate={handleNavigation} />
-      <StoresCarousel onStoreClick={handleStoreClick} />
+      <EnhancedStoresCarousel onStoreClick={handleStoreClick} />
       <DiscountSlider />
       <PartnersSection onNavigate={handleNavigation} />
       <Footer />
@@ -2555,10 +3186,10 @@ export default function Home() {
       <WelcomePopup
         isOpen={showWelcomePopup}
         onClose={() => {
-          console.log('Welcome popup onClose called');
-          console.log('showWelcomePopup before:', showWelcomePopup);
+          
+          
           setShowWelcomePopup(false);
-          console.log('showWelcomePopup after:', showWelcomePopup);
+          
         }}
         onRegistrationComplete={handleRegistrationComplete}
       />
@@ -2623,7 +3254,7 @@ export default function Home() {
             {/* زر متابعة التسوق فقط - تم إزالة زر لوحة التحكم */}
             <Button
               onClick={() => {
-                console.log('Continue shopping clicked in welcome back modal');
+                
                 setShowWelcomeBackModal(null);
               }}
               className="w-full bg-gradient-to-r from-green-500 to-primary hover:from-green-600 hover:to-primary/90 text-white font-bold py-3"

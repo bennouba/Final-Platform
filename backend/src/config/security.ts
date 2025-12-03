@@ -141,7 +141,7 @@ class SecurityManager {
     }
 
     return this.SENSITIVE_FIELDS.some(field =>
-      data.hasOwnProperty(field) && data[field]
+      Object.prototype.hasOwnProperty.call(data, field) && data[field]
     );
   }
 

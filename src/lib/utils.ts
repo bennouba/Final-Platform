@@ -132,12 +132,15 @@ export function advanceImageOnError(
   const nextIndex = currentIndex + 1
 
   if (nextIndex < sources.length) {
-    target.dataset.imageIndex = String(nextIndex)
-    target.src = sources[nextIndex]
-    return
+    const nextSrc = sources[nextIndex]
+    if (nextSrc) {
+      target.dataset.imageIndex = String(nextIndex)
+      target.src = nextSrc
+      return
+    }
   }
 
-  if (fallback && target.src !== fallback) {
+  if (fallback && fallback.length > 0 && target.src !== fallback) {
     target.onerror = null
     target.src = fallback
   }

@@ -22,7 +22,10 @@ interface PaymentAttributes {
   completedAt?: Date;
 }
 
-interface PaymentCreationAttributes extends Optional<PaymentAttributes, 'id' | 'createdAt' | 'updatedAt' | 'completedAt'> {}
+type PaymentCreationAttributes = Optional<
+  PaymentAttributes,
+  'id' | 'createdAt' | 'updatedAt' | 'completedAt'
+>;
 
 class Payment extends Model<PaymentAttributes, PaymentCreationAttributes> implements PaymentAttributes {
   declare id: string;
@@ -73,7 +76,7 @@ Payment.init(
       defaultValue: 'LYD',
     },
     gateway: {
-      type: DataTypes.ENUM(...Object.values(PaymentGateway)),
+      type: DataTypes.ENUM(...(Object.values(PaymentGateway) as string[])),
       allowNull: false,
     },
     gatewayResponse: {
@@ -81,7 +84,7 @@ Payment.init(
       allowNull: true,
     },
     status: {
-      type: DataTypes.ENUM(...Object.values(PaymentStatus)),
+      type: DataTypes.ENUM(...(Object.values(PaymentStatus) as string[])),
       defaultValue: PaymentStatus.PENDING,
     },
     secureHash: {

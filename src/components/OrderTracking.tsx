@@ -252,7 +252,9 @@ const OrderTracking: React.FC<OrderTrackingProps> = ({
           priority: status.status === 'delivered' ? 'high' : 'medium',
           actionUrl: `/orders/${orderId}`,
           actionText: 'عرض التفاصيل'
-        }).catch(console.error);
+        }).catch(() => {
+          void 0;
+        });
       }
       return status ?? null;
     });

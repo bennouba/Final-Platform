@@ -193,13 +193,13 @@ export const partnersData = {
 
 // storesData: Store information and configurations
 // بيانات المتاجر
-export const storesData = [
+const baseStoresData = [
   {
     id: 1,
     name: "نواعم",
     slug: "nawaem",
     description: "متجر الأزياء النسائية العصرية والعبايات الراقية",
-    logo: "/assets/real-stores/6.webp",
+    logo: "/assets/stores/nawaem.webp",
     categories: ["فساتين", "عبايات", "ملابس يومية", "اكسسوارات"],
     url: "https://nawaem.ly/",
     endpoints: {
@@ -218,7 +218,7 @@ export const storesData = [
     name: "شيرين",
     slug: "sheirine",
     description: "متجر شيرين للمجوهرات والإكسسوارات الفاخرة",
-    logo: "/assets/real-stores/1.webp",
+    logo: "/assets/stores/sheirine.webp",
     categories: ["All", "Engagement Rings", "Jewelry Sets", "Bracelets", "Necklaces and Chains", "Earrings", "Rings", "Hair Jewelry", "Leggings", "Body Jewelry and Accessories"],
     url: "https://sheirine.ly/",
     endpoints: {
@@ -235,7 +235,7 @@ export const storesData = [
     name: "Pretty",
     slug: "pretty",
     description: "متجر الأزياء والإكسسوارات الأنيقة",
-    logo: "/assets/real-stores/pretty/2.png",
+    logo: "/assets/stores/pretty.webp",
     categories: ["ملابس نسائية", "فساتين", "إكسسوارات", "أحذية"],
     url: "https://pretty.ezone.ly/",
     endpoints: {
@@ -250,7 +250,7 @@ export const storesData = [
     name: "Delta Store",
     slug: "delta-store",
     description: "متجر الأزياء والملابس العصرية",
-    logo: "/assets/brands/4.webp",
+    logo: "/assets/stores/delta-store.webp",
     categories: ["أزياء", "ملابس", "إكسسوارات"],
     url: "https://details.ly/",
     endpoints: {
@@ -265,7 +265,7 @@ export const storesData = [
     name: "Megna",
     slug: "magna-beauty",
     description: "متجر منتجات التجميل والعناية بالجمال",
-    logo: "/assets/brands/6.webp", 
+    logo: "/assets/stores/magna-beauty.webp",
     categories: ["مكياج", "عناية بالبشرة", "منتجات تجميل"],
     url: "https://store.magna-beauty.com/",
     endpoints: {
@@ -276,224 +276,194 @@ export const storesData = [
     isActive: true
   },
   {
-    id: 6,
-    name: "SHL ستور",
-    slug: "shl-store",
-    description: "متجر الأزياء والملابس العصرية",
-    logo: "/assets/stores/5.webp",
-    categories: ["أزياء", "ملابس", "إكسسوارات"],
-    url: "https://shlstore.eshro.ly/",
+    id: 1764003948994,
+    name: "انديش",
+    slug: "indeesh",
+    description: "متجر انديش للعطور والمنظفات والعناية الشخصية",
+    logo: "/assets/indeesh/logo/1764003949069-2wl3b2-Indeesh.png",
+    categories: ["عطور", "منظفات", "عناية شخصية"],
+    url: "/indeesh",
     endpoints: {
-      products: "https://shlstore.eshro.ly/products/latest-products?cat=%D8%A7%D9%84%D9%83%D9%84"
+      products: "",
+      discounts: ""
     },
     social: {},
     isActive: true
   },
-  {
-    id: 6,
-    name: "مكانك",
-    slug: "mkanek",
-    description: "متجر الأثاث وديكور المنزل",
-    logo: "/assets/stores/6.webp",
-    categories: ["أثاث", "ديكور", "أدوات منزلية"],
-    url: "https://mkanek.ly/",
-    endpoints: {
-      products: "https://mkanek.ly/products?cat=%D8%A7%D9%84%D9%83%D9%84",
-      discounts: "https://mkanek.ly/products/discounts"
-    },
-    social: {},
-    isActive: true
-  },
-  {
-    id: 7,
-    name: "كومفي",
-    slug: "comfy",
-    description: "متجر الملابس المريحة والرياضية",
-    logo: "/assets/stores/7.webp",
-    categories: ["ملابس رياضية", "ملابس مريحة", "أحذية رياضية"],
-    url: "https://comfy.ly/",
-    endpoints: {
-      products: "https://comfy.ly/products/latest-products?cat=%D8%A7%D9%84%D9%83%D9%84"
-    },
-    social: {},
-    isActive: true
-  },
-  {
-    id: 8,
-    name: "مكنون",
-    slug: "maknoon",
-    description: "متجر الإكسسوارات والهدايا المميزة",
-    logo: "/assets/stores/8.webp",
-    categories: ["إكسسوارات", "هدايا", "مجوهرات"],
-    url: "https://maknoon.ly/",
-    endpoints: {
-      products: "https://maknoon.ly/products?cat=%D8%A7%D9%84%D9%83%D9%84",
-      discounts: "https://maknoon.ly/products/discounts"
-    },
-    social: {},
-    isActive: true
-  },
-  {
-    id: 9,
-    name: "مايكرو تك",
-    slug: "microtech",
-    description: "متجر الإلكترونيات والتقنية الحديثة",
-    logo: "/assets/stores/10.webp",
-    categories: ["إلكترونيات", "حاسوب", "هواتف ذكية"],
-    url: "https://microtech.eshro.ly/",
-    endpoints: {
-      products: "https://microtech.eshro.ly/products/latest-products?cat=%D8%A7%D9%84%D9%83%D9%84"
-    },
-    social: {},
-    isActive: true
-  },
-  {
-    id: 10,
-    name: "تحفة",
-    slug: "tohfa",
-    description: "متجر التحف والهدايا التراثية",
-    logo: "/assets/stores/11.webp",
-    categories: ["تحف", "هدايا تراثية", "ديكور"],
-    url: "https://tohfa.ly/",
-    endpoints: {
-      products: "https://tohfa.ly/products?cat=%D8%A7%D9%84%D9%83%D9%84",
-      discounts: "https://tohfa.ly/products/discounts"
-    },
-    social: {},
-    isActive: true
-  },
-  {
-    id: 11,
-    name: "برشت بلو",
-    slug: "brushtblue",
-    description: "متجر أدوات الرسم والفنون",
-    logo: "/assets/stores/12.webp",
-    categories: ["أدوات رسم", "فنون", "قرطاسية"],
-    url: "https://brushtblue.ly/",
-    endpoints: {
-      products: "https://brushtblue.ly/products?cat=%D8%A7%D9%84%D9%83%D9%84",
-      discounts: "https://brushtblue.ly/products/discounts"
-    },
-    social: {},
-    isActive: true
-  },
-  {
-    id: 12,
-    name: "باجسي",
-    slug: "bagsy",
-    description: "متجر الحقائب والمحافظ",
-    logo: "/assets/stores/13.webp",
-    categories: ["حقائب", "محافظ", "إكسسوارات"],
-    url: "https://bagsy.eshro.ly/",
-    endpoints: {
-      products: "https://bagsy.eshro.ly/products?cat=%D8%A7%D9%84%D9%83%D9%84"
-    },
-    social: {},
-    isActive: true
-  },
-  {
-    id: 13,
-    name: "أونباسو",
-    slug: "unpasso",
-    description: "متجر الأحذية والصنادل",
-    logo: "/assets/stores/14.webp",
-    categories: ["أحذية", "صنادل", "أحذية رياضية"],
-    url: "https://unpasso.ly/",
-    endpoints: {
-      products: "https://unpasso.ly/products/latest-products?cat=%D8%A7%D9%84%D9%83%D9%84"
-    },
-    social: {},
-    isActive: true
-  },
-  {
-    id: 14,
-    name: "نايز كوزمتكس",
-    slug: "nyscosmetics",
-    description: "متجر مستحضرات التجميل العالمية",
-    logo: "/assets/stores/15.webp",
-    categories: ["مكياج", "عناية بالبشرة", "عطور"],
-    url: "https://nyscosmetics.eshro.ly/",
-    endpoints: {
-      products: "https://nyscosmetics.eshro.ly/products?cat=%D8%A7%D9%84%D9%83%D9%84",
-      discounts: "https://nyscosmetics.eshro.ly/products/discounts"
-    },
-    social: {},
-    isActive: true
-  },
-  {
-    id: 15,
-    name: "لوتس تك",
-    slug: "lotus-tec",
-    description: "متجر التقنية والأجهزة الذكية",
-    logo: "/assets/stores/16.webp",
-    categories: ["إلكترونيات", "أجهزة ذكية", "تقنية"],
-    url: "https://lotus_tec.eshro.ly/",
-    endpoints: {
-      products: "https://lotus_tec.eshro.ly/products/latest-products?cat=%D8%A7%D9%84%D9%83%D9%84"
-    },
-    social: {},
-    isActive: true
-  },
-  {
-    id: 16,
-    name: "الوردة البيضاء",
-    slug: "alwardaalbayda",
-    description: "متجر العطور والورود الطبيعية",
-    logo: "/assets/stores/17.webp",
-    categories: ["عطور", "ورود", "زيوت طبيعية"],
-    url: "https://alwardaalbayda.ly/",
-    endpoints: {
-      products: "https://alwardaalbayda.ly/products?cat=%D8%A7%D9%84%D9%83%D9%84",
-      discounts: "https://alwardaalbayda.ly/products/discounts"
-    },
-    social: {},
-    isActive: true
-  },
-  {
-    id: 17,
-    name: "الركن الليبي للساعات",
-    slug: "tlcwatches",
-    description: "متجر الساعات الفاخرة والإكسسوارات الرجالية",
-    logo: "/assets/stores/18.webp",
-    categories: ["ساعات", "إكسسوارات رجالية", "ساعات ذكية"],
-    url: "https://tlcwatches.ly/",
-    endpoints: {
-      products: "https://tlcwatches.ly/products?cat=%D8%A7%D9%84%D9%83%D9%84",
-      discounts: "https://tlcwatches.ly/products/discounts"
-    },
-    social: {},
-    isActive: true
-  },
-  {
-    id: 18,
-    name: "إيلول",
-    slug: "eylul",
-    description: "متجر الأزياء التركية والملابس النسائية العصرية",
-    logo: "/assets/stores/19.webp",
-    categories: ["أزياء تركية", "ملابس نسائية", "أطقم عصرية"],
-    url: "https://eylul.ly/",
-    endpoints: {
-      products: "https://eylul.ly/products?cat=%D8%A7%D9%84%D9%83%D9%84",
-      discounts: "https://eylul.ly/products/discounts"
-    },
-    social: {},
-    isActive: true
-  },
-  {
-    id: 19,
-    name: "كوزيت بوتيك",
-    slug: "cozetboutique",
-    description: "بوتيك الأزياء الراقية والإكسسوارات النسائية الفاخرة",
-    logo: "/assets/stores/20.webp",
-    categories: ["أزياء راقية", "إكسسوارات فاخرة", "حقائب مميزة"],
-    url: "https://cozetboutique.ly/",
-    endpoints: {
-      products: "https://cozetboutique.ly/products/latest-products?cat=%D8%A7%D9%84%D9%83%D9%84"
-    },
-    social: {},
-    isActive: true
-  }
 ];
+
+let cachedStoresData: any[] | null = null;
+
+const ALLOWED_STORES = ['nawaem', 'sheirine', 'pretty', 'delta-store', 'magna-beauty'];
+
+export function cleanupAnonymousStores() {
+  if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
+    return;
+  }
+
+  try {
+    // لا نحذف أي متجر مُسجل ما دام موجودًا في eshro_stores.
+    // نكتفي بتنظيف المفاتيح اليتيمة فقط.
+    const registeredStores = JSON.parse(localStorage.getItem('eshro_stores') || '[]');
+    if (!Array.isArray(registeredStores)) return;
+
+    // إعادة كتابة القائمة كما هي لضمان صحة التخزين فقط
+    localStorage.setItem('eshro_stores', JSON.stringify(registeredStores));
+
+    // إزالة المفاتيح اليتيمة
+    cleanupOrphanedStoreFiles();
+    invalidateStoresCache();
+  } catch (error) {
+
+  }
+}
+
+function removeStoreData(slug: string) {
+  localStorage.removeItem(`eshro_store_files_${slug}`);
+  localStorage.removeItem(`store_products_${slug}`);
+  localStorage.removeItem(`store_sliders_${slug}`);
+}
+
+export function removeStoreCompletely(slug: string) {
+  if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
+
+    return;
+  }
+
+  try {
+    removeStoreData(slug);
+    
+    const registeredStores = JSON.parse(localStorage.getItem('eshro_stores') || '[]');
+    const filtered = registeredStores.filter((s: any) => {
+      const storeSlug = (s?.subdomain || s?.id?.toString() || '').toString().toLowerCase().trim().replace(/\s+/g, '-');
+      return storeSlug !== slug.toLowerCase().trim().replace(/\s+/g, '-');
+    });
+    
+    if (filtered.length !== registeredStores.length) {
+      localStorage.setItem('eshro_stores', JSON.stringify(filtered));
+
+    }
+    
+    cleanupOrphanedStoreFiles();
+    invalidateStoresCache();
+    
+
+  } catch (error) {
+
+  }
+}
+
+function cleanupOrphanedStoreFiles() {
+  if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
+    return;
+  }
+
+  const keysToRemove: string[] = [];
+
+  // اجمع كل السلاجز المسجلة فعليًا
+  let registeredSlugs: string[] = [];
+  try {
+    const registeredStores = JSON.parse(localStorage.getItem('eshro_stores') || '[]');
+    if (Array.isArray(registeredStores)) {
+      registeredSlugs = registeredStores
+        .map((s: any) => (typeof s?.subdomain === 'string' ? s.subdomain : (s?.id ? String(s.id) : '')))
+        .filter(Boolean);
+    }
+  } catch {
+    // ignore
+  }
+
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (!key) continue;
+
+    if (key.startsWith('eshro_store_files_') || key.startsWith('store_products_') || key.startsWith('store_sliders_')) {
+      const slug = key
+        .replace('eshro_store_files_', '')
+        .replace('store_products_', '')
+        .replace('store_sliders_', '');
+
+      // احذف المفتاح إن لم يكن السلاج موجودًا ضمن eshro_stores
+      if (!registeredSlugs.includes(slug)) {
+        keysToRemove.push(key);
+      }
+    }
+  }
+
+  keysToRemove.forEach((key) => {
+
+    localStorage.removeItem(key);
+  });
+
+  if (keysToRemove.length > 0) {
+    void 0;
+  }
+}
+
+export function getStoresData(forceRefresh = false) {
+  if (cachedStoresData && !forceRefresh) {
+    return cachedStoresData;
+  }
+
+  const normalize = (v: any) => {
+    const n = (v ?? '').toString().trim().toLowerCase().replace(/\s+/g, '-');
+    const alias: Record<string, string> = {
+      sherine: 'sheirine',
+      sheirin: 'sheirine',
+      delta: 'delta-store',
+      details: 'delta-store',
+      detail: 'delta-store',
+      megna: 'magna-beauty',
+      magna: 'magna-beauty',
+      magna_beauty: 'magna-beauty',
+    };
+    return alias[n] || n;
+  };
+  const allStores = [...baseStoresData];
+  
+  if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
+    try {
+      const registeredStores = JSON.parse(localStorage.getItem('eshro_stores') || '[]');
+      registeredStores.forEach((newStore: any) => {
+        const slug = normalize(newStore.subdomain);
+        const storeIndex = allStores.findIndex(s => normalize(s.slug) === slug);
+        if (storeIndex === -1) {
+          const nextId = Math.max(...allStores.map(s => s.id), 0) + 1;
+          allStores.push({
+            id: nextId,
+            name: newStore.nameAr || newStore.name,
+            slug: slug,
+            description: newStore.description || '',
+            logo: newStore.logo || '/assets/default-store.png',
+            categories: newStore.categories || [],
+            url: `/store/${slug}`,
+            endpoints: {
+              products: '',
+              discounts: ''
+            },
+            social: {
+              facebook: '',
+              instagram: '',
+              website: ''
+            },
+            isActive: newStore.setupComplete !== false
+          });
+        }
+      });
+    } catch (error) {
+
+    }
+  }
+  
+  cachedStoresData = allStores;
+  return allStores;
+}
+
+export function invalidateStoresCache() {
+  cachedStoresData = null;
+}
+
+export const storesData = getStoresData();
 
 // sampleProducts: Sample product data for testing and display
 // بيانات المنتجات التجريبية
@@ -520,7 +490,10 @@ export const sampleProducts = [
     rating: 4.5,
     reviews: 12,
     category: "فساتين",
-    inStock: true
+    inStock: true,
+    quantity: 10,
+    expiryDate: "2027-08-15",
+    endDate: "2029-08-15"
   },
   {
     id: 2,
@@ -542,7 +515,10 @@ export const sampleProducts = [
     rating: 4.8,
     reviews: 8,
     category: "فساتين",
-    inStock: true
+    inStock: true,
+    quantity: 8,
+    expiryDate: "2027-10-22",
+    endDate: "2029-10-22"
   },
   {
     id: 3,
@@ -565,7 +541,10 @@ export const sampleProducts = [
     rating: 4.9,
     reviews: 15,
     category: "فساتين",
-    inStock: true
+    inStock: true,
+    quantity: 15,
+    expiryDate: "2028-02-10",
+    endDate: "2030-02-10"
   },
   {
     id: 4,
@@ -585,7 +564,10 @@ export const sampleProducts = [
     rating: 4.6,
     reviews: 20,
     category: "عبايات", 
-    inStock: true
+    inStock: true,
+    quantity: 12,
+    expiryDate: "2028-05-18",
+    endDate: "2030-05-18"
   },
   {
     id: 5,
@@ -607,7 +589,10 @@ export const sampleProducts = [
     rating: 4.3,
     reviews: 25,
     category: "ملابس يومية",
-    inStock: true
+    inStock: true,
+    quantity: 20,
+    expiryDate: "2027-11-30",
+    endDate: "2029-11-30"
   },
   {
     id: 6,
@@ -628,7 +613,10 @@ export const sampleProducts = [
     rating: 4.7,
     reviews: 30,
     category: "اكسسوارات",
-    inStock: true
+    inStock: true,
+    quantity: 25,
+    expiryDate: "2028-03-05",
+    endDate: "2030-03-05"
   }
 ];
 
@@ -674,6 +662,8 @@ export const availableCoupons = [
     description: "تخفيضات 20% بقيمة شراء 3000 د.ل"
   }
 ];
+
+
 
 // statsData: Statistics data for the homepage display
 // بيانات الإحصائيات للصفحة الرئيسية

@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تنظيف متجر شيخة - Clear Shikha Store</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Cairo', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 16px;
+            line-height: 1.6;
+        }
+        
+        .warning-box {
+            background: #fff3cd;
+            border: 2px solid #ffeaa7;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 25px 0;
+            text-align: right;
+        }
+        
+        .warning-title {
+            font-weight: bold;
+            color: #856404;
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+        
+        .warning-text {
+            color: #856404;
+            line-height: 1.6;
+        }
+        
+        .btn-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: center;
+            margin: 30px 0;
+        }
+        
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 25px;
+            font-size: 16px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.3s ease;
+            font-weight: bold;
+            min-width: 160px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(45deg, #dc3545, #c82333);
+            color: white;
+            box-shadow: 0 5px 15px rgba(220, 53, 69, 0.3);
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(220, 53, 69, 0.4);
+        }
+        
+        .btn-secondary {
+            background: linear-gradient(45deg, #6c757d, #5a6268);
+            color: white;
+            box-shadow: 0 5px 15px rgba(108, 117, 125, 0.3);
+        }
+        
+        .btn-secondary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(108, 117, 125, 0.4);
+        }
+        
+        .btn-success {
+            background: linear-gradient(45deg, #28a745, #218838);
+            color: white;
+            box-shadow: 0 5px 15px rgba(40, 167, 69, 0.3);
+        }
+        
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(40, 167, 69, 0.4);
+        }
+        
+        .status {
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            font-weight: bold;
+            text-align: right;
+        }
+        
+        .status-info {
+            background-color: #cce7ff;
+            color: #004085;
+            border: 1px solid #99d1ff;
+        }
+        
+        .status-success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .store-info {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            text-align: right;
+            border: 1px solid #dee2e6;
+        }
+        
+        .store-name {
+            font-size: 20px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .store-desc {
+            color: #666;
+            margin-bottom: 10px;
+        }
+        
+        .data-item {
+            display: flex;
+            justify-content: space-between;
+            margin: 5px 0;
+            padding: 5px 0;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .data-label {
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .data-value {
+            color: #007bff;
+        }
+        
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: right;
+        }
+        
+        .loading {
+            background: #e9ecef;
+            color: #495057;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+                margin: 10px;
+            }
+            
+            .btn-group {
+                flex-direction: column;
+            }
+            
+            .btn {
+                width: 100%;
+                min-width: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧹 تنظيف متجر شيخة</h1>
+        <div class="subtitle">
+            أداة تنظيف وإدارة بيانات متجر شيخة في localStorage
+        </div>
+        
+        <div class="store-info">
+            <div class="store-name">🏪 متجر شيخة</div>
+            <div class="store-desc">ملابس نسائية راقية</div>
+            
+            <div class="data-item">
+                <span class="data-label">عدد المنتجات:</span>
+                <span class="data-value">3 منتجات</span>
+            </div>
+            <div class="data-item">
+                <span class="data-label">الفئة:</span>
+                <span class="data-value">الأزياء والملابس</span>
+            </div>
+            <div class="data-item">
+                <span class="data-label">الحالة:</span>
+                <span class="data-value">نشط</span>
+            </div>
+        </div>
+        
+        <div class="warning-box">
+            <div class="warning-title">⚠️ تحذير مهم</div>
+            <div class="warning-text">
+                هذه الأداة ستقوم بحذف جميع البيانات المتعلقة بمتجر شيخة من localStorage.
+                تأكد من أنك تريد المتابعة قبل النقر على أي زر.
+            </div>
+        </div>
+        
+        <div class="status status-info" id="currentStatus">
+            📊 حالة localStorage: جاري الفحص...
+        </div>
+        
+        <div class="btn-group">
+            <button onclick="checkStoreData()" class="btn btn-secondary">
+                🔍 فحص البيانات
+            </button>
+            <button onclick="clearStoreData()" class="btn btn-primary">
+                🗑️ حذف بيانات المتجر
+            </button>
+            <button onclick="clearAllData()" class="btn btn-primary">
+                🗑️ حذف جميع البيانات
+            </button>
+            <button onclick="restoreStore()" class="btn btn-success">
+                🔄 استعادة المتجر
+            </button>
+        </div>
+        
+        <div class="btn-group">
+            <a href="http://localhost:5174" target="_blank" rel="noopener" class="btn btn-success">
+                🚀 الذهاب للتطبيق
+            </a>
+            <button onclick="location.reload()" class="btn btn-secondary">
+                🔄 إعادة تحميل
+            </button>
+        </div>
+        
+        <div id="result" class="result loading">
+            مرحباً! انقر على أي زر أعلاه لبدء عملية التنظيف أو الفحص.
+        </div>
+    </div>
+
+    <script>
+        function updateStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('currentStatus');
+            statusDiv.textContent = message;
+            statusDiv.className = `status status-${type}`;
+        }
+        
+        function updateResult(message, type = 'loading') {
+            const resultDiv = document.getElementById('result');
+            resultDiv.textContent = message;
+            resultDiv.className = `result ${type}`;
+        }
+        
+        function checkStoreData() {
+            updateResult('🔍 جاري فحص البيانات...', 'loading');
+            
+            try {
+                const shikhaProducts = localStorage.getItem('store_products_shikha');
+                const shikhaSliders = localStorage.getItem('store_sliders_shikha');
+                const shikhaFiles = localStorage.getItem('eshro_store_files_shikha');
+                
+                let message = '📋 نتائج الفحص:\\n\\n';
+                
+                if (shikhaProducts) {
+                    const products = JSON.parse(shikhaProducts);
+                    message += `✅ منتجات المتجر: ${products.length} منتج\\n`;
+                } else {
+                    message += '❌ لا توجد منتجات محفوظة\\n';
+                }
+                
+                if (shikhaSliders) {
+                    const sliders = JSON.parse(shikhaSliders);
+                    message += `✅ صور السلايدر: ${sliders.length} صورة\\n`;
+                } else {
+                    message += '❌ لا توجد صور سلايدر محفوظة\\n';
+                }
+                
+                if (shikhaFiles) {
+                    message += '✅ ملفات المتجر موجودة\\n';
+                } else {
+                    message += '❌ لا توجد ملفات متجر محفوظة\\n';
+                }
+                
+                message += `\\n📊 إجمالي المفاتيح في localStorage: ${localStorage.length}`;
+                
+                updateResult(message, 'success');
+                updateStatus(`✅ تم العثور على ${localStorage.length} عنصر في localStorage`, 'success');
+                
+            } catch (error) {
+                updateResult(`❌ خطأ في فحص البيانات: ${error.message}`, 'error');
+                updateStatus('❌ خطأ في فحص البيانات', 'error');
+            }
+        }
+        
+        function clearStoreData() {
+            if (!confirm('هل أنت متأكد من حذف جميع بيانات متجر شيخة؟')) {
+                return;
+            }
+            
+            updateResult('🗑️ جاري حذف بيانات المتجر...', 'loading');
+            
+            try {
+                // حذف البيانات المتعلقة بمتجر شيخة
+                const keysToRemove = [
+                    'store_products_shikha',
+                    'store_sliders_shikha',
+                    'eshro_store_files_shikha'
+                ];
+                
+                let deletedCount = 0;
+                keysToRemove.forEach(key => {
+                    if (localStorage.getItem(key)) {
+                        localStorage.removeItem(key);
+                        deletedCount++;
+                    }
+                });
+                
+                updateResult(`✅ تم حذف ${deletedCount} عنصر متعلق بمتجر شيخة`, 'success');
+                updateStatus(`🗑️ تم حذف ${deletedCount} عنصر`, 'success');
+                
+                // فحص سريع بعد الحذف
+                setTimeout(() => {
+                    const remainingItems = localStorage.length;
+                    updateStatus(`📊 المتبقي في localStorage: ${remainingItems} عنصر`, 'info');
+                }, 1000);
+                
+            } catch (error) {
+                updateResult(`❌ خطأ في حذف البيانات: ${error.message}`, 'error');
+                updateStatus('❌ خطأ في حذف البيانات', 'error');
+            }
+        }
+        
+        function clearAllData() {
+            if (!confirm('⚠️ تحذير: هذا سيحذف جميع البيانات من localStorage!\\n\\nهل أنت متأكد؟')) {
+                return;
+            }
+            
+            updateResult('🗑️ جاري حذف جميع البيانات...', 'loading');
+            
+            try {
+                const beforeCount = localStorage.length;
+                localStorage.clear();
+                
+                updateResult(`✅ تم حذف جميع البيانات (${beforeCount} عنصر)`, 'success');
+                updateStatus('🗑️ تم حذف جميع البيانات', 'success');
+                
+            } catch (error) {
+                updateResult(`❌ خطأ في حذف جميع البيانات: ${error.message}`, 'error');
+                updateStatus('❌ خطأ في حذف جميع البيانات', 'error');
+            }
+        }
+        
+        function restoreStore() {
+            updateResult('🔄 جاري استعادة متجر شيخة...', 'loading');
+            
+            try {
+                // فحص ما إذا كان المتجر موجود في الفهرس
+                fetch('http://localhost:4000/assets/stores/index.json')
+                    .then(response => response.json())
+                    .then(stores => {
+                        const shikhaStore = stores.find(store => store.slug === 'shikha');
+                        
+                        if (shikhaStore) {
+                            updateResult(
+                                `✅ تم العثور على متجر شيخة في النظام!\\n\\n` +
+                                `الاسم: ${shikhaStore.nameAr}\\n` +
+                                `عدد المنتجات: ${shikhaStore.productsCount}\\n` +
+                                `آخر تحديث: ${new Date(shikhaStore.lastUpdated).toLocaleString('ar')}\\n\\n` +
+                                `يمكنك الآن الذهاب للتطبيق وستجد متجر شيخة في قائمة المتاجر.`,
+                                'success'
+                            );
+                            updateStatus('✅ المتجر متاح في النظام', 'success');
+                        } else {
+                            updateResult('❌ لم يتم العثور على متجر شيخة في فهرس المتاجر', 'error');
+                            updateStatus('❌ المتجر غير موجود في النظام', 'error');
+                        }
+                    })
+                    .catch(error => {
+                        updateResult(`❌ خطأ في الاتصال: ${error.message}`, 'error');
+                        updateStatus('❌ خطأ في الاتصال بالخادم', 'error');
+                    });
+                
+            } catch (error) {
+                updateResult(`❌ خطأ في استعادة المتجر: ${error.message}`, 'error');
+                updateStatus('❌ خطأ في استعادة المتجر', 'error');
+            }
+        }
+        
+        // فحص فوري عند تحميل الصفحة
+        window.addEventListener('load', () => {
+            updateStatus(`📊 حالة localStorage: ${localStorage.length} عنصر محفوظ`, 'info');
+        });
+        
+        console.log('🧹 تم تحميل أداة تنظيف متجر شيخة');
+    </script>
+</body>
+</html>

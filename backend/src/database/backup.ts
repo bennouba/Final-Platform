@@ -181,69 +181,71 @@ if (require.main === module) {
     case 'backup':
       backupManager.createBackup()
         .then((filepath) => {
-          console.log(`✅ Backup created: ${filepath}`);
+
           process.exit(0);
         })
         .catch((error) => {
-          console.error('❌ Backup failed:', error);
+
           process.exit(1);
         });
       break;
 
-    case 'restore':
+    case 'restore': {
       const backupFile = process.argv[3];
       if (!backupFile) {
-        console.error('❌ Please provide backup file path');
-        console.log('Usage: npm run db:backup-restore <backup-file>');
+
+
         process.exit(1);
       }
       backupManager.restoreBackup(backupFile)
         .then(() => {
-          console.log('✅ Database restored successfully');
+
           process.exit(0);
         })
         .catch((error) => {
-          console.error('❌ Restore failed:', error);
+
           process.exit(1);
         });
       break;
+    }
 
-    case 'list':
+    case 'list': {
       const backups = backupManager.listBackups();
       if (backups.length === 0) {
-        console.log('📁 No backup files found');
+        void 0;
       } else {
-        console.log('📁 Available backups:');
         backups.forEach((backup, index) => {
           const info = backupManager.getBackupInfo(backup);
           const size = info.size ? `${(info.size / 1024 / 1024).toFixed(2)} MB` : 'Unknown';
           const date = info.created ? info.created.toLocaleString() : 'Unknown';
-          console.log(`${index + 1}. ${backup} (${size}) - ${date}`);
+
         });
       }
       break;
+    }
 
-    case 'clean':
+    case 'clean': {
       const keepCount = parseInt(process.argv[3]) || 10;
       backupManager.cleanOldBackups(keepCount)
         .then(() => {
-          console.log(`✅ Cleaned old backups, keeping last ${keepCount}`);
+
           process.exit(0);
         })
         .catch((error) => {
-          console.error('❌ Clean failed:', error);
+
           process.exit(1);
         });
       break;
+    }
 
     default:
-      console.log('📋 Database Backup Manager');
-      console.log('');
-      console.log('Usage:');
-      console.log('  npm run db:backup          - Create new backup');
-      console.log('  npm run db:restore <file>   - Restore from backup');
-      console.log('  npm run db:list             - List backup files');
-      console.log('  npm run db:clean [count]    - Clean old backups (default: keep 10)');
+
+
+
+
+
+
+
       break;
   }
 }

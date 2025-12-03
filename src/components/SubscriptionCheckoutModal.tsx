@@ -128,7 +128,7 @@ export const SubscriptionCheckoutModal: React.FC<SubscriptionCheckoutModalProps>
     if (!isOpen) return;
     if (currentStep >= 2) {
       ensureMoamalatScript().catch((error) => {
-        console.error('[Moamalat] preload failed:', error);
+
       });
     }
   }, [isOpen, currentStep]);
@@ -136,7 +136,7 @@ export const SubscriptionCheckoutModal: React.FC<SubscriptionCheckoutModalProps>
   useEffect(() => {
     if (!isOpen || !selectedPaymentMethod) return;
     ensureMoamalatScript().catch((error) => {
-      console.error('[Moamalat] script load error:', error);
+
       alert('تعذر تحميل سكربت بوابة معاملات. حاول مرة أخرى.');
     });
   }, [isOpen, selectedPaymentMethod]);
@@ -160,7 +160,7 @@ export const SubscriptionCheckoutModal: React.FC<SubscriptionCheckoutModalProps>
           setTimeout(() => alert(`تمت عملية الدفع بنجاح عبر ${methodLabel}! سيتم تفعيل الاشتراك قريباً.`), 400);
         },
         onError: (err) => {
-          console.error('[Moamalat] error:', err);
+
           setIsProcessing(false);
           setIsLaunchingMoamalat(false);
           alert('حدث خطأ في عملية الدفع عبر ' + methodLabel + ': ' + (err?.error || err?.message || 'خطأ غير معروف'));
@@ -171,7 +171,7 @@ export const SubscriptionCheckoutModal: React.FC<SubscriptionCheckoutModalProps>
         },
       });
     } catch (error: any) {
-      console.error('[Moamalat] launch failed:', error);
+
       setIsProcessing(false);
       setIsLaunchingMoamalat(false);
       alert('فشل في تهيئة بوابة الدفع عبر ' + methodLabel + ': ' + (error?.message || 'خطأ غير معروف'));

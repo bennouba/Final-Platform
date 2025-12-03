@@ -52,7 +52,7 @@ interface FilterCriteria {
   values: FilterValue[];
   isActive: boolean;
   sortOrder: number;
-  createdAt: string;
+  createdAt?: string;
 }
 
 interface FilterCriteriaViewProps {
@@ -200,8 +200,6 @@ const FilterCriteriaView: React.FC<FilterCriteriaViewProps> = ({ storeData, setS
   const handleSaveFilter = () => {
     if (!storeData) return;
 
-    const createdAt = editingFilter ? editingFilter.createdAt : new Date().toISOString().split('T')[0];
-
     const newFilter: FilterCriteria = {
       id: editingFilter ? editingFilter.id : Date.now().toString(),
       nameAr: filterForm.nameAr,
@@ -209,7 +207,7 @@ const FilterCriteriaView: React.FC<FilterCriteriaViewProps> = ({ storeData, setS
       type: filterForm.type,
       isActive: filterForm.isActive,
       sortOrder: filterForm.sortOrder,
-      createdAt,
+      ...(editingFilter?.createdAt && { createdAt: editingFilter.createdAt }),
       values: filterForm.values,
     };
 

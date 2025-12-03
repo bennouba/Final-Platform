@@ -71,7 +71,7 @@ const MoamalatRealLightbox: React.FC<MoamalatRealLightboxProps> = ({
   }
 
   const handlePaymentSuccess = useCallback((transactionData: any) => {
-    console.log('Payment successful:', transactionData);
+
     const formattedData = {
       TxnDate: transactionData.TxnDate,
       SystemReference: transactionData.SystemReference,
@@ -93,12 +93,12 @@ const MoamalatRealLightbox: React.FC<MoamalatRealLightboxProps> = ({
   }, [onClose, onPaymentSuccess]);
 
   const handlePaymentError = useCallback((error: any) => {
-    console.error('Payment error:', error);
+
     onPaymentError(error.error || 'حدث خطأ في عملية الدفع');
   }, [onPaymentError]);
 
   const handlePaymentCancel = useCallback(() => {
-    console.log('Payment cancelled');
+
     onClose();
   }, [onClose]);
 
@@ -138,11 +138,11 @@ const MoamalatRealLightbox: React.FC<MoamalatRealLightboxProps> = ({
           // Show the lightbox
           (window as any).Lightbox.Checkout.showLightbox();
         } else {
-          console.error('Lightbox SDK not loaded properly');
+
           onPaymentError('فشل في تحميل نظام الدفع');
         }
       } catch (error) {
-        console.error('Error initializing Moamalat Lightbox:', error);
+
         onPaymentError('خطأ في تهيئة نظام الدفع');
       }
     };
@@ -159,7 +159,7 @@ const MoamalatRealLightbox: React.FC<MoamalatRealLightboxProps> = ({
             sdkLoadedRef.current = true;
             initializeLightbox();
           } else {
-            console.error('Lightbox SDK not loaded');
+
             onPaymentError('فشل في تحميل نظام الدفع. يرجى المحاولة لاحقاً.');
           }
         }, 1000);
@@ -171,7 +171,8 @@ const MoamalatRealLightbox: React.FC<MoamalatRealLightboxProps> = ({
 
   const generateSecureHash = async (params: any) => {
     try {
-      const response = await fetch('http://localhost:4000/api/moamalat/hash', {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+      const response = await fetch(`${apiUrl}/moamalat/hash`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -192,7 +193,7 @@ const MoamalatRealLightbox: React.FC<MoamalatRealLightboxProps> = ({
       const data = await response.json();
       return data.secureHash;
     } catch (error) {
-      console.error('Error generating secure hash:', error);
+
       // Fallback to client-side generation (not secure, for testing only)
       const sortedParams = {
         Amount: params.Amount,

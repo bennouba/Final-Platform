@@ -303,7 +303,7 @@ const ReturnsView: React.FC<ReturnsViewProps> = ({
       setShowCreateDialog(false);
       loadReturns();
     } catch (error) {
-      console.error('Error creating return:', error);
+
     } finally {
       setIsLoading(false);
     }

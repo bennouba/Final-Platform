@@ -10,6 +10,7 @@ import type { Product } from '../../storeProducts';
 
 interface DeltaSliderProps {
   products: Product[];
+  sliderImages?: Array<{ id: string | number; image: string; title?: string; subtitle?: string; buttonText?: string }>;
   storeSlug?: string;
   onProductClick: (productId: number) => void;
   onAddToCart: (product: Product) => void;
@@ -19,6 +20,7 @@ interface DeltaSliderProps {
 
 const DeltaSlider: React.FC<DeltaSliderProps> = ({
   products,
+  sliderImages,
   storeSlug = 'delta-store',
   onProductClick,
   onAddToCart,
@@ -31,8 +33,7 @@ const DeltaSlider: React.FC<DeltaSliderProps> = ({
   const sliderRef = useRef<HTMLDivElement>(null);
   const startX = useRef(0);
 
-  // صور السلايدر لمتجر دلتا
-  const sliderBanners = [
+  const defaultBanners = [
     {
       id: 'delta-banner1',
       image: '/assets/delta/slider1.webp',
@@ -65,9 +66,12 @@ const DeltaSlider: React.FC<DeltaSliderProps> = ({
     },
   ];
 
-  const allSlides = sliderBanners;
+  if (sliderImages && sliderImages.length > 0) {
+    void 0;
+  }
 
-  // التشغيل التلقائي
+  const allSlides = (Array.isArray(sliderImages) && sliderImages.length > 0) ? sliderImages : defaultBanners;
+
   useEffect(() => {
     if (!isAutoPlaying || allSlides.length <= 1 || isDragging) return;
 
@@ -90,7 +94,6 @@ const DeltaSlider: React.FC<DeltaSliderProps> = ({
     setActiveSlide(index);
   };
 
-  // معالجة السحب للأجهزة اللمسية
   const handleMouseDown = (e: React.MouseEvent) => {
     setIsDragging(true);
     startX.current = e.clientX;
@@ -118,7 +121,6 @@ const DeltaSlider: React.FC<DeltaSliderProps> = ({
     setTimeout(() => setIsAutoPlaying(true), 3000);
   };
 
-  // ألوان متجر دلتا
   const storeColors = {
     background: 'from-blue-50 via-cyan-50 to-teal-50',
     accent: 'from-blue-400 via-cyan-400 to-teal-400',
@@ -127,29 +129,34 @@ const DeltaSlider: React.FC<DeltaSliderProps> = ({
   };
 
   return (
-    <div className={`relative h-[600px] md:h-[800px] overflow-hidden bg-gradient-to-br ${storeColors.background}`}>
-      {/* خلفية متحركة لمتجر دلتا */}
+    <div className={`relative h-[500px] md:h-[600px] overflow-hidden bg-gradient-to-br ${storeColors.background}`}>
       <div className="absolute inset-0">
         <div className={`absolute inset-0 bg-gradient-to-r ${storeColors.accent}/20 via-current/10 to-current/20`}></div>
         <div className="absolute inset-0">
-          {[...Array(20)].map((_, i) => (
-            <div
-              key={i}
-              className="absolute animate-pulse"
-              style={{
-                left: `${Math.random() * 100}%`,
-                top: `${Math.random() * 100}%`,
-                animationDelay: `${Math.random() * 3}s`,
-                animationDuration: `${2 + Math.random() * 2}s`
-              }}
-            >
-              <Sparkles className="h-4 w-4 text-blue-400/40" />
-            </div>
-          ))}
+          {[...Array(20)].map((_, i) => {
+            const leftPos = Math.random() * 100;
+            const topPos = Math.random() * 100;
+            const delay = Math.random() * 3;
+            const duration = 2 + Math.random() * 2;
+            
+            return (
+              <div
+                key={i}
+                className="absolute animate-pulse"
+                style={{
+                  left: `${leftPos}%`,
+                  top: `${topPos}%`,
+                  animationDelay: `${delay}s`,
+                  animationDuration: `${duration}s`
+                }}
+              >
+                <Sparkles className="h-4 w-4 text-blue-400/40" />
+              </div>
+            );
+          })}
         </div>
       </div>
 
-      {/* السلايدر */}
       <div
         ref={sliderRef}
         className="relative h-full cursor-grab active:cursor-grabbing"
@@ -169,15 +176,12 @@ const DeltaSlider: React.FC<DeltaSliderProps> = ({
               key={slide.id}
               className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
                 index === activeSlide ? 'opacity-100' : 'opacity-0'
-              }`}
-              style={{
-                filter: isDragging ? 'brightness(0.9)' : 'brightness(1)'
-              }}
+              } ${isDragging ? 'brightness-90' : 'brightness-100'}`}
             >
               <img
                 src={slide.image}
                 alt={slide.title}
-                className="w-full h-full object-contain object-center rounded-lg"
+                className="w-full h-full object-cover object-center"
                 onError={(e) => {
                   const target = e.target as HTMLImageElement;
                   target.style.display = 'none';
@@ -188,17 +192,20 @@ const DeltaSlider: React.FC<DeltaSliderProps> = ({
         </div>
       </div>
 
-      {/* أزرار التنقل */}
       {allSlides.length > 1 && (
         <>
           <button
             onClick={prevSlide}
+            title="السابق"
+            aria-label="السابق"
             className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white/90 backdrop-blur-sm hover:bg-white p-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 border-2 border-blue-200 hover:border-blue-400 z-50"
           >
             <ArrowLeft className="h-6 w-6 text-gray-700" />
           </button>
           <button
             onClick={nextSlide}
+            title="التالي"
+            aria-label="التالي"
             className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white/90 backdrop-blur-sm hover:bg-white p-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 border-2 border-blue-200 hover:border-blue-400 z-50"
           >
             <ArrowRight className="h-6 w-6 text-gray-700" />
@@ -206,13 +213,14 @@ const DeltaSlider: React.FC<DeltaSliderProps> = ({
         </>
       )}
 
-      {/* نقاط التنقل */}
       {allSlides.length > 1 && (
         <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex gap-3 z-20">
           {allSlides.map((_, index) => (
             <button
               key={index}
               onClick={() => goToSlide(index)}
+              title={`اذهب إلى الشريحة ${index + 1}`}
+              aria-label={`اذهب إلى الشريحة ${index + 1}`}
               className={`transition-all duration-300 rounded-full ${
                 index === activeSlide
                   ? 'w-10 h-3 bg-gradient-to-r from-blue-400 to-cyan-500'
@@ -223,10 +231,11 @@ const DeltaSlider: React.FC<DeltaSliderProps> = ({
         </div>
       )}
 
-      {/* مؤشر التشغيل التلقائي */}
       <div className="absolute top-4 left-4 z-20">
         <button
           onClick={() => setIsAutoPlaying(!isAutoPlaying)}
+          title={isAutoPlaying ? 'إيقاف التشغيل' : 'بدء التشغيل'}
+          aria-label={isAutoPlaying ? 'إيقاف التشغيل التلقائي' : 'بدء التشغيل التلقائي'}
           className={`p-2 rounded-full backdrop-blur-sm border transition-all duration-300 ${
             isAutoPlaying
               ? 'bg-green-500/90 border-green-300 text-white'

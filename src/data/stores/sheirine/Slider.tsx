@@ -6,6 +6,7 @@ import type { Product } from '../../storeProducts';
 
 interface SheirineSliderProps {
   products: Product[];
+  sliderImages?: Array<{ id: string | number; image: string; title?: string; subtitle?: string; buttonText?: string }>;
   storeSlug?: string;
   onProductClick: (productId: number) => void;
   onAddToCart: (product: Product) => void;
@@ -15,6 +16,7 @@ interface SheirineSliderProps {
 
 const SheirineSlider: React.FC<SheirineSliderProps> = ({
   products,
+  sliderImages,
   storeSlug = 'sheirine',
   onProductClick,
   onAddToCart,
@@ -27,8 +29,7 @@ const SheirineSlider: React.FC<SheirineSliderProps> = ({
   const sliderRef = useRef<HTMLDivElement>(null);
   const startX = useRef(0);
 
-  // صور السلايدر لمتجر شيرين
-  const sliderBanners = [
+  const defaultBanners = [
     {
       id: 'banner1',
       image: '/assets/sheirine/slider1.jpg',
@@ -51,7 +52,11 @@ const SheirineSlider: React.FC<SheirineSliderProps> = ({
     },
   ];
 
-  const allSlides = sliderBanners;
+  if (sliderImages && sliderImages.length > 0) {
+    void 0;
+  }
+
+  const allSlides = (Array.isArray(sliderImages) && sliderImages.length > 0) ? sliderImages : defaultBanners;
 
   // التشغيل التلقائي
   useEffect(() => {
@@ -113,7 +118,7 @@ const SheirineSlider: React.FC<SheirineSliderProps> = ({
   };
 
   return (
-    <div className={`relative h-[600px] md:h-[800px] overflow-hidden bg-gradient-to-br ${storeColors.background}`}>
+    <div className={`relative h-[500px] md:h-[600px] overflow-hidden bg-gradient-to-br ${storeColors.background}`}>
       {/* خلفية متحركة لمتجر شيرين */}
       <div className="absolute inset-0">
         <div className={`absolute inset-0 bg-gradient-to-r ${storeColors.accent}/20 via-current/10 to-current/20`}></div>
@@ -163,7 +168,7 @@ const SheirineSlider: React.FC<SheirineSliderProps> = ({
               <img
                 src={slide.image}
                 alt={slide.title}
-                className="w-full h-full object-contain object-center rounded-lg"
+                className="w-full h-full object-cover object-center"
                 onError={(e) => {
                   const target = e.target as HTMLImageElement;
                   target.style.display = 'none';
@@ -179,12 +184,14 @@ const SheirineSlider: React.FC<SheirineSliderProps> = ({
         <>
           <button
             onClick={prevSlide}
+            title="الشريحة السابقة"
             className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white/90 backdrop-blur-sm hover:bg-white p-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 border-2 border-pink-200 hover:border-pink-400 z-50"
           >
             <ArrowLeft className="h-6 w-6 text-gray-700" />
           </button>
           <button
             onClick={nextSlide}
+            title="الشريحة التالية"
             className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white/90 backdrop-blur-sm hover:bg-white p-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 border-2 border-pink-200 hover:border-pink-400 z-50"
           >
             <ArrowRight className="h-6 w-6 text-gray-700" />
@@ -199,6 +206,7 @@ const SheirineSlider: React.FC<SheirineSliderProps> = ({
             <button
               key={index}
               onClick={() => goToSlide(index)}
+              title={`انتقل إلى الشريحة ${index + 1}`}
               className={`transition-all duration-300 rounded-full ${
                 index === activeSlide
                   ? 'w-10 h-3 bg-gradient-to-r from-pink-400 to-purple-500'

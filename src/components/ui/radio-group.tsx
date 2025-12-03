@@ -11,8 +11,9 @@ export const RadioGroup: React.FC<RadioGroupProps> = ({ value, onValueChange, cl
     <div className={cn("space-y-2", className)} {...props}>
       {React.Children.map(children, (child) => {
         if (!React.isValidElement(child)) return child;
+        const childProps = child.props as any;
         return React.cloneElement(child as any, {
-          checked: child.props.value === value,
+          checked: childProps.value === value,
           onChange: (e: React.ChangeEvent<HTMLInputElement>) => onValueChange?.(e.target.value),
         });
       })}

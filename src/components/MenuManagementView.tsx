@@ -80,7 +80,7 @@ export const MenuManagementView: React.FC<MenuManagementViewProps> = ({
 
   const handleAddLink = () => {
     // Here you would typically add the new link to the menu
-    console.log('Adding new link:', newLink);
+
     setNewLink({ title: '', url: 'http://', location: 'header' });
   };
 

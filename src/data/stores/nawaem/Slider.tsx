@@ -16,6 +16,7 @@ import type { Product } from '../../storeProducts';
 
 interface NawaemSliderProps {
   products: Product[];
+  sliderImages?: Array<{ id: string | number; image: string; title?: string; subtitle?: string; buttonText?: string }>;
   storeSlug?: string;
   onProductClick: (productId: number) => void;
   onAddToCart: (product: Product) => void;
@@ -25,6 +26,7 @@ interface NawaemSliderProps {
 
 const NawaemSlider: React.FC<NawaemSliderProps> = ({
   products,
+  sliderImages,
   storeSlug = 'nawaem',
   onProductClick,
   onAddToCart,
@@ -134,10 +136,13 @@ const NawaemSlider: React.FC<NawaemSliderProps> = ({
     ];
   };
 
-  const sliderBanners = getSliderBanners(storeSlug);
-
-  // دمج البانرات بدون منتجات - فقط صور السلايدر
-  const allSlides = sliderBanners;
+  const defaultBanners = getSliderBanners(storeSlug);
+  
+  if (sliderImages && sliderImages.length > 0) {
+    void 0;
+  }
+  
+  const allSlides = (Array.isArray(sliderImages) && sliderImages.length > 0) ? sliderImages : defaultBanners;
 
   // التشغيل التلقائي المحسن
   useEffect(() => {
@@ -214,7 +219,7 @@ const NawaemSlider: React.FC<NawaemSliderProps> = ({
   const storeColors = getStoreColors(storeSlug);
 
   return (
-    <div className={`relative h-[600px] md:h-[800px] overflow-hidden bg-gradient-to-br ${storeColors.background}`}>
+    <div className={`relative h-[500px] md:h-[600px] overflow-hidden bg-gradient-to-br ${storeColors.background}`}>
       {/* خلفية متحركة حسب المتجر */}
       <div className="absolute inset-0">
         <div className={`absolute inset-0 bg-gradient-to-r ${storeColors.accent}/20 via-current/10 to-current/20`}></div>
@@ -264,7 +269,7 @@ const NawaemSlider: React.FC<NawaemSliderProps> = ({
               <img
                 src={slide.image}
                 alt={slide.title}
-                className="w-full h-full object-contain object-center rounded-lg"
+                className="w-full h-full object-cover object-center"
                 onError={(e) => {
                   const target = e.target as HTMLImageElement;
                   target.style.display = 'none';
@@ -280,6 +285,8 @@ const NawaemSlider: React.FC<NawaemSliderProps> = ({
         <>
           <button
             onClick={prevSlide}
+            title="السابق"
+            aria-label="السابق"
             className={`absolute left-4 md:left-8 top-1/2 transform -translate-y-1/2 bg-white/90 backdrop-blur-sm hover:bg-white p-3 md:p-4 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 group border-2 ${
               storeSlug === 'sheirine' ? 'border-pink-200 hover:border-pink-400' : 'border-yellow-200 hover:border-yellow-400'
             }`}
@@ -290,6 +297,8 @@ const NawaemSlider: React.FC<NawaemSliderProps> = ({
           </button>
           <button
             onClick={nextSlide}
+            title="التالي"
+            aria-label="التالي"
             className={`absolute right-4 md:right-8 top-1/2 transform -translate-y-1/2 bg-white/90 backdrop-blur-sm hover:bg-white p-3 md:p-4 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 group border-2 ${
               storeSlug === 'sheirine' ? 'border-pink-200 hover:border-pink-400' : 'border-yellow-200 hover:border-yellow-400'
             }`}
@@ -308,6 +317,8 @@ const NawaemSlider: React.FC<NawaemSliderProps> = ({
             <button
               key={index}
               onClick={() => goToSlide(index)}
+              title={`اذهب إلى الشريحة ${index + 1}`}
+              aria-label={`اذهب إلى الشريحة ${index + 1}`}
               className={`transition-all duration-300 rounded-full ${
                 index === activeSlide 
                   ? `w-10 h-3 bg-gradient-to-r ${storeSlug === 'sheirine' ? 'from-pink-400 to-purple-500' : 'from-yellow-400 to-amber-500'}` 

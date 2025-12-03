@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import type { JSX } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -23,7 +23,8 @@ import {
 import ShareMenu from '@/components/ShareMenu';
 import { allStoreProducts } from '@/data/allStoreProducts';
 import type { Product } from '@/data/storeProducts';
-import NotifyWhenAvailable, { NotificationRequest } from '@/components/NotifyWhenAvailable';
+import NotifyWhenAvailable from '@/components/NotifyWhenAvailable';
+import { getStoresData } from '@/data/ecommerceData';
 
 interface Color {
   name: string;
@@ -40,6 +41,7 @@ interface EnhancedProductPageProps {
   onNotifyWhenAvailable: (productId: number) => void;
   onProductSelect?: (product: Product) => void;
   isFavorite: boolean;
+  storeSlug?: string | undefined;
 }
 
 const EnhancedProductPage: React.FC<EnhancedProductPageProps> = ({
@@ -50,7 +52,8 @@ const EnhancedProductPage: React.FC<EnhancedProductPageProps> = ({
   onToggleFavorite,
   onNotifyWhenAvailable,
   onProductSelect,
-  isFavorite = false
+  isFavorite = false,
+  storeSlug
 }) => {
   const [selectedSize, setSelectedSize] = useState<string>('');
   const [selectedColor, setSelectedColor] = useState<string>('');
@@ -59,6 +62,25 @@ const EnhancedProductPage: React.FC<EnhancedProductPageProps> = ({
   const [linkCopied, setLinkCopied] = useState(false);
   const [validationError, setValidationError] = useState('');
   const [showNotifyModal, setShowNotifyModal] = useState(false);
+  const storesCatalog = useMemo(() => getStoresData(), []);
+  const resolvedStoreInfo = useMemo(() => {
+    if (storeSlug) {
+      const bySlug = storesCatalog.find((store) => store.slug === storeSlug);
+      if (bySlug) {
+        return bySlug;
+      }
+      return { slug: storeSlug, name: storeSlug };
+    }
+    if (product.storeId) {
+      const byId = storesCatalog.find((store) => store.id === product.storeId);
+      if (byId) {
+        return byId;
+      }
+    }
+    return undefined;
+  }, [storeSlug, product.storeId, storesCatalog]);
+  const notifyStoreSlug = resolvedStoreInfo?.slug || storeSlug;
+  const notifyStoreName = resolvedStoreInfo?.name;
 
   
   // عدادات live (محاكاة) - تعيين القيم المحددة للمنتجات غير المتوفرة
@@ -177,7 +199,7 @@ const EnhancedProductPage: React.FC<EnhancedProductPageProps> = ({
       setLinkCopied(true);
       setTimeout(() => setLinkCopied(false), 2000);
     } catch (err) {
-      console.error('فشل في نسخ الرابط:', err);
+
     }
   };
 
@@ -190,22 +212,6 @@ const EnhancedProductPage: React.FC<EnhancedProductPageProps> = ({
     setShowNotifyModal(false);
   };
 
-  const handleSubmitNotification = (notificationData: NotificationRequest) => {
-    console.log('تم إرسال طلب الإشعار:', notificationData);
-    // حفظ بيانات التنبيه في قائمة العناصر غير المتوفرة
-    const newUnavailableItem = {
-      ...product,
-      notificationData: notificationData,
-      requestedAt: new Date().toISOString()
-    };
-
-    // حفظ في localStorage
-    const savedUnavailable = JSON.parse(localStorage.getItem('eshro_unavailable') || '[]');
-    savedUnavailable.push(newUnavailableItem);
-    localStorage.setItem('eshro_unavailable', JSON.stringify(savedUnavailable));
-
-    setShowNotifyModal(false);
-  };
 
   // دالة للحصول على منتجات مشابهة
   const getSimilarProducts = (currentProduct: Product) => {
@@ -344,6 +350,7 @@ const EnhancedProductPage: React.FC<EnhancedProductPageProps> = ({
               <button
                 onClick={() => onToggleFavorite(product.id)}
                 className="absolute top-4 left-4 w-10 h-10 bg-white/90 rounded-full flex items-center justify-center hover:bg-white transition-colors shadow-lg"
+                aria-label={isFavorite ? 'إزالة من المفضلة' : 'إضافة إلى المفضلة'}
               >
                 <Heart 
                   className={`h-5 w-5 ${isFavorite ? 'fill-red-500 text-red-500' : 'text-gray-600 hover:text-red-500'}`} 
@@ -539,6 +546,7 @@ const EnhancedProductPage: React.FC<EnhancedProductPageProps> = ({
                         <div 
                           className="w-4 h-4 rounded-full border border-gray-300"
                           style={{ backgroundColor: color.value }}
+                          title={`اللون: ${color.name}`}
                         ></div>
                         <span>{color.name}</span>
                       </button>
@@ -575,7 +583,7 @@ const EnhancedProductPage: React.FC<EnhancedProductPageProps> = ({
               ) : (
                 <Button
                   onClick={() => {
-                    console.log('Notification button clicked for product:', product.id);
+
                     handleNotifyWhenAvailable();
                   }}
                   variant="outline"
@@ -664,7 +672,7 @@ const EnhancedProductPage: React.FC<EnhancedProductPageProps> = ({
                   </p>
                   <Button
                     onClick={() => {
-                      console.log('Second notification button clicked for product:', product.id);
+
                       handleNotifyWhenAvailable();
                     }}
                     className="bg-orange-600 hover:bg-orange-700 text-white"
@@ -752,6 +760,7 @@ const EnhancedProductPage: React.FC<EnhancedProductPageProps> = ({
                       <button
                         key={star}
                         className="text-gray-300 hover:text-yellow-400 transition-colors"
+                        aria-label={`تقييم ${star} نجوم`}
                       >
                         <Star className="h-5 w-5" />
                       </button>
@@ -850,7 +859,8 @@ const EnhancedProductPage: React.FC<EnhancedProductPageProps> = ({
           isOpen={showNotifyModal}
           product={product}
           onClose={handleCloseNotifyModal}
-          onSubmit={handleSubmitNotification}
+          storeSlug={notifyStoreSlug}
+          storeName={notifyStoreName}
         />
       )}
     </div>

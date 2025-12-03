@@ -84,14 +84,14 @@ class MockWebSocketService {
   connect(sessionId: string): Promise<void> {
     return new Promise((resolve) => {
       setTimeout(() => {
-        console.log('WebSocket connected for session:', sessionId);
+
         resolve();
       }, 1000);
     });
   }
 
   disconnect(): void {
-    console.log('WebSocket disconnected');
+
   }
 
   sendMessage(sessionId: string, message: ChatMessage): void {
@@ -257,7 +257,9 @@ const LiveChat: React.FC<LiveChatProps> = ({
           priority: 'medium',
           actionUrl: '/chat',
           actionText: 'عرض احادثة'
-        }).catch(console.error);
+        }).catch(() => {
+          void 0;
+        });
       }
     }
   }, [sessionId]);

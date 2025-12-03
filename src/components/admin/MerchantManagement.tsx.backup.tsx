@@ -288,7 +288,7 @@ const MerchantManagement = () => {
       }
       window.dispatchEvent(new Event(MERCHANT_PERMISSIONS_EVENT));
     } catch (error) {
-      console.error("Failed to save permissions to localStorage:", error);
+
     }
   }, [permissions]);
 

@@ -127,7 +127,7 @@ const CityAreaSelector: React.FC<CityAreaSelectorProps> = ({
           locationData.address = data.display_name;
         }
       } catch (geocodeError) {
-        console.warn('فشل في الحصول على العنوان:', geocodeError);
+
       }
 
       setCurrentLocation(locationData);
@@ -153,7 +153,7 @@ const CityAreaSelector: React.FC<CityAreaSelectorProps> = ({
       }
 
     } catch (error) {
-      console.error('خطأ في تحديد الموقع:', error);
+
       
       if (error instanceof GeolocationPositionError) {
         switch (error.code) {
@@ -178,7 +178,7 @@ const CityAreaSelector: React.FC<CityAreaSelectorProps> = ({
   };
 
   return (
-    <div className={`grid grid-cols-1 md:grid-cols-2 gap-4 transition-all duration-300 ${className}`} style={{ minHeight: '120px', background: 'transparent' }}>
+    <div className={`grid grid-cols-1 md:grid-cols-2 gap-4 transition-opacity duration-300 ${className}`} style={{ minHeight: '120px', background: 'transparent' }}>
       {/* اختيار المدينة */}
       <div className="space-y-2">
         <Label htmlFor="city-select">

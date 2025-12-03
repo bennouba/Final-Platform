@@ -53,6 +53,60 @@ const SectionRow = ({
   onToggle: (storeId: string, sectionId: string, newValue: boolean) => void;
 }) => {
   const indentPx = section.level * 32;
+  const isRequiredOnly = section.required;
+  
+  if (isRequiredOnly) {
+    return (
+      <div
+        className="w-full transition-none"
+        style={{
+          paddingRight: `${indentPx}px`,
+          marginBottom: '8px',
+          minHeight: '70px',
+          maxHeight: '70px',
+          height: '70px'
+        }}
+      >
+        <div 
+          className="rounded-lg border-2 border-emerald-200 dark:border-emerald-700/50 bg-emerald-50/30 dark:bg-emerald-950/20"
+          style={{
+            padding: '16px',
+            minHeight: '70px',
+            maxHeight: '70px',
+            height: '70px',
+            display: 'flex',
+            alignItems: 'center'
+          }}
+        >
+          <div className="flex items-center justify-between gap-4 w-full">
+            <div className="flex-1 min-w-0 flex items-center gap-3">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h4 className="text-sm font-semibold text-emerald-900 dark:text-emerald-200 truncate">
+                    {section.label}
+                  </h4>
+                  <Badge className="rounded-full bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border-emerald-300 text-xs shrink-0">
+                    دائم ✓
+                  </Badge>
+                </div>
+                {section.description && (
+                  <p className="text-xs text-emerald-700/70 dark:text-emerald-300/70 truncate mt-1">
+                    {section.description}
+                  </p>
+                )}
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-3 shrink-0">
+              <Badge className="rounded-full px-3 py-1 text-xs font-medium bg-emerald-500 text-white">
+                <Eye className="w-3 h-3 ml-1 inline" /> مفعّل دائماً
+              </Badge>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
   
   return (
     <div
@@ -83,11 +137,6 @@ const SectionRow = ({
                 <h4 className="text-sm font-semibold text-slate-900 dark:text-white truncate">
                   {section.label}
                 </h4>
-                {section.required && (
-                  <Badge variant="outline" className="rounded-full bg-emerald-50 text-emerald-700 border-emerald-200 text-xs shrink-0">
-                    إلزامي
-                  </Badge>
-                )}
                 {section.children.length > 0 && (
                   <Badge variant="outline" className="rounded-full bg-blue-50 text-blue-700 border-blue-200 text-xs shrink-0">
                     {section.children.length}
@@ -132,13 +181,15 @@ const SectionRow = ({
 };
 
 const MerchantManagement = () => {
-  const allMerchants = useMemo(() => getAllMerchants(), []);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
   const flatSections = useMemo(() => flattenSections(merchantSections), []);
   const sectionMap = useMemo(() => {
     const map = new Map<string, SectionNodeFlat>();
     flatSections.forEach(section => map.set(section.id, section));
     return map;
   }, [flatSections]);
+
+  const allMerchants = useMemo(() => getAllMerchants(), [refreshTrigger]);
 
   const initializePermissions = useCallback((): StoreMatrix => {
     const initial: StoreMatrix = {};
@@ -176,20 +227,17 @@ const MerchantManagement = () => {
           });
         }
       } catch (error) {
-        console.error("❌ Failed to load permissions:", error);
+
       }
     }
 
     return initial;
   }, [allMerchants, flatSections, sectionMap]);
 
-  const [activeStoreId, setActiveStoreId] = useState<string>(currentAllMerchants[0]?.id || "");
+  const [activeStoreId, setActiveStoreId] = useState<string>(allMerchants[0]?.id || "");
   const [permissions, setPermissions] = useState<StoreMatrix>(initializePermissions);
   const [lastSavedTime, setLastSavedTime] = useState<Date | null>(null);
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
-
-  // إعادة تحميل المتاجر عند التغيير
-  const currentAllMerchants = useMemo(() => getAllMerchants(), [refreshTrigger]);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
   useEffect(() => {
     setPermissions(initializePermissions());
@@ -199,18 +247,16 @@ const MerchantManagement = () => {
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    const handleNewStore = () => {
-      setRefreshTrigger(prev => prev + 1);
+    const handleStorageChange = (event: StorageEvent) => {
+      if (event.key === 'eshro_stores') {
+        setRefreshTrigger(prev => prev + 1);
+      }
     };
 
-    window.addEventListener('storage', (event) => {
-      if (event.key === 'eshro_stores') {
-        handleNewStore();
-      }
-    });
+    window.addEventListener('storage', handleStorageChange);
 
     return () => {
-      window.removeEventListener('storage', handleNewStore);
+      window.removeEventListener('storage', handleStorageChange);
     };
   }, []);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
@@ -222,9 +268,23 @@ const MerchantManagement = () => {
       setSaveStatus('saving');
       const jsonData = JSON.stringify(data);
       
+
+
+      
+      // Log each store's permissions
+      Object.entries(data).forEach(([storeId, config]) => {
+        const disabledSections = Object.entries(config)
+          .filter(([_, enabled]) => !enabled)
+          .map(([sectionId, _]) => sectionId);
+        if (disabledSections.length > 0) {
+          void 0;
+        }
+      });
+      
       window.localStorage.setItem(MERCHANT_PERMISSIONS_KEY, jsonData);
       
       window.dispatchEvent(new Event(MERCHANT_PERMISSIONS_EVENT));
+
       
       window.dispatchEvent(new StorageEvent('storage', {
         key: MERCHANT_PERMISSIONS_KEY,
@@ -237,14 +297,13 @@ const MerchantManagement = () => {
       setLastSavedTime(new Date());
       setSaveStatus('saved');
       
-      console.log('✅ Permissions saved successfully');
-      console.log('📦 Data:', data);
+
       
       setTimeout(() => setSaveStatus('idle'), 2000);
       
       return true;
     } catch (error) {
-      console.error("❌ Save failed:", error);
+
       setSaveStatus('error');
       setTimeout(() => setSaveStatus('idle'), 3000);
       return false;
@@ -255,7 +314,7 @@ const MerchantManagement = () => {
     const section = sectionMap.get(sectionId);
     if (!section || section.required) return;
 
-    console.log(`🔄 Toggle: ${section.label} → ${newValue}`);
+
 
     setPermissions(prev => {
       const next: StoreMatrix = JSON.parse(JSON.stringify(prev));
@@ -299,10 +358,10 @@ const MerchantManagement = () => {
         }
       }
 
-      saveToLocalStorage(next);
+      setHasUnsavedChanges(true);
       return next;
     });
-  }, [sectionMap, saveToLocalStorage]);
+  }, [sectionMap]);
 
   const bulkToggle = useCallback((storeId: string, enable: boolean) => {
     setPermissions(prev => {
@@ -314,10 +373,10 @@ const MerchantManagement = () => {
       });
 
       next[storeId] = storeConfig;
-      saveToLocalStorage(next);
+      setHasUnsavedChanges(true);
       return next;
     });
-  }, [flatSections, saveToLocalStorage]);
+  }, [flatSections]);
 
   const resetStore = useCallback((storeId: string) => {
     const merchant = allMerchants.find(m => m.id === storeId);
@@ -333,20 +392,20 @@ const MerchantManagement = () => {
       });
 
       next[storeId] = config;
-      saveToLocalStorage(next);
+      setHasUnsavedChanges(true);
       return next;
     });
-  }, [currentAllMerchants, flatSections, saveToLocalStorage]);
+  }, [allMerchants, flatSections]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
     const handleStorageChange = (event: StorageEvent | Event) => {
-      if ('key' in event && event.key && event.key !== MERCHANT_PERMISSIONS_KEY && event.key !== 'eshro_stores') return;
+      if ('key' in event && (event as StorageEvent).key && (event as StorageEvent).key !== MERCHANT_PERMISSIONS_KEY && (event as StorageEvent).key !== 'eshro_stores') return;
 
       try {
         // إعادة تحميل الصلاحيات
-        if (event.key === MERCHANT_PERMISSIONS_KEY || !event.key) {
+        if ((event as StorageEvent).key === MERCHANT_PERMISSIONS_KEY || !(event as StorageEvent).key) {
           const stored = window.localStorage.getItem(MERCHANT_PERMISSIONS_KEY);
           if (stored) {
             const parsed = JSON.parse(stored) as StoreMatrix;
@@ -355,7 +414,7 @@ const MerchantManagement = () => {
         }
 
         // إعادة تحميل قائمة المتاجر إذا تم إنشاء متجر جديد
-        if (event.key === 'eshro_stores' || !event.key) {
+        if ((event as StorageEvent).key === 'eshro_stores' || !(event as StorageEvent).key) {
           // إعادة تحميل المتاجر الديناميكية
           setPermissions(prev => {
             const newPermissions = { ...prev };
@@ -376,7 +435,7 @@ const MerchantManagement = () => {
           });
         }
       } catch (error) {
-        console.error("❌ Sync failed:", error);
+
       }
     };
 
@@ -402,11 +461,11 @@ const MerchantManagement = () => {
     >
       <div style={{ maxWidth: '1600px', margin: '0 auto' }}>
         <Card className="border-none shadow-xl bg-white dark:bg-slate-800">
-          <CardHeader className="border-b border-slate-200 dark:border-slate-700" style={{ padding: '24px', minHeight: '120px' }}>
-            <div className="flex items-center gap-4">
+          <CardHeader className="border-b border-slate-200 dark:border-slate-700" style={{ padding: '24px', minHeight: '140px' }}>
+            <div className="flex items-start gap-4 w-full">
               <div 
                 className="flex shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 shadow-lg"
-                style={{ height: '56px', width: '56px' }}
+                style={{ height: '56px', width: '56px', marginTop: '4px' }}
               >
                 <Store className="h-7 w-7 text-white" />
               </div>
@@ -432,15 +491,31 @@ const MerchantManagement = () => {
                     </Badge>
                   )}
                 </CardTitle>
-                <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
-                  التغييرات تُحفظ فوراً وتطبق على واجهة التاجر بعد إعادة التحميل
+                <p className="text-sm text-slate-600 dark:text-slate-400 mt-2">
+                  التغييرات تُحفظ بشكل دائم في قاعدة البيانات عند الضغط على زر الحفظ
                   {lastSavedTime && (
                     <span className="mr-2 text-emerald-600">
-                      • {lastSavedTime.toLocaleTimeString('ar-LY')}
+                      • آخر حفظ: {lastSavedTime.toLocaleTimeString('ar-LY')}
                     </span>
                   )}
                 </p>
               </div>
+              <Button
+                size="lg"
+                onClick={() => {
+                  saveToLocalStorage(permissions);
+                  setHasUnsavedChanges(false);
+                }}
+                disabled={!hasUnsavedChanges || saveStatus === 'saving'}
+                className={`rounded-xl px-6 py-6 font-semibold text-base whitespace-nowrap transition-all shrink-0 ${
+                  hasUnsavedChanges
+                    ? 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg'
+                    : 'bg-slate-200 text-slate-500 cursor-not-allowed'
+                }`}
+              >
+                <Save className="w-5 h-5 ml-2" />
+                حفظ
+              </Button>
             </div>
           </CardHeader>
 
@@ -448,7 +523,7 @@ const MerchantManagement = () => {
             <Tabs value={activeStoreId} onValueChange={setActiveStoreId} className="w-full">
               <div className="overflow-x-auto pb-2">
                 <TabsList className="inline-flex w-full min-w-max gap-3 bg-transparent p-0 h-auto">
-                  {currentAllMerchants.map(merchant => {
+                  {allMerchants.map(merchant => {
                     const Icon = merchant.icon;
                     const config = permissions[merchant.id] || {};
                     const activeCount = Object.values(config).filter(Boolean).length;
@@ -465,18 +540,26 @@ const MerchantManagement = () => {
                         <div className="w-full space-y-3">
                           <div className="flex items-center justify-between w-full gap-2">
                             <div className="flex items-center gap-2">
-                              <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${merchant.color} flex items-center justify-center shadow-md relative shrink-0`}>
-                                <Icon className="w-5 h-5 text-white/90" />
-                                <span className="absolute text-lg">{merchant.emblem}</span>
-                              </div>
-                              <div className="text-right">
-                                <p className="font-semibold text-sm text-slate-900 dark:text-white">
-                                  {merchant.name}
-                                </p>
-                                <p className="text-xs text-slate-600 dark:text-slate-400">
-                                  {merchant.owner}
-                                </p>
-                              </div>
+                              {merchant.logo ? (
+                                <img
+                                  src={merchant.logo}
+                                  alt={merchant.name}
+                                  className="w-10 h-10 rounded-xl shadow-md object-cover shrink-0"
+                                />
+                              ) : (
+                                <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${merchant.color} flex items-center justify-center shadow-md relative shrink-0`}>
+                                  <Icon className="w-5 h-5 text-white/90" />
+                                  <span className="absolute text-lg">{merchant.emblem}</span>
+                                </div>
+                              )}
+                            </div>
+                            <div className="text-right">
+                              <p className="font-semibold text-sm text-slate-900 dark:text-white">
+                                {merchant.name}
+                              </p>
+                              <p className="text-xs text-slate-600 dark:text-slate-400">
+                                {merchant.owner}
+                              </p>
                             </div>
                             <Badge className="rounded-full text-xs shrink-0">
                               {merchant.plan}
@@ -498,7 +581,7 @@ const MerchantManagement = () => {
                 </TabsList>
               </div>
 
-              {currentAllMerchants.map(merchant => {
+              {allMerchants.map(merchant => {
                 const config = permissions[merchant.id] || {};
                 const activeCount = Object.values(config).filter(Boolean).length;
                 const totalCount = flatSections.length;
@@ -626,8 +709,8 @@ const MerchantManagement = () => {
               variant="outline"
               onClick={() => {
                 const stored = localStorage.getItem(MERCHANT_PERMISSIONS_KEY);
-                console.log('📦 localStorage:', stored ? JSON.parse(stored) : 'EMPTY');
-                console.log('🔑 Current permissions state:', permissions);
+
+
                 alert('تم عرض البيانات في Console (F12)');
               }}
             >

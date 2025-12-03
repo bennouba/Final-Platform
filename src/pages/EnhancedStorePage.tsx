@@ -23,7 +23,7 @@ import {
   TrendingUp,
   X
 } from 'lucide-react';
-import { storesData } from '@/data/ecommerceData';
+import { getStoresData } from '@/data/ecommerceData';
 import ShareMenu from '@/components/ShareMenu';
 import { getProductsByCategory, productCategories, sheirineJewelryCategories } from '@/data/productCategories';
 import { allStoreProducts } from '@/data/allStoreProducts';
@@ -32,8 +32,11 @@ import { sheirineProducts } from '@/data/stores/sheirine/products';
 import { prettyProducts } from '@/data/stores/pretty/products';
 import { deltaProducts } from '@/data/stores/delta-store/products';
 import { magnaBeautyProducts } from '@/data/stores/magna-beauty/products';
+
 import type { Product } from '@/data/storeProducts';
-import NotifyWhenAvailable, { NotificationRequest } from '@/components/NotifyWhenAvailable';
+import NotifyWhenAvailable from '@/components/NotifyWhenAvailable';
+import StoreFrontSlider from '@/components/StoreFrontSlider';
+import StoreAds from '@/components/StoreAds';
 
 interface EnhancedStorePageProps {
   storeSlug: string;
@@ -62,6 +65,7 @@ const EnhancedStorePage: React.FC<EnhancedStorePageProps> = ({
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
   // العثور على المتجر
+  const storesData = getStoresData();
   const store = storesData.find(s => s.slug === storeSlug);
   
   if (!store) {
@@ -94,8 +98,19 @@ const EnhancedStorePage: React.FC<EnhancedStorePageProps> = ({
       case 'magna-beauty':
         storeProducts = magnaBeautyProducts;
         break;
+
       default:
-        storeProducts = allStoreProducts.filter(p => p.storeId === store.id) as any;
+        try {
+          const localProducts = localStorage.getItem(`store_products_${store.slug}`);
+          if (localProducts) {
+            storeProducts = JSON.parse(localProducts);
+          } else {
+            storeProducts = allStoreProducts.filter(p => p.storeId === store.id) as any;
+          }
+        } catch (error) {
+
+          storeProducts = allStoreProducts.filter(p => p.storeId === store.id) as any;
+        }
     }
   }
   
@@ -122,7 +137,7 @@ const EnhancedStorePage: React.FC<EnhancedStorePageProps> = ({
         return b.rating - a.rating;
       case 'newest':
       default:
-        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        return b.id - a.id;
     }
   });
 
@@ -157,6 +172,7 @@ const EnhancedStorePage: React.FC<EnhancedStorePageProps> = ({
       case 'اكثر طلبا': return 'bg-blue-800'; // الأزرق الملكي
       case 'اكثر مبيعا': return 'bg-purple-600'; // البنفسجي
       case 'اكثر مشاهدة': return 'bg-yellow-500'; // الأصفر
+      case 'اكثر إعجاب': return 'bg-red-500'; // الأحمر للإعجاب
       case 'مميز': return 'bg-red-600'; // الأحمر
       case 'تخفيضات': return 'bg-pink-600'; // الوردي
       case 'حصري': return 'bg-gray-400'; // الفضي اللامع
@@ -173,6 +189,7 @@ const EnhancedStorePage: React.FC<EnhancedStorePageProps> = ({
       'اكثر طلبا',
       'اكثر مبيعا',
       'اكثر مشاهدة',
+      'اكثر إعجاب',
       'مميز',
       'تخفيضات',
       'حصري'
@@ -190,6 +207,7 @@ const EnhancedStorePage: React.FC<EnhancedStorePageProps> = ({
   const handleNotifyWhenAvailable = (product: Product) => {
     setSelectedProduct(product);
     setShowNotifyModal(true);
+    onNotifyWhenAvailable(product.id);
   };
 
   const handleCloseNotifyModal = () => {
@@ -197,24 +215,6 @@ const EnhancedStorePage: React.FC<EnhancedStorePageProps> = ({
     setSelectedProduct(null);
   };
 
-  const handleSubmitNotification = (notificationData: NotificationRequest) => {
-    if (selectedProduct) {
-      console.log('تم إرسال طلب الإشعار:', notificationData);
-      // حفظ بيانات التنبيه في قائمة العناصر غير المتوفرة
-      const newUnavailableItem = {
-        ...selectedProduct,
-        notificationData,
-        requestedAt: new Date().toISOString()
-      };
-
-      // حفظ في localStorage
-      const savedUnavailable = JSON.parse(localStorage.getItem('eshro_unavailable') || '[]');
-      savedUnavailable.push(newUnavailableItem);
-      localStorage.setItem('eshro_unavailable', JSON.stringify(savedUnavailable));
-    }
-    setShowNotifyModal(false);
-    setSelectedProduct(null);
-  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -256,6 +256,18 @@ const EnhancedStorePage: React.FC<EnhancedStorePageProps> = ({
           </div>
         </div>
       </header>
+
+      <div className="mb-6">
+        <div className="container mx-auto px-4">
+          <StoreFrontSlider storeSlug={storeSlug} storeId={store.slug} />
+        </div>
+      </div>
+
+      <div className="mb-6">
+        <div className="container mx-auto px-4">
+          <StoreAds storeId={store.slug} />
+        </div>
+      </div>
 
       <div className="container mx-auto px-4 py-6">
         {/* شريط البحث والتصفية */}
@@ -335,6 +347,7 @@ const EnhancedStorePage: React.FC<EnhancedStorePageProps> = ({
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value as any)}
             className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+            aria-label="ترتيب المنتجات"
           >
             <option value="newest">الأحدث</option>
             <option value="price-low">السعر: من الأقل للأعلى</option>
@@ -366,12 +379,12 @@ const EnhancedStorePage: React.FC<EnhancedStorePageProps> = ({
                   if (product.inStock && product.isAvailable) {
                     onProductClick(product.id);
                   } else {
-                    onNotifyWhenAvailable(product.id);
+                    handleNotifyWhenAvailable(product);
                   }
                 }}
                 onAddToCart={() => onAddToCart(product)}
                 onToggleFavorite={() => onToggleFavorite(product.id)}
-                onNotifyWhenAvailable={() => onNotifyWhenAvailable(product.id)}
+                onNotifyWhenAvailable={() => handleNotifyWhenAvailable(product)}
                 renderStarRating={renderStarRating}
               />
             ))}
@@ -385,7 +398,8 @@ const EnhancedStorePage: React.FC<EnhancedStorePageProps> = ({
           isOpen={showNotifyModal}
           product={selectedProduct}
           onClose={handleCloseNotifyModal}
-          onSubmit={handleSubmitNotification}
+          storeSlug={store.slug}
+          storeName={store.name}
         />
       )}
     </div>
@@ -432,6 +446,7 @@ const ProductCard: React.FC<{
       case 'اكثر طلبا': return 'bg-blue-800'; // الأزرق الملكي
       case 'اكثر مبيعا': return 'bg-purple-600'; // البنفسجي
       case 'اكثر مشاهدة': return 'bg-yellow-500'; // الأصفر
+      case 'اكثر إعجاب': return 'bg-red-500'; // الأحمر للإعجاب
       case 'مميز': return 'bg-red-600'; // الأحمر
       case 'تخفيضات': return 'bg-pink-600'; // الوردي
       case 'حصري': return 'bg-gray-400'; // الفضي اللامع
@@ -448,6 +463,7 @@ const ProductCard: React.FC<{
       'اكثر طلبا',
       'اكثر مبيعا',
       'اكثر مشاهدة',
+      'اكثر إعجاب',
       'مميز',
       'تخفيضات',
       'حصري'
@@ -464,8 +480,8 @@ const ProductCard: React.FC<{
 
   if (viewMode === 'list') {
     return (
-      <Card 
-        className={`overflow-hidden hover:shadow-lg transition-all cursor-pointer ${!product.inStock ? 'opacity-75' : ''}`}
+      <Card
+        className={`overflow-hidden hover:shadow-lg transition-shadow duration-300 cursor-pointer ${!product.inStock ? 'opacity-75' : ''}`}
         onClick={onProductClick}
       >
         <CardContent className="p-0">
@@ -551,7 +567,7 @@ const ProductCard: React.FC<{
                   )}
                 </div>
                 
-                {product.inStock ? (
+                {product.inStock && (product.quantity || 0) > 0 ? (
                   <Button size="sm" onClick={(e) => { e.stopPropagation(); onAddToCart(); }}>
                     <ShoppingCart className="h-4 w-4 mr-1" />
                     أضف للسلة
@@ -563,7 +579,7 @@ const ProductCard: React.FC<{
                     onClick={(e) => { e.stopPropagation(); onNotifyWhenAvailable(); }}
                   >
                     <Bell className="h-4 w-4 mr-1" />
-                    نبهني
+                    أخبرني عند التوفر
                   </Button>
                 )}
               </div>
@@ -576,8 +592,8 @@ const ProductCard: React.FC<{
 
   // عرض الشبكة
   return (
-    <Card 
-      className={`overflow-hidden hover:shadow-lg transition-all cursor-pointer group ${!product.inStock ? 'opacity-75' : ''}`}
+    <Card
+      className={`overflow-hidden hover:shadow-lg transition-shadow duration-300 cursor-pointer group ${!product.inStock ? 'opacity-75' : ''}`}
       onClick={onProductClick}
     >
       <CardContent className="p-0">
@@ -699,7 +715,7 @@ const ProductCard: React.FC<{
             </div>
           </div>
           
-          {product.inStock ? (
+          {product.inStock && (product.quantity || 0) > 0 ? (
             <div className="grid grid-cols-2 gap-2">
               <Button 
                 size="sm" 
@@ -724,7 +740,7 @@ const ProductCard: React.FC<{
               onClick={(e) => { e.stopPropagation(); onNotifyWhenAvailable(); }}
             >
               <Bell className="h-4 w-4 mr-1" />
-              نبهني عند التوفر
+              أخبرني عند التوفر
             </Button>
           )}
         </div>

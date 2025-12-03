@@ -1,14 +1,17 @@
 // بيانات شاملة لجميع المنتجات في جميع المتاجر
 import type { Product } from './storeProducts';
 import { type RealProduct, allRealStoreProducts } from './realStoreProducts';
-import { nawaemProducts, nawaemStoreConfig } from './nawamProducts';
-import { deltaProducts, deltaStoreConfig } from './deltaProducts';
+import { nawaemProducts, nawaemStoreConfig } from './stores/nawaem/nawamProducts';
+import { deltaProducts } from './stores/delta-store/products';
+import { deltaStoreConfig } from './stores/delta-store/config';
+import { indeeshProducts } from './stores/indeesh/products';
 
 // أيقونات المتاجر والفئات
 export const storeIcons = {
   1: "👑", // نواعم - أزياء راقية
   2: "✨", // شيرين - أزياء
-  4: "💄", // ماجنا بيوتي - تجميل  
+  4: "🛍️", // دلتا ستور - أزياء عائلية
+  5: "💄", // ماجنا بيوتي - تجميل  
   6: "🛋️", // مكانك - أثاث
   7: "👟", // كومفي - رياضة
   8: "💎", // مكنون - مجوهرات
@@ -21,7 +24,7 @@ export const storeIcons = {
 export const storeColors = {
   1: "from-amber-400 to-yellow-600", // نواعم
   2: "from-pink-400 to-purple-600", // شيرين
-  4: "from-purple-500 to-violet-600", // ماجنا بيوتي
+  5: "from-purple-500 to-violet-600", // ماجنا بيوتي
   6: "from-blue-500 to-indigo-600", // مكانك
   7: "from-green-500 to-emerald-600", // كومفي
   8: "from-yellow-500 to-orange-600", // مكنون
@@ -30,6 +33,7 @@ export const storeColors = {
   17: "from-gray-500 to-slate-600", // الركن الليبي
 };
 
+const MAGNA_BEAUTY_STORE_ID = 5;
 
 // منتجات شيرين (sheirine.ly) - storeId: 2
 // منتجات متنوعة تشمل: مجوهرات، ملابس أحجام كبيرة، أحذية نسائية، وحقائب
@@ -42,7 +46,7 @@ const sheirineProducts: Product[] = [
     colors: [
       {name: "فضي", value: "#8f8f8fff"}
     ],
-    rating: 4.9, reviews: 120, views: 240, likes: 420, orders: 320, category: "المجوهرات",
+    rating: 4.9, reviews: 120, views: 240, likes: 420, orders: 320, quantity: 10, category: "المجوهرات",
     inStock: true, isAvailable: true, tags: ["أكثر مبيعاً"], badge: "أكثر مبيعاً"
   },
   {
@@ -50,7 +54,7 @@ const sheirineProducts: Product[] = [
     price: 260, originalPrice: 275, images: ["/assets/sheirine/jewelry-set-2.jpg"],
     sizes: ["واحد"], availableSizes: ["واحد"],
     colors: [{name: "ذهب أصفر", value: "#F59E0B"}, {name: "ذهب أبيض", value: "#F8F8FF"}],
-    rating: 4.8, reviews: 32, views: 423, likes: 189, orders: 26, category: "المجوهرات",
+    rating: 4.8, reviews: 32, views: 423, likes: 189, orders: 26, quantity: 10, category: "المجوهرات",
     inStock: true, isAvailable: true, tags: ["مميزة"], badge: "مميزة"
   },
   {
@@ -58,7 +62,7 @@ const sheirineProducts: Product[] = [
     price: 175, originalPrice: 235, images: ["/assets/sheirine/jewelry-set-3.jpg"],
     sizes: ["صغير", "متوسط", "كبير"], availableSizes: ["متوسط", "كبير"],
     colors: [{name: "ذهب أبيض", value: "#F8F8FF"}, {name: "ذهب أصفر", value: "#F59E0B"}],
-    rating: 4.9, reviews: 28, views: 345, likes: 156, orders: 22, category: "أساور",
+    rating: 4.9, reviews: 28, views: 345, likes: 156, orders: 22, quantity: 10, category: "أساور",
     inStock: true, isAvailable: true, tags: ["مميزة", "أكثر إعجاباً"], badge: "أكثر إعجاباً"
   },
   {
@@ -66,7 +70,7 @@ const sheirineProducts: Product[] = [
     price: 345, originalPrice: 380, images: ["/assets/sheirine/necklace-loulou.jpg"],
     sizes: ["قصير", "طويل"], availableSizes: ["قصير", "طويل"],
     colors: [{name: "لؤلؤ أبيض", value: "#F8F8FF"}, {name: "لؤلؤ كريمي", value: "#FEF3C7"}],
-    rating: 4.7, reviews: 41, views: 389, likes: 167, orders: 33, category: "عقود",
+    rating: 4.7, reviews: 41, views: 389, likes: 167, orders: 33, quantity: 10, category: "عقود",
     inStock: true, isAvailable: true, tags: ["أكثر طلباً"], badge: "أكثر طلباً"
   },
   {
@@ -74,7 +78,7 @@ const sheirineProducts: Product[] = [
     price: 260, originalPrice: 325, images: ["/assets/sheirine/SHEIN-VCAY.jpg"],
     sizes: ["واحد"], availableSizes: ["واحد"],
     colors: [{name: "ذهب أبيض", value: "#F8F8FF"}, {name: "ذهب وردي", value: "#F472B6"}],
-    rating: 4.8, reviews: 37, views: 298, likes: 134, orders: 29, category: "أقراط",
+    rating: 4.8, reviews: 37, views: 298, likes: 134, orders: 29, quantity: 10, category: "أقراط",
     inStock: true, isAvailable: true, tags: ["جديد"], badge: "جديد"
   },
   {
@@ -82,7 +86,7 @@ const sheirineProducts: Product[] = [
     price: 380, originalPrice: 435, images: ["/assets/sheirine/ring2.jpg"],
     sizes: ["5", "6", "7", "8", "9"], availableSizes: ["6", "7", "8"],
     colors: [{name: "ذهب أصفر", value: "#F59E0B"}, {name: "ذهب أبيض", value: "#F8F8FF"}],
-    rating: 4.9, reviews: 19, views: 267, likes: 145, orders: 16, category: "خواتم زواج",
+    rating: 4.9, reviews: 19, views: 267, likes: 145, orders: 16, quantity: 10, category: "خواتم زواج",
     inStock: true, isAvailable: true, tags: ["مميزة"], badge: "مميزة"
   },
   {
@@ -90,7 +94,7 @@ const sheirineProducts: Product[] = [
     price: 310, originalPrice: 375, images: ["/assets/sheirine/23.jpeg","/assets/sheirine/24.webp"],
     sizes: ["45cm", "50cm", "55cm"], availableSizes: ["45cm", "50cm"],
     colors: [{name: "ذهب أصفر", value: "#F59E0B"}, {name: "ذهب أبيض", value: "#F8F8FF"}],
-    rating: 4.6, reviews: 52, views: 445, likes: 198, orders: 41, category: "سلاسل",
+    rating: 4.6, reviews: 52, views: 445, likes: 198, orders: 41, quantity: 10, category: "سلاسل",
     inStock: true, isAvailable: true, tags: ["تخفيضات"], badge: "تخفيضات"
   },
   {
@@ -98,7 +102,7 @@ const sheirineProducts: Product[] = [
     price: 25, originalPrice: 35, images: ["/assets/sheirine/sparkly.jpeg","/assets/sheirine/sparkly2.jpeg"],
     sizes: ["واحد"], availableSizes: ["واحد"],
     colors: [{name: "ذهب أصفر", value: "#F59E0B"}, {name: "ذهب أبيض", value: "#F8F8FF"}],
-    rating: 4.7, reviews: 38, views: 312, likes: 145, orders: 28, category: "حلق",
+    rating: 4.7, reviews: 38, views: 312, likes: 145, orders: 28, quantity: 10, category: "حلق",
     inStock: true, isAvailable: true, tags: ["أكثر إعجاباً"], badge: "أكثر إعجاباً"
   },
   {
@@ -106,7 +110,7 @@ const sheirineProducts: Product[] = [
     price: 45, originalPrice: 68, images: ["/assets/sheirine/antique.jpeg","/assets/sheirine/antique2.jpeg"],
     sizes: ["صغير", "متوسط"], availableSizes: ["صغير", "متوسط"],
     colors: [{name: "ذهبي", value: "#f1a014ff"}, {name: "فضي", value: "#C0C0C0"}],
-    rating: 4.5, reviews: 29, views: 234, likes: 98, orders: 22, category: "بروش",
+    rating: 4.5, reviews: 29, views: 234, likes: 98, orders: 22, quantity: 10, category: "بروش",
     inStock: true, isAvailable: true, tags: ["جديد"], badge: "جديد"
   },
   {
@@ -114,7 +118,7 @@ const sheirineProducts: Product[] = [
     price: 145, originalPrice: 180, images: ["/assets/sheirine/jewelry-box.webp"],
     sizes: ["صغير"], availableSizes: ["صغير"],
     colors: [{name: "فضي", value: "#C0C0C0"}],
-    rating: 4.2, reviews: 40, views: 80, likes: 120, orders: 30, category: "مجوهرات نسائية",
+    rating: 4.2, reviews: 40, views: 80, likes: 120, orders: 30, quantity: 10, category: "مجوهرات نسائية",
     inStock: true, isAvailable: true, tags: ["أكثر طلباً"], badge: "أكثر طلباً"
   },
   {
@@ -122,7 +126,7 @@ const sheirineProducts: Product[] = [
     price: 120, originalPrice: 180, images: ["/assets/sheirine/ring6.jpg"],
     sizes: ["6", "7", "8", "9"], availableSizes: ["7", "8", "9"],
     colors: [{name: "فضي", value: "#C0C0C0"}],
-    rating: 4.1, reviews: 34, views: 130, likes: 210, orders: 80, category: "خواتم فضة",
+    rating: 4.1, reviews: 34, views: 130, likes: 210, orders: 80, quantity: 10, category: "خواتم فضة",
     inStock: true, isAvailable: true, tags: ["أكثر إعجاباً"], badge: "أكثر إعجاباً"
   },
   {
@@ -130,7 +134,7 @@ const sheirineProducts: Product[] = [
     price: 220, originalPrice: 275, images: ["/assets/sheirine/jewelry-set-1.jpg"],
     sizes: ["قصير"], availableSizes: ["قصير"],
     colors: [{name: "أسود", value: "#121213ff"}],
-    rating: 4.8, reviews: 50, views: 360, likes: 355, orders: 210, category: "المجوهرات",
+    rating: 4.8, reviews: 50, views: 360, likes: 355, orders: 210, quantity: 10, category: "المجوهرات",
     inStock: true, isAvailable: true, tags: ["تخفيضات"], badge: "تخفيضات"
   },
   {
@@ -139,7 +143,7 @@ const sheirineProducts: Product[] = [
     sizes: [], availableSizes: [],
     colors: [],
     rating: 0, reviews: 0, views: 3, likes: 0, orders: 1, category: "أقراط",
-    inStock: false, isAvailable: false, tags: ["غير متوفر"], badge: "غير متوفر"
+    quantity: 10, inStock: true, isAvailable: true, tags: []
   },
 
   // ملابس أحجام كبيرة (10 منتجات)
@@ -149,7 +153,7 @@ const sheirineProducts: Product[] = [
     sizes: ["SX", "S", "M", "L", "XL", "2XL", "3XL", "4XL"], availableSizes: ["L", "XL", "2XL", "3XL"],
     colors: [{name: "أزرق ملكي", value: "#1b0c50ff"}, {name: "أسود", value: "#0a0a0aff"}, {name: "أخضر", value: "#096d12ff"}],
     rating: 4.7, reviews: 38, views: 423, likes: 189, orders: 32, category: "ملابس للمناسبات أحجام كبيرة",
-    inStock: true, isAvailable: true, tags: ["أكثر طلباً"], badge: "أكثر طلباً"
+    quantity: 10, inStock: true, isAvailable: true, tags: []
   },
   {
     id: 2014, storeId: 2, name: "فستان ماكسي كتف واحد فتحة للفخذ حزام ترتر", description: "فستان ماكسي كتف واحد فتحة للفخذ حزام ترتر",
@@ -157,7 +161,7 @@ const sheirineProducts: Product[] = [
     sizes: ["SX", "S", "M", "L", "XL", "2XL", "3XL", "4XL"], availableSizes: ["M", "L", "XL", "2XL"],
     colors: [{name: "أسود", value: "#0c0c0cff"}],
     rating: 4.2, reviews: 60, views: 160, likes: 255, orders: 120, category: "ملابس للمناسبات أحجام كبيرة",
-    inStock: true, isAvailable: true, tags: ["جديد"], badge: "جديد"
+    quantity: 10, inStock: true, isAvailable: true, tags: []
   },
   {
     id: 2015, storeId: 2, name: "سروال بساق واسع من الاسفل", description: "سروال بساق واسع من الاسفل",
@@ -165,7 +169,7 @@ const sheirineProducts: Product[] = [
     sizes: ["SX", "S", "M", "L", "XL", "2XL", "3XL", "4XL"], availableSizes: ["L", "XL", "2XL"],
     colors: [{name: "أسود", value: "#000000"}],
     rating: 4.0, reviews: 30, views: 99, likes: 100, orders: 43, category: "ملابس للمناسبات أحجام كبيرة",
-    inStock: true, isAvailable: true, tags: ["أكثر مشاهدة"], badge: "أكثر مشاهدة"
+    quantity: 10, inStock: true, isAvailable: true, tags: []
   },
   {
     id: 2016, storeId: 2, name: "فستان دانتيل اكمام منتفضة", description: "فستان دانتيل اكمام منتفضة",
@@ -173,7 +177,7 @@ const sheirineProducts: Product[] = [
     sizes: ["SX", "S", "M", "L", "XL", "2XL", "3XL", "4XL"], availableSizes: ["XL", "2XL", "3XL"],
     colors: [{name: "أبيض", value: "#fffbfbff"}],
     rating: 4.9, reviews: 120, views: 130, likes: 240, orders: 87, category: "ملابس للمناسبات أحجام كبيرة",
-    inStock: true, isAvailable: true, tags: ["أكثر مبيعاً"], badge: "أكثر مبيعاً"
+    quantity: 10, inStock: true, isAvailable: true, tags: []
   },
   {
     id: 2017, storeId: 2, name: " فستان  مكشوف الكتف دانتيل", description: " فستان  مكشوف الكتف دانتيل",
@@ -181,7 +185,7 @@ const sheirineProducts: Product[] = [
     sizes: ["SX", "S", "M", "L", "XL", "2XL", "3XL", "4XL"], availableSizes: ["L", "XL", "2XL", "3XL"],
     colors: [{name: "أزرق ملكي", value: "#130f53ff"}],
     rating: 4.7, reviews: 66, views: 156, likes: 217, orders: 111, category: "ملابس للمناسبات أحجام كبيرة",
-    inStock: true, isAvailable: true, tags: ["تخفيضات"], badge: "تخفيضات"
+    quantity: 10, inStock: true, isAvailable: true, tags: []
   },
   {
     id: 2018, storeId: 2, name: " تنورة خصرعالي فتحة للفخذ بترتر", description: " تنورة خصرعالي فتحة للفخذ بترتر",
@@ -189,7 +193,7 @@ const sheirineProducts: Product[] = [
     sizes: ["SX", "S", "M", "L", "XL", "2XL", "3XL", "4XL"], availableSizes: ["M", "L", "XL"],
     colors: [{name: "فضي", value: "#747272ff"}],
     rating: 4.7, reviews: 70, views: 188, likes: 250, orders: 218, category: "ملابس للمناسبات أحجام كبيرة",
-    inStock: true, isAvailable: true, tags: ["مميزة"], badge: "مميزة"
+    quantity: 10, inStock: true, isAvailable: true, tags: []
   },
   {
     id: 2019, storeId: 2, name: "بلوزة بترتر", description: "بلوزة بترتر",
@@ -197,7 +201,7 @@ const sheirineProducts: Product[] = [
     sizes: ["SX", "S", "M", "L", "XL", "2XL", "3XL", "4XL"], availableSizes: ["L", "XL", "2XL", "3XL", "4XL"],
     colors: [{name: "ذهبي", value: "#e4d72cb4"}],
     rating: 4.8, reviews: 60, views: 310, likes: 380, orders: 200, category: "ملابس للمناسبات أحجام كبيرة",
-    inStock: true, isAvailable: true, tags: ["مميزة"], badge: "مميزة"
+    quantity: 10, inStock: true, isAvailable: true, tags: []
   },
   {
     id: 2020, storeId: 2, name: "توب شفاف", description: " توب شفاف",
@@ -205,7 +209,7 @@ const sheirineProducts: Product[] = [
     sizes: ["SX", "S", "M", "L", "XL", "2XL", "3XL", "4XL"], availableSizes: ["S", "M", "L", "XL", "2XL"],
     colors: [{name: "أسود", value: "#0f0f0fff"}],
     rating: 4.9, reviews: 145, views: 420, likes: 300, orders: 240, category: "ملابس للمناسبات أحجام كبيرة",
-    inStock: true, isAvailable: true, tags: ["أكثر مبيعاً"], badge: "أكثر مبيعاً"
+    quantity: 10, inStock: true, isAvailable: true, tags: []
   },
   {
     id: 2021, storeId: 2, name: "فستان بحزام أكمام فانوس حافة مكشكشة", description: "فستان بحزام أكمام فانوس حافة مكشكشة",
@@ -213,7 +217,7 @@ const sheirineProducts: Product[] = [
     sizes: ["SX", "S", "M", "L", "XL", "2XL", "3XL", "4XL"], availableSizes: ["M", "L", "XL", "2XL"],
     colors: [{name: "أزرق فاتح", value: "#60A5FA"}, {name: "وردي", value: "#EC4899"}, {name: "أصفر", value: "#FDE047"}, {name: "بنفسجي", value: "#7a2a99ff"}],
     rating: 4.6, reviews: 60, views: 267, likes: 112, orders: 190, category: "ملابس للمناسبات أحجام كبيرة",
-    inStock: true, isAvailable: true, tags: ["أكثر مشاهدة"], badge: "أكثر مشاهدة"
+    quantity: 10, inStock: true, isAvailable: true, tags: []
   },
   {
     id: 2022, storeId: 2, name: "فستان ضيق مكشوف الكتف بترتر", description: "فستان ضيق مكشوف الكتف بترتر",
@@ -221,7 +225,7 @@ const sheirineProducts: Product[] = [
     sizes: ["SX", "S", "M", "L", "XL", "2XL", "3XL", "4XL"], availableSizes: ["L", "XL", "2XL", "3XL"],
     colors: [{name: "أسود", value: "#000000"}, {name: "أخضر", value: "#08741fff"}, {name: "وردي", value: "#e2928fff"}],
     rating: 4.9, reviews: 160, views: 490, likes: 460, orders: 230, category: "ملابس للمناسبات أحجام كبيرة",
-    inStock: true, isAvailable: true, tags: ["أكثر طلباً"], badge: "أكثر طلباً"
+    quantity: 10, inStock: true, isAvailable: true, tags: []
   },
   {
     id: 1023, storeId: 2, name: "فستان ماكسي متدلي", description: "فستان ماكسي احمر, مكشوف الكتف بصدر دانتيل من الامامم",
@@ -229,7 +233,7 @@ const sheirineProducts: Product[] = [
     sizes: [], availableSizes: [],
     colors: [],
     rating: 0, reviews: 0, views: 0, likes: 0, orders: 0, category: "فساتين فاخرة",
-    inStock: false, isAvailable: false, tags: ["غير متوفر"], badge: "غير متوفر"
+    quantity: 10, inStock: true, isAvailable: true, tags: []
   },
     {
     id: 1060, storeId: 2, name: "بلوزة لماعة بالترتر", description: "بلوزة لماعة بالترتر",
@@ -237,7 +241,7 @@ const sheirineProducts: Product[] = [
     sizes: [], availableSizes: [],
     colors: [],
     rating: 0, reviews: 0, views: 0, likes: 0, orders: 0, category: "فساتين فاخرة",
-    inStock: false, isAvailable: false, tags: ["غير متوفر"], badge: "غير متوفر"
+    quantity: 10, inStock: true, isAvailable: true, tags: []
   },
 
   // أحذية نسائية (5 منتجات)
@@ -247,7 +251,7 @@ const sheirineProducts: Product[] = [
     sizes: ["36", "37", "38", "39", "40", "41", "42"], availableSizes: ["37", "38", "39", "40"],
     colors: [{name: "بني", value: "#8B4513"}],
     rating: 4.8, reviews: 31, views: 267, likes: 250, orders: 216, category: "أحذية نسائية",
-    inStock: true, isAvailable: true, tags: ["مميزة"], badge: "مميزة"
+    quantity: 10, inStock: true, isAvailable: true, tags: []
   },
   {
     id: 2026, storeId: 2, name: "حذاء نسائي أنيق للثلوج لشتاء مع فرو قطنية سميكة للدفء", description: "حذاء نسائي أنيق للثلوج لشتاء مع فرو قطنية سميكة للدفء",
@@ -255,7 +259,7 @@ const sheirineProducts: Product[] = [
     sizes: ["36", "37", "38", "39"], availableSizes: ["36", "37", "38", "39"],
     colors: [{name: "أسود", value: "#000000"}],
     rating: 4.6, reviews: 26, views: 234, likes: 98, orders: 21, category: "أحذية نسائية",
-    inStock: true, isAvailable: true, tags: ["جديد"], badge: "جديد"
+    quantity: 10, inStock: true, isAvailable: true, tags: []
   },
   {
     id: 2027, storeId: 2, name: "حذاء كاجوال رباط وشاح", description: "حذاء كاجوال رباط وشاح",
@@ -263,7 +267,7 @@ const sheirineProducts: Product[] = [
     sizes: ["36", "37", "38", "39", "40", "41"], availableSizes: ["37", "38", "39", "40", "41"],
     colors: [{name: "أبيض", value: "#FFFFFF"}, {name: "وردي", value: "#EC4899"}, {name: "أسود", value: "#000000"}],
     rating: 4.7, reviews: 29, views: 245, likes: 112, orders: 24, category: "أحذية نسائية",
-    inStock: true, isAvailable: true, tags: ["أكثر طلباً"], badge: "أكثر طلباً"
+    quantity: 10, inStock: true, isAvailable: true, tags: []
   },
   {
     id: 2028, storeId: 2, name: "أحذية كاجوال مسطحة للنساء", description: "أحذية كاجوال مسطحة للنساء",
@@ -271,7 +275,7 @@ const sheirineProducts: Product[] = [
     sizes: ["36", "37", "38", "39", "40", "41", "42"], availableSizes: ["36", "37", "38", "39", "40"],
     colors: [{name: "أزرق ملكي", value: "#0a216bff"}],
     rating: 4.6, reviews: 40, views: 198, likes: 110, orders: 70, category: "أحذية نسائية",
-    inStock: true, isAvailable: true, tags: ["تخفيضات"], badge: "تخفيضات"
+    quantity: 10, inStock: true, isAvailable: true, tags: []
   },
   {
     id: 2029, storeId: 2, name: "حذاء لوفر مسطح ميتالك", description: "حذاء لوفر مسطح ميتالك",
@@ -279,7 +283,7 @@ const sheirineProducts: Product[] = [
     sizes: ["36", "37", "38", "39", "40", "41", "42"], availableSizes: ["37", "38", "39", "40", "41"],
     colors: [{name: "أسود", value: "#000000"}, {name: "وردي", value: "#e79c89ff"}, {name: "ذهبي", value: "#ebe049ff"}],
     rating: 4.9, reviews: 40, views: 170, likes: 230, orders: 230, category: "أحذية نسائية",
-    inStock: true, isAvailable: true, tags: ["أكثر مبيعاً"], badge: "أكثر مبيعاً"
+    quantity: 10, inStock: true, isAvailable: true, tags: []
   },
   {
     id: 2030, storeId: 2, name: "أحذية قصيرة", description: "أحذية قصيرة مريحة وعصرية",
@@ -287,7 +291,7 @@ const sheirineProducts: Product[] = [
     sizes: ["36", "37", "38", "39", "40", "41", "42", "43"], availableSizes: ["37", "38", "39", "40", "41", "42", "43"],
     colors: [{name: "وردي", value: "#f38b8bff"}, {name: "أحمر", value: "#ff2121f8"}, {name: "أسود", value: "#050505ff"}],
     rating: 4.9, reviews: 59, views: 260, likes: 444, orders: 360, category: "أحذية نسائية",
-    inStock: true, isAvailable: true, tags: ["مميزة"], badge: "مميزة"
+    quantity: 10, inStock: true, isAvailable: true, tags: []
   },
   // حقائب (5 منتجات)
   {
@@ -296,7 +300,7 @@ const sheirineProducts: Product[] = [
     sizes: ["صغير", "متوسط", "كبير"], availableSizes: ["متوسط", "كبير"],
     colors: [{name: "بني", value: "#704d0cff"}, {name: "أسود", value: "#070707ff"}, {name: "بيج", value: "#b6ab8cff"}],
     rating: 4.9, reviews: 24, views: 234, likes: 112, orders: 19, category: "حقائب",
-    inStock: true, isAvailable: true, tags: ["مميزة"], badge: "مميزة"
+    quantity: 10, inStock: true, isAvailable: true, tags: []
   },
   {
     id: 2032, storeId: 2, name: "حقيبة قفل أنيقة خفيفة", description: "حقيبة قفل أنيقة خفيفة",
@@ -304,7 +308,7 @@ const sheirineProducts: Product[] = [
     sizes: ["صغير", "متوسط"], availableSizes: ["صغير"],
     colors: [{name: "أسود", value: "#000000"},{name: "بني", value: "#c49f6fff"}],
     rating: 4.8, reviews: 31, views: 267, likes: 277, orders: 120, category: "حقائب",
-    inStock: true, isAvailable: true, tags: ["جديد"], badge: "جديد"
+    quantity: 10, inStock: true, isAvailable: true, tags: []
   },
   {
     id: 2033, storeId: 2, name: "حقيبة يد صغيرة مع حزام", description: "حقيبة يد صغيرة مع حزام",
@@ -312,7 +316,7 @@ const sheirineProducts: Product[] = [
     sizes: ["صغيرة", "متوسطة"], availableSizes: ["صغيرة"],
     colors: [{name: "أزرق", value: "#2f2cc0ff"}],
     rating: 4.8, reviews: 19, views: 189, likes: 87, orders: 15, category: "حقائب",
-    inStock: true, isAvailable: true, tags: ["مميزة"], badge: "مميزة"
+    quantity: 10, inStock: true, isAvailable: true, tags: []
   },
   {
     id: 2034, storeId: 2, name: "حقيبة كروس بتصميم ضفيرة سعة كبيرة", description: "حقيبة كروس بتصميم ضفيرة سعة كبيرة",
@@ -320,7 +324,7 @@ const sheirineProducts: Product[] = [
     sizes: ["كبيرة"], availableSizes: ["كبيرة"],
     colors: [{name: "أسود", value: "#080808ff"}],
     rating: 4.6, reviews: 26, views: 198, likes: 89, orders: 21, category: "حقائب",
-    inStock: true, isAvailable: true, tags: ["مميزة"], badge: "مميزة"
+    quantity: 10, inStock: true, isAvailable: true, tags: []
   },
   {
     id: 2035, storeId: 2, name: "حقيبة يد من الكتان مطبوع عليها زهور", description: "حقيبة يد من الكتان مطبوع عليها زهور",
@@ -328,115 +332,115 @@ const sheirineProducts: Product[] = [
     sizes: ["متوسط"], availableSizes: ["متوسط"],
     colors: [{name: "بني", value: "#b69665ff"}],
     rating: 4.0, reviews: 33, views: 55, likes: 80, orders: 23, category: "حقائب",
-    inStock: true, isAvailable: true, tags: ["تخفيضات"], badge: "تخفيضات"
+    quantity: 10, inStock: true, isAvailable: true, tags: []
   }
 ];
 
-// منتجات ماجنا بيوتي (magna-beauty.com) - storeId: 4
+// منتجات ماجنا بيوتي (magna-beauty.com) - storeId: 5
 const magnaBeautyProducts: Product[] = [
   {
-    id: 4001, storeId: 4, name: "PINK PUFF", description: "PINK PUFF",
+    id: 4001, storeId: MAGNA_BEAUTY_STORE_ID, name: "PINK PUFF", description: "PINK PUFF",
     price: 10, originalPrice: 12, images: ["public/assets/magna-beauty/pink-puff.webp","public/assets/magna-beauty/pink-puff1.webp","public/assets/magna-beauty/pink-puff2.webp"],
     sizes: ["واحد"], availableSizes: ["واحد"],
     colors: [{name: "وردي", value: "#e2ababff"}, {name: "بيج", value: "#DEB887"}, {name: "أسود", value: "#0e0d0dff"}],
     rating: 4.9, reviews: 70, views: 298, likes: 300, orders: 200, category: "مكياج",
-    inStock: true, isAvailable: true, tags: ["مميزة"], badge: "مميزة"
+    quantity: 10, inStock: true, isAvailable: true, tags: []
   },
   {
-    id: 4002, storeId: 4, name: "blush-brush", description: "blush-brush",
+    id: 4002, storeId: MAGNA_BEAUTY_STORE_ID, name: "blush-brush", description: "blush-brush",
     price: 25, originalPrice: 45, images: ["public/assets/magna-beauty/blush-brush1.webp","public/assets/magna-beauty/blush-brush2.webp"],
     sizes: ["واحد"], availableSizes: ["واحد"],
     colors: [{name: "وردي", value: "#ffc6c6ff"}],
     rating: 4.9, reviews: 88, views: 456, likes: 500, orders: 300, category: "مكياج",
-    inStock: true, isAvailable: true, tags: ["أكثر طلباً"], badge: "أكثر طلباً"
+    quantity: 10, inStock: true, isAvailable: true, tags: []
   },
   {
-    id: 4003, storeId: 4, name: "shader-brush", description: "shader-brush",
+    id: 4003, storeId: MAGNA_BEAUTY_STORE_ID, name: "shader-brush", description: "shader-brush",
     price: 15, originalPrice: 30, images: ["/assets/magna-beauty/shader-brush.webp"],
     sizes: ["واحد"], availableSizes: ["واحد"],
     colors: [{name: "بني", value: "#8B4513"}],
     rating: 4.8, reviews: 70, views: 312, likes: 460, orders: 214, category: "مكياج",
-    inStock: true, isAvailable: true, tags: ["أكثر مبيعاً"], badge: "أكثر مبيعاً"
+    quantity: 10, inStock: true, isAvailable: true, tags: []
   },
   {
-    id: 4004, storeId: 4, name: "foundation-brush", description: "foundation-brush",
+    id: 4004, storeId: MAGNA_BEAUTY_STORE_ID, name: "foundation-brush", description: "foundation-brush",
     price: 25, originalPrice: 40, images: ["/assets/magna-beauty/foundation-brush.webp"],
     sizes: ["واحد"], availableSizes: ["واحد"],
     colors: [{name: "ألوان دافئة", value: "#e6cab6ff"}],
     rating: 4.9, reviews: 44, views: 240, likes: 260, orders: 180, category: "مكياج",
-    inStock: true, isAvailable: true, tags: ["جديد"], badge: "جديد"
+    quantity: 10, inStock: true, isAvailable: true, tags: []
   },
   {
-    id: 4005, storeId: 4, name: "fan-brush", description: "fan-brush",
+    id: 4005, storeId: MAGNA_BEAUTY_STORE_ID, name: "fan-brush", description: "fan-brush",
     price: 25, originalPrice: 40, images: ["/assets/magna-beauty/fan-brush.webp"],
     sizes: ["واحد"], availableSizes: ["واحد"],
     colors: [{name: "طبيعي", value: "#F5F5DC"}],
     rating: 4.7, reviews: 52, views: 367, likes: 145, orders: 38, category: "عناية بالبشرة",
-    inStock: true, isAvailable: true, tags: ["أكثر مشاهدة"], badge: "أكثر مشاهدة"
+    quantity: 10, inStock: true, isAvailable: true, tags: []
   },
   {
-    id: 4006, storeId: 4, name: "eye-contour", description: "eye-contour",
+    id: 4006, storeId: MAGNA_BEAUTY_STORE_ID, name: "eye-contour", description: "eye-contour",
     price: 15, originalPrice: 25, images: ["/assets/magna-beauty/eye-contour.webp"],
     sizes: ["واحد"], availableSizes: ["واحد"],
     colors: [{name: "طبيعي", value: "#FFF8DC"}],
     rating: 4.8, reviews: 28, views: 234, likes: 98, orders: 21, category: "عناية بالبشرة",
-    inStock: true, isAvailable: true, tags: ["تخفيضات"], badge: "تخفيضات"
+    quantity: 10, inStock: true, isAvailable: true, tags: []
   },
   {
-    id: 4007, storeId: 4, name: "eyebrow-brush", description: "eyebrow-brush",
+    id: 4007, storeId: MAGNA_BEAUTY_STORE_ID, name: "eyebrow-brush", description: "eyebrow-brush",
     price: 25, originalPrice: 40, images: ["public/assets/magna-beauty/eyebrow-brush.webp"],
     sizes: ["واحد"], availableSizes: ["واحد"],
     colors: [{name: "طبيعي", value: "#F0F8FF"}],
     rating: 4.5, reviews: 39, views: 287, likes: 112, orders: 70, category: "عناية بالبشرة",
-    inStock: true, isAvailable: true, tags: ["مميزة"], badge: "مميزة"
+    quantity: 10, inStock: true, isAvailable: true, tags: []
   },
   {
-    id: 4008, storeId: 4, name: "eyeliner-brush", description: "eyeliner-brush",
+    id: 4008, storeId: MAGNA_BEAUTY_STORE_ID, name: "eyeliner-brush", description: "eyeliner-brush",
     price: 25, originalPrice: 40, images: ["public/assets/magna-beauty/eyeliner-brush.webp"],
     sizes: ["واحدة"], availableSizes: ["واحدة"],
     colors: [{name: "طبيعي", value: "#F0F8FF"}],
     rating: 4.9, reviews: 19, views: 167, likes: 89, orders: 44, category: "عطور",
-    inStock: true, isAvailable: true, tags: ["جديد"], badge: "جديد"
+    quantity: 10, inStock: true, isAvailable: true, tags: []
   },
   {
-    id: 4009, storeId: 4, name: "POSE", description: "POSE",
+    id: 4009, storeId: MAGNA_BEAUTY_STORE_ID, name: "POSE", description: "POSE",
     price: 25, originalPrice: 40, images: ["public/assets/magna-beauty/pose.webp"],
     sizes: ["واحدة"], availableSizes: ["واحدة"],
     colors: [{name: "طبيعي", value: "#F5E6D3"}],
     rating: 4.6, reviews: 33, views: 245, likes: 87, orders: 45, category: "عناية بالبشرة",
-    inStock: true, isAvailable: true, tags: ["مميزة"], badge: "مميزة"
+    quantity: 10, inStock: true, isAvailable: true, tags: []
   },
   {
-    id: 4010, storeId: 4, name: "ANGEL", description: "ANGEL",
+    id: 4010, storeId: MAGNA_BEAUTY_STORE_ID, name: "ANGEL", description: "ANGEL",
     price: 25, originalPrice: 40, images: ["public/assets/magna-beauty/angel.webp"],
     sizes: ["واحد"], availableSizes: ["واحد"],
     colors: [{name: "فاتح", value: "#FFEAA7"}],
     rating: 4.7, reviews: 26, views: 198, likes: 76, orders: 54, category: "مكياج",
-    inStock: true, isAvailable: true, tags: ["أكثر طلباً"], badge: "أكثر طلباً"
+    quantity: 10, inStock: true, isAvailable: true, tags: []
   },
   {
-    id: 4011, storeId: 4, name: "GEM", description: "GEM",
+    id: 4011, storeId: MAGNA_BEAUTY_STORE_ID, name: "GEM", description: "GEM",
     price: 25, originalPrice: 40, images: ["public/assets/magna-beauty/gem.JPEG"],
     sizes: ["واحدة"], availableSizes: ["واحدة"],
     colors: [{name: "طبيعي", value: "#F5E6D3"}],
     rating: 4.9, reviews: 37, views: 245, likes: 67, orders: 69, category: "عناية بالبشرة",
-    inStock: true, isAvailable: true, tags: ["أكثر إعجاباً"], badge: "أكثر إعجاباً"
+    quantity: 10, inStock: true, isAvailable: true, tags: []
   },
   {
-    id: 4012, storeId: 4, name: "ICY1", description: "ICY1",
+    id: 4012, storeId: MAGNA_BEAUTY_STORE_ID, name: "ICY1", description: "ICY1",
     price: 75, originalPrice: 95, images: ["public/assets/magna-beauty/icy1.JPEG"],
     sizes: ["واحدة"], availableSizes: ["واحدة"],
     colors: [{name: "طبيعي", value: "#F5E6D3"}],
     rating: 4.9, reviews: 12, views: 130, likes: 55, orders: 102, category: "عناية بالبشرة",
-    inStock: true, isAvailable: true, tags: ["جديد"], badge: "جديد"
+    quantity: 10, inStock: true, isAvailable: true, tags: []
   },
   {
-    id: 4013, storeId: 4, name: "TOPAZ", description: "TOPAZ",
+    id: 4013, storeId: MAGNA_BEAUTY_STORE_ID, name: "TOPAZ", description: "TOPAZ",
     price: 75, originalPrice: 95, images: ["public/assets/magna-beauty/topaz1.JPEG","public/assets/magna-beauty/topaz2.WEBP"],
     sizes: ["واحدة"], availableSizes: ["واحدة"],
     colors: [{name: "طبيعي", value: "#F5E6D3"}],
     rating: 4.7, reviews: 48, views: 600, likes: 355, orders: 250, category: "عناية بالبشرة",
-    inStock: true, isAvailable: true, tags: ["مميزة"], badge: "مميزة"
+    quantity: 10, inStock: true, isAvailable: true, tags: []
   }
 ];
 
@@ -448,7 +452,7 @@ const mkanekProducts: Product[] = [
     sizes: ["3 مقاعد"], availableSizes: ["3 مقاعد"],
     colors: [{name: "رمادي", value: "#6B7280"}, {name: "بيج", value: "#D4A574"}, {name: "أزرق", value: "#3B82F6"}],
     rating: 4.8, reviews: 15, views: 234, likes: 89, orders: 12, category: "أثاث",
-    inStock: true, isAvailable: true, tags: ["مميزة"], badge: "مميزة"
+    quantity: 10, inStock: true, isAvailable: true, tags: []
   },
   {
     id: 6002, storeId: 6, name: "طاولة قهوة خشبية", description: "طاولة قهوة من الخشب الطبيعي بتصميم عصري",
@@ -456,7 +460,7 @@ const mkanekProducts: Product[] = [
     sizes: ["120x60"], availableSizes: ["120x60"],
     colors: [{name: "بني فاتح", value: "#D2B48C"}, {name: "بني غامق", value: "#8B4513"}],
     rating: 4.7, reviews: 22, views: 187, likes: 67, orders: 16, category: "أثاث",
-    inStock: true, isAvailable: true, tags: ["أكثر طلباً"], badge: "أكثر طلباً"
+    quantity: 10, inStock: true, isAvailable: true, tags: []
   },
   {
     id: 6003, storeId: 6, name: "خزانة ملابس بأبواب منزلقة", description: "خزانة واسعة بتصميم حديث وأبواب منزلقة",
@@ -464,7 +468,7 @@ const mkanekProducts: Product[] = [
     sizes: ["200x180"], availableSizes: ["200x180"],
     colors: [{name: "أبيض", value: "#FFFFFF"}, {name: "بني", value: "#8B4513"}],
     rating: 4.9, reviews: 9, views: 156, likes: 54, orders: 7, category: "أثاث",
-    inStock: true, isAvailable: true, tags: ["جديد"], badge: "جديد"
+    quantity: 10, inStock: true, isAvailable: true, tags: []
   },
   {
     id: 6004, storeId: 6, name: "مصباح أرضي LED", description: "مصباح أرضي بإضاءة LED قابلة للتعديل",
@@ -472,7 +476,7 @@ const mkanekProducts: Product[] = [
     sizes: ["واحد"], availableSizes: ["واحد"],
     colors: [{name: "أسود", value: "#000000"}, {name: "أبيض", value: "#FFFFFF"}],
     rating: 4.6, reviews: 18, views: 143, likes: 42, orders: 13, category: "ديكور",
-    inStock: true, isAvailable: true, tags: ["تخفيضات"], badge: "تخفيضات"
+    quantity: 10, inStock: true, isAvailable: true, tags: []
   },
   {
     id: 6005, storeId: 6, name: "مرآة حائط دائرية", description: "مرآة دائرية بإطار ذهبي أنيق",
@@ -480,7 +484,7 @@ const mkanekProducts: Product[] = [
     sizes: ["60cm"], availableSizes: ["60cm"],
     colors: [{name: "ذهبي", value: "#F59E0B"}, {name: "فضي", value: "#9CA3AF"}],
     rating: 4.8, reviews: 25, views: 198, likes: 73, orders: 19, category: "ديكور",
-    inStock: true, isAvailable: true, tags: ["أكثر إعجاباً"], badge: "أكثر إعجاباً"
+    quantity: 10, inStock: true, isAvailable: true, tags: []
   },
   {
     id: 6006, storeId: 6, name: "كراسي طعام حديثة", description: "مجموعة من 4 كراسي بتصميم حديث ومريح",
@@ -488,7 +492,7 @@ const mkanekProducts: Product[] = [
     sizes: ["مجموعة 4"], availableSizes: ["مجموعة 4"],
     colors: [{name: "أسود", value: "#000000"}, {name: "رمادي", value: "#6B7280"}],
     rating: 4.7, reviews: 14, views: 167, likes: 58, orders: 11, category: "أثاث",
-    inStock: true, isAvailable: true, tags: ["أكثر مبيعاً"], badge: "أكثر مبيعاً"
+    quantity: 10, inStock: true, isAvailable: true, tags: []
   },
   {
     id: 6007, storeId: 6, name: "رف كتب متعدد الطوابق", description: "رف كتب من 5 طوابق لتنظيم مثالي",
@@ -496,7 +500,7 @@ const mkanekProducts: Product[] = [
     sizes: ["180x80"], availableSizes: ["180x80"],
     colors: [{name: "بني", value: "#8B4513"}, {name: "أبيض", value: "#FFFFFF"}],
     rating: 4.5, reviews: 20, views: 178, likes: 45, orders: 15, category: "أثاث",
-    inStock: true, isAvailable: true, tags: ["مميزة"], badge: "مميزة"
+    quantity: 10, inStock: true, isAvailable: true, tags: []
   },
   {
     id: 6008, storeId: 6, name: "طقم أواني مطبخ", description: "طقم شامل من الأواني غير القابلة للالتصاق",
@@ -504,7 +508,7 @@ const mkanekProducts: Product[] = [
     sizes: ["طقم 10 قطع"], availableSizes: ["طقم 10 قطع"],
     colors: [{name: "أحمر", value: "#DC2626"}, {name: "أزرق", value: "#3B82F6"}],
     rating: 4.9, reviews: 31, views: 267, likes: 98, orders: 24, category: "أدوات منزلية",
-    inStock: true, isAvailable: true, tags: ["جديد"], badge: "جديد"
+    quantity: 10, inStock: true, isAvailable: true, tags: []
   },
   {
     id: 6009, storeId: 6, name: "مكتب عمل مع أدراج", description: "مكتب عملي بأدراج للتخزين وتصميم أنيق",
@@ -512,7 +516,7 @@ const mkanekProducts: Product[] = [
     sizes: ["120x60"], availableSizes: ["120x60"],
     colors: [{name: "بني", value: "#8B4513"}, {name: "أبيض", value: "#FFFFFF"}],
     rating: 4.8, reviews: 12, views: 134, likes: 47, orders: 9, category: "أثاث",
-    inStock: true, isAvailable: true, tags: ["تخفيضات"], badge: "تخفيضات"
+    quantity: 10, inStock: true, isAvailable: true, tags: []
   },
   {
     id: 6010, storeId: 6, name: "ساعة حائط عصرية", description: "ساعة حائط صامتة بتصميم عصري وأنيق",
@@ -520,7 +524,7 @@ const mkanekProducts: Product[] = [
     sizes: ["30cm"], availableSizes: ["30cm"],
     colors: [{name: "أسود", value: "#000000"}, {name: "أبيض", value: "#FFFFFF"}, {name: "ذهبي", value: "#F59E0B"}],
     rating: 4.6, reviews: 28, views: 201, likes: 69, orders: 21, category: "ديكور",
-    inStock: true, isAvailable: true, tags: ["أكثر طلباً"], badge: "أكثر طلباً"
+    quantity: 10, inStock: true, isAvailable: true, tags: []
   }
 ];
 
@@ -532,7 +536,7 @@ const comfyProducts: Product[] = [
     sizes: ["S", "M", "L", "XL"], availableSizes: ["M", "L", "XL"],
     colors: [{name: "رمادي", value: "#6B7280"}, {name: "أزرق", value: "#3B82F6"}, {name: "أسود", value: "#000000"}],
     rating: 4.7, reviews: 34, views: 298, likes: 123, orders: 28, category: "ملابس رياضية",
-    inStock: true, isAvailable: true, tags: ["أكثر طلباً"], badge: "أكثر طلباً"
+    quantity: 10, inStock: true, isAvailable: true, tags: []
   },
   {
     id: 7002, storeId: 7, name: "حذاء جري متقدم", description: "حذاء جري مع تقنية امتصاص الصدمات",
@@ -540,7 +544,7 @@ const comfyProducts: Product[] = [
     sizes: ["40", "41", "42", "43", "44"], availableSizes: ["41", "42", "43"],
     colors: [{name: "أسود", value: "#000000"}, {name: "أبيض", value: "#FFFFFF"}, {name: "أزرق", value: "#3B82F6"}],
     rating: 4.8, reviews: 29, views: 267, likes: 89, orders: 22, category: "أحذية رياضية",
-    inStock: true, isAvailable: true, tags: ["مميزة"], badge: "مميزة"
+    quantity: 10, inStock: true, isAvailable: true, tags: []
   },
   {
     id: 7003, storeId: 7, name: "شورت رياضي قصير", description: "شورت رياضي مريح بتقنية التهوية",
@@ -548,7 +552,7 @@ const comfyProducts: Product[] = [
     sizes: ["S", "M", "L", "XL"], availableSizes: ["S", "M", "L", "XL"],
     colors: [{name: "أسود", value: "#000000"}, {name: "أزرق", value: "#3B82F6"}, {name: "رمادي", value: "#6B7280"}],
     rating: 4.5, reviews: 41, views: 345, likes: 134, orders: 35, category: "ملابس رياضية",
-    inStock: true, isAvailable: true, tags: ["أكثر مبيعاً"], badge: "أكثر مبيعاً"
+    quantity: 10, inStock: true, isAvailable: true, tags: []
   },
   {
     id: 7004, storeId: 7, name: "قميص رياضي بأكمام طويلة", description: "قميص رياضي مضاد للبكتيريا",
@@ -556,7 +560,7 @@ const comfyProducts: Product[] = [
     sizes: ["S", "M", "L", "XL"], availableSizes: ["M", "L"],
     colors: [{name: "أبيض", value: "#FFFFFF"}, {name: "أحمر", value: "#DC2626"}],
     rating: 4.6, reviews: 18, views: 189, likes: 67, orders: 14, category: "ملابس رياضية",
-    inStock: true, isAvailable: true, tags: ["جديد"], badge: "جديد"
+    quantity: 10, inStock: true, isAvailable: true, tags: []
   },
   {
     id: 7005, storeId: 7, name: "سراويل يوغا مرنة", description: "سراويل يوغا عالية المرونة للنساء",
@@ -564,7 +568,7 @@ const comfyProducts: Product[] = [
     sizes: ["S", "M", "L", "XL"], availableSizes: ["S", "M", "L"],
     colors: [{name: "أسود", value: "#000000"}, {name: "رمادي", value: "#6B7280"}, {name: "بنفسجي", value: "#8B5CF6"}],
     rating: 4.9, reviews: 26, views: 234, likes: 98, orders: 19, category: "ملابس مريحة",
-    inStock: true, isAvailable: true, tags: ["أكثر إعجاباً"], badge: "أكثر إعجاباً"
+    quantity: 10, inStock: true, isAvailable: true, tags: []
   },
   {
     id: 7006, storeId: 7, name: "جوارب رياضية قطنية", description: "مجموعة 6 أزواج من الجوارب القطنية",
@@ -572,7 +576,7 @@ const comfyProducts: Product[] = [
     sizes: ["واحد"], availableSizes: ["واحد"],
     colors: [{name: "متنوع", value: "#9CA3AF"}],
     rating: 4.4, reviews: 52, views: 287, likes: 145, orders: 43, category: "إكسسوارات رياضية",
-    inStock: true, isAvailable: true, tags: ["تخفيضات"], badge: "تخفيضات"
+    quantity: 10, inStock: true, isAvailable: true, tags: []
   },
   {
     id: 7007, storeId: 7, name: "حقيبة رياضية مقاومة للماء", description: "حقيبة رياضية واسعة ومقاومة للماء",
@@ -580,7 +584,7 @@ const comfyProducts: Product[] = [
     sizes: ["متوسط", "كبير"], availableSizes: ["متوسط", "كبير"],
     colors: [{name: "أسود", value: "#000000"}, {name: "أزرق", value: "#3B82F6"}],
     rating: 4.7, reviews: 21, views: 178, likes: 76, orders: 16, category: "إكسسوارات رياضية",
-    inStock: true, isAvailable: true, tags: ["مميزة"], badge: "مميزة"
+    quantity: 10, inStock: true, isAvailable: true, tags: []
   },
   {
     id: 7008, storeId: 7, name: "أساور معصم رياضية", description: "أساور معصم لامتصاص العرق",
@@ -588,7 +592,7 @@ const comfyProducts: Product[] = [
     sizes: ["واحد"], availableSizes: ["واحد"],
     colors: [{name: "أبيض", value: "#FFFFFF"}, {name: "أسود", value: "#000000"}, {name: "أحمر", value: "#DC2626"}],
     rating: 4.3, reviews: 37, views: 198, likes: 87, orders: 29, category: "إكسسوارات رياضية",
-    inStock: true, isAvailable: true, tags: ["جديد"], badge: "جديد"
+    quantity: 10, inStock: true, isAvailable: true, tags: []
   },
   {
     id: 7009, storeId: 7, name: "طقم تمارين منزلية", description: "طقم كامل لممارسة التمارين في المنزل",
@@ -596,7 +600,7 @@ const comfyProducts: Product[] = [
     sizes: ["طقم"], availableSizes: ["طقم"],
     colors: [{name: "متنوع", value: "#6B7280"}],
     rating: 4.8, reviews: 15, views: 156, likes: 54, orders: 11, category: "معدات رياضية",
-    inStock: true, isAvailable: true, tags: ["أكثر طلباً"], badge: "أكثر طلباً"
+    quantity: 10, inStock: true, isAvailable: true, tags: []
   },
   {
     id: 7010, storeId: 7, name: "بنطال جوغينغ قطني", description: "بنطال جوغينغ مريح للاستخدام اليومي",
@@ -604,7 +608,7 @@ const comfyProducts: Product[] = [
     sizes: ["S", "M", "L", "XL"], availableSizes: ["S", "M", "L", "XL"],
     colors: [{name: "رمادي", value: "#6B7280"}, {name: "أزرق داكن", value: "#1E40AF"}],
     rating: 4.6, reviews: 33, views: 245, likes: 112, orders: 26, category: "ملابس مريحة",
-    inStock: true, isAvailable: true, tags: ["تخفيضات"], badge: "تخفيضات"
+    quantity: 10, inStock: true, isAvailable: true, tags: []
   }
 ];
 
@@ -616,7 +620,7 @@ const maknoonProducts: Product[] = [
     sizes: ["واحد"], availableSizes: ["واحد"],
     colors: [{name: "أبيض لؤلؤي", value: "#F8F8FF"}, {name: "كريمي", value: "#FEF3C7"}],
     rating: 4.9, reviews: 18, views: 234, likes: 89, orders: 14, category: "مجوهرات",
-    inStock: true, isAvailable: true, tags: ["مميزة"], badge: "مميزة"
+    quantity: 10, inStock: true, isAvailable: true, tags: []
   },
   {
     id: 8002, storeId: 8, name: "أساور ذهبية مطلية", description: "مجموعة من الأساور الذهبية المطلية بتصاميم متنوعة",
@@ -624,7 +628,7 @@ const maknoonProducts: Product[] = [
     sizes: ["واحد"], availableSizes: ["واحد"],
     colors: [{name: "ذهبي", value: "#F59E0B"}, {name: "ذهبي وردي", value: "#F472B6"}],
     rating: 4.7, reviews: 26, views: 198, likes: 67, orders: 19, category: "إكسسوارات",
-    inStock: true, isAvailable: true, tags: ["أكثر طلباً"], badge: "أكثر طلباً"
+    quantity: 10, inStock: true, isAvailable: true, tags: []
   },
   {
     id: 8003, storeId: 8, name: "حلق فضي بالأحجار الكريمة", description: "أقراط فضية مرصعة بالأحجار الكريمة",
@@ -632,7 +636,7 @@ const maknoonProducts: Product[] = [
     sizes: ["واحد"], availableSizes: ["واحد"],
     colors: [{name: "فضي", value: "#C0C0C0"}, {name: "فضي بأحجار زرقاء", value: "#3B82F6"}],
     rating: 4.8, reviews: 22, views: 167, likes: 78, orders: 16, category: "مجوهرات",
-    inStock: true, isAvailable: true, tags: ["جديد"], badge: "جديد"
+    quantity: 10, inStock: true, isAvailable: true, tags: []
   },
   {
     id: 8004, storeId: 8, name: "علبة مجوهرات مخملية", description: "علبة أنيقة لحفظ المجوهرات مبطنة بالمخمل",
@@ -640,7 +644,7 @@ const maknoonProducts: Product[] = [
     sizes: ["متوسط", "كبير"], availableSizes: ["متوسط", "كبير"],
     colors: [{name: "أحمر", value: "#DC2626"}, {name: "أزرق", value: "#3B82F6"}, {name: "أسود", value: "#000000"}],
     rating: 4.6, reviews: 31, views: 245, likes: 98, orders: 24, category: "هدايا",
-    inStock: true, isAvailable: true, tags: ["تخفيضات"], badge: "تخفيضات"
+    quantity: 10, inStock: true, isAvailable: true, tags: []
   },
   {
     id: 8005, storeId: 8, name: "خاتم خطوبة مرصع", description: "خاتم خطوبة أنيق مرصع بحجر كريم مميز",
@@ -648,7 +652,7 @@ const maknoonProducts: Product[] = [
     sizes: ["6", "7", "8", "9"], availableSizes: ["7", "8"],
     colors: [{name: "ذهبي أبيض", value: "#F8F8FF"}, {name: "ذهبي أصفر", value: "#F59E0B"}],
     rating: 4.9, reviews: 12, views: 156, likes: 67, orders: 9, category: "مجوهرات",
-    inStock: true, isAvailable: true, tags: ["مميزة"], badge: "مميزة"
+    quantity: 10, inStock: true, isAvailable: true, tags: []
   }
 ];
 
@@ -660,7 +664,7 @@ const tohfaProducts: Product[] = [
     sizes: ["متوسط", "كبير"], availableSizes: ["متوسط", "كبير"],
     colors: [{name: "نحاسي", value: "#B8860B"}, {name: "فضي", value: "#C0C0C0"}],
     rating: 4.8, reviews: 19, views: 178, likes: 54, orders: 14, category: "تحف",
-    inStock: true, isAvailable: true, tags: ["مميزة"], badge: "مميزة"
+    quantity: 10, inStock: true, isAvailable: true, tags: []
   },
   {
     id: 10002, storeId: 10, name: "صينية تقديم خشبية", description: "صينية تقديم من الخشب المنقوش بتصاميم تراثية",
@@ -668,7 +672,7 @@ const tohfaProducts: Product[] = [
     sizes: ["صغير", "متوسط", "كبير"], availableSizes: ["متوسط", "كبير"],
     colors: [{name: "بني فاتح", value: "#D2B48C"}, {name: "بني غامق", value: "#8B4513"}],
     rating: 4.7, reviews: 25, views: 201, likes: 67, orders: 18, category: "ديكور",
-    inStock: true, isAvailable: true, tags: ["أكثر طلباً"], badge: "أكثر طلباً"
+    quantity: 10, inStock: true, isAvailable: true, tags: []
   },
   {
     id: 10003, storeId: 10, name: "فازة خزفية مزخرفة", description: "فازة من الخزف المزخرف بألوان زاهية",
@@ -676,7 +680,7 @@ const tohfaProducts: Product[] = [
     sizes: ["صغير", "متوسط"], availableSizes: ["صغير", "متوسط"],
     colors: [{name: "أزرق وأبيض", value: "#3B82F6"}, {name: "أحمر وذهبي", value: "#DC2626"}],
     rating: 4.6, reviews: 28, views: 234, likes: 89, orders: 21, category: "ديكور",
-    inStock: true, isAvailable: true, tags: ["جديد"], badge: "جديد"
+    quantity: 10, inStock: true, isAvailable: true, tags: []
   },
   {
     id: 10004, storeId: 10, name: "طقم فناجين قهوة تراثية", description: "طقم من 6 فناجين قهوة بتصميم تراثي أنيق",
@@ -684,7 +688,7 @@ const tohfaProducts: Product[] = [
     sizes: ["طقم 6 قطع"], availableSizes: ["طقم 6 قطع"],
     colors: [{name: "ذهبي وأبيض", value: "#F59E0B"}, {name: "أزرق وذهبي", value: "#3B82F6"}],
     rating: 4.9, reviews: 16, views: 167, likes: 76, orders: 12, category: "هدايا تراثية",
-    inStock: true, isAvailable: true, tags: ["أكثر إعجاباً"], badge: "أكثر إعجاباً"
+    quantity: 10, inStock: true, isAvailable: true, tags: []
   },
   {
     id: 10005, storeId: 10, name: "مصحف شريف مزخرف", description: "مصحف شريف بغلاف جلدي مزخرف وحروف ذهبية",
@@ -692,7 +696,7 @@ const tohfaProducts: Product[] = [
     sizes: ["متوسط"], availableSizes: ["متوسط"],
     colors: [{name: "بني وذهبي", value: "#8B4513"}, {name: "أخضر وذهبي", value: "#10B981"}],
     rating: 4.9, reviews: 23, views: 189, likes: 98, orders: 17, category: "هدايا تراثية",
-    inStock: true, isAvailable: true, tags: ["مميزة"], badge: "مميزة"
+    quantity: 10, inStock: true, isAvailable: true, tags: []
   }
 ];
 
@@ -704,7 +708,7 @@ const brushtblueProducts: Product[] = [
     sizes: ["طقم 12 قطعة", "طقم 24 قطعة"], availableSizes: ["طقم 12 قطعة", "طقم 24 قطعة"],
     colors: [{name: "متنوع", value: "#6B7280"}],
     rating: 4.8, reviews: 34, views: 267, likes: 123, orders: 28, category: "أدوات رسم",
-    inStock: true, isAvailable: true, tags: ["مميزة"], badge: "مميزة"
+    quantity: 10, inStock: true, isAvailable: true, tags: []
   },
   {
     id: 11002, storeId: 11, name: "ألوان مائية عالية الجودة", description: "مجموعة ألوان مائية احترافية بـ36 لون",
@@ -712,7 +716,7 @@ const brushtblueProducts: Product[] = [
     sizes: ["36 لون"], availableSizes: ["36 لون"],
     colors: [{name: "متنوع", value: "#EC4899"}],
     rating: 4.7, reviews: 41, views: 298, likes: 134, orders: 32, category: "أدوات رسم",
-    inStock: true, isAvailable: true, tags: ["أكثر طلباً"], badge: "أكثر طلباً"
+    quantity: 10, inStock: true, isAvailable: true, tags: []
   },
   {
     id: 11003, storeId: 11, name: "لوحة رسم خشبية", description: "لوحة رسم من الخشب الطبيعي بأحجام متنوعة",
@@ -720,7 +724,7 @@ const brushtblueProducts: Product[] = [
     sizes: ["30x40", "50x70"], availableSizes: ["30x40", "50x70"],
     colors: [{name: "طبيعي", value: "#D2B48C"}],
     rating: 4.6, reviews: 28, views: 198, likes: 87, orders: 22, category: "أدوات رسم",
-    inStock: true, isAvailable: true, tags: ["جديد"], badge: "جديد"
+    quantity: 10, inStock: true, isAvailable: true, tags: []
   },
   {
     id: 11004, storeId: 11, name: "أقلام رصاص للرسم", description: "مجموعة أقلام رصاص بدرجات مختلفة للرسم",
@@ -728,7 +732,7 @@ const brushtblueProducts: Product[] = [
     sizes: ["مجموعة 12 قلم"], availableSizes: ["مجموعة 12 قلم"],
     colors: [{name: "رمادي", value: "#6B7280"}],
     rating: 4.5, reviews: 52, views: 334, likes: 145, orders: 43, category: "قرطاسية",
-    inStock: true, isAvailable: true, tags: ["تخفيضات"], badge: "تخفيضات"
+    quantity: 10, inStock: true, isAvailable: true, tags: []
   },
   {
     id: 11005, storeId: 11, name: "ألوان أكريليك احترافية", description: "مجموعة ألوان أكريليك عالية الجودة بـ24 لون",
@@ -736,7 +740,7 @@ const brushtblueProducts: Product[] = [
     sizes: ["24 لون"], availableSizes: ["24 لون"],
     colors: [{name: "متنوع", value: "#8B5CF6"}],
     rating: 4.8, reviews: 19, views: 178, likes: 76, orders: 15, category: "أدوات رسم",
-    inStock: true, isAvailable: true, tags: ["أكثر مبيعاً"], badge: "أكثر مبيعاً"
+    quantity: 10, inStock: true, isAvailable: true, tags: []
   }
 ];
 
@@ -748,7 +752,7 @@ const tlcwatchesProducts: Product[] = [
     sizes: ["واحد"], availableSizes: ["واحد"],
     colors: [{name: "أسود", value: "#000000"}, {name: "بني", value: "#8B4513"}, {name: "أزرق", value: "#1E40AF"}],
     rating: 4.8, reviews: 29, views: 267, likes: 89, orders: 22, category: "ساعات",
-    inStock: true, isAvailable: true, tags: ["مميزة"], badge: "مميزة"
+    quantity: 10, inStock: true, isAvailable: true, tags: []
   },
   {
     id: 17002, storeId: 17, name: "ساعة ذكية رياضية", description: "ساعة ذكية مقاومة للماء مع مراقبة اللياقة البدنية",
@@ -756,7 +760,7 @@ const tlcwatchesProducts: Product[] = [
     sizes: ["38mm", "42mm"], availableSizes: ["42mm"],
     colors: [{name: "أسود", value: "#000000"}, {name: "فضي", value: "#C0C0C0"}],
     rating: 4.9, reviews: 18, views: 234, likes: 98, orders: 14, category: "ساعات ذكية",
-    inStock: true, isAvailable: true, tags: ["جديد"], badge: "جديد"
+    quantity: 10, inStock: true, isAvailable: true, tags: []
   },
   {
     id: 17003, storeId: 17, name: "محفظة جلدية فاخرة", description: "محفظة رجالية من الجلد الطبيعي بتصميم أنيق",
@@ -764,7 +768,7 @@ const tlcwatchesProducts: Product[] = [
     sizes: ["واحد"], availableSizes: ["واحد"],
     colors: [{name: "أسود", value: "#000000"}, {name: "بني", value: "#8B4513"}],
     rating: 4.7, reviews: 26, views: 198, likes: 67, orders: 19, category: "إكسسوارات رجالية",
-    inStock: true, isAvailable: true, tags: ["أكثر طلباً"], badge: "أكثر طلباً"
+    quantity: 10, inStock: true, isAvailable: true, tags: []
   },
   {
     id: 17004, storeId: 17, name: "خاتم رجالي من الفضة", description: "خاتم رجالي أنيق من الفضة الخالصة",
@@ -772,7 +776,7 @@ const tlcwatchesProducts: Product[] = [
     sizes: ["8", "9", "10", "11"], availableSizes: ["9", "10"],
     colors: [{name: "فضي", value: "#C0C0C0"}],
     rating: 4.6, reviews: 22, views: 167, likes: 54, orders: 16, category: "إكسسوارات رجالية",
-    inStock: true, isAvailable: true, tags: ["تخفيضات"], badge: "تخفيضات"
+    quantity: 10, inStock: true, isAvailable: true, tags: []
   },
   {
     id: 17005, storeId: 17, name: "سلسلة رجالية ذهبية", description: "سلسلة رجالية من الذهب المطلي بتصميم عصري",
@@ -780,7 +784,7 @@ const tlcwatchesProducts: Product[] = [
     sizes: ["50cm", "60cm"], availableSizes: ["50cm", "60cm"],
     colors: [{name: "ذهبي", value: "#F59E0B"}],
     rating: 4.8, reviews: 15, views: 145, likes: 67, orders: 11, category: "إكسسوارات رجالية",
-    inStock: true, isAvailable: true, tags: ["أكثر إعجاباً"], badge: "أكثر إعجاباً"
+    quantity: 10, inStock: true, isAvailable: true, tags: []
   }
 ];
 
@@ -792,7 +796,7 @@ const unpassoProducts: Product[] = [
     sizes: ["40", "41", "42", "43", "44"], availableSizes: ["41", "42", "43"],
     colors: [{name: "أبيض", value: "#FFFFFF"}, {name: "أسود", value: "#000000"}, {name: "أزرق", value: "#3B82F6"}],
     rating: 4.7, reviews: 28, views: 234, likes: 89, orders: 21, category: "أحذية رياضية",
-    inStock: true, isAvailable: true, tags: ["مميزة"], badge: "مميزة"
+    quantity: 10, inStock: true, isAvailable: true, tags: []
   },
   {
     id: 13002, storeId: 13, name: "صنادل جلدية عادية", description: "صنادل من الجلد الطبيعي بتصميم كلاسيكي",
@@ -800,7 +804,7 @@ const unpassoProducts: Product[] = [
     sizes: ["38", "39", "40", "41", "42"], availableSizes: ["39", "40", "41"],
     colors: [{name: "بني", value: "#8B4513"}, {name: "أسود", value: "#000000"}],
     rating: 4.6, reviews: 34, views: 198, likes: 67, orders: 26, category: "صنادل",
-    inStock: true, isAvailable: true, tags: ["أكثر طلباً"], badge: "أكثر طلباً"
+    quantity: 10, inStock: true, isAvailable: true, tags: []
   },
   {
     id: 13003, storeId: 13, name: "أحذية نسائية عالية الكعب", description: "أحذية عالية الكعب مع تصميم أنيق ومريح",
@@ -808,7 +812,7 @@ const unpassoProducts: Product[] = [
     sizes: ["36", "37", "38", "39", "40"], availableSizes: ["37", "38", "39"],
     colors: [{name: "أسود", value: "#000000"}, {name: "بني", value: "#8B4513"}, {name: "أحمر", value: "#DC2626"}],
     rating: 4.8, reviews: 19, views: 167, likes: 54, orders: 15, category: "أحذية",
-    inStock: true, isAvailable: true, tags: ["جديد"], badge: "جديد"
+    quantity: 10, inStock: true, isAvailable: true, tags: []
   },
   {
     id: 13004, storeId: 13, name: "حذاء رجالي رسمي", description: "حذاء رجالي من الجلد للمناسبات الرسمية",
@@ -816,7 +820,7 @@ const unpassoProducts: Product[] = [
     sizes: ["40", "41", "42", "43", "44", "45"], availableSizes: ["42", "43", "44"],
     colors: [{name: "أسود", value: "#000000"}, {name: "بني", value: "#8B4513"}],
     rating: 4.9, reviews: 16, views: 145, likes: 67, orders: 12, category: "أحذية",
-    inStock: true, isAvailable: true, tags: ["مميزة"], badge: "مميزة"
+    quantity: 10, inStock: true, isAvailable: true, tags: []
   },
   {
     id: 13005, storeId: 13, name: "شباشب نسائية عصرية", description: "شباشب نسائية مريحة بتصميم عصري",
@@ -824,7 +828,7 @@ const unpassoProducts: Product[] = [
     sizes: ["36", "37", "38", "39", "40"], availableSizes: ["37", "38", "39", "40"],
     colors: [{name: "وردي", value: "#EC4899"}, {name: "أبيض", value: "#FFFFFF"}, {name: "ذهبي", value: "#F59E0B"}],
     rating: 4.5, reviews: 31, views: 256, likes: 98, orders: 24, category: "شباشب",
-    inStock: true, isAvailable: true, tags: ["تخفيضات"], badge: "تخفيضات"
+    quantity: 10, inStock: true, isAvailable: true, tags: []
   }
 ];
 
@@ -836,7 +840,7 @@ const eylulProducts: Product[] = [
     sizes: ["S", "M", "L", "XL"], availableSizes: ["M", "L", "XL"],
     colors: [{name: "أزرق تركي", value: "#1E40AF"}, {name: "أحمر عتيق", value: "#DC2626"}],
     rating: 4.8, reviews: 22, views: 198, likes: 76, orders: 17, category: "أزياء تركية",
-    inStock: true, isAvailable: true, tags: ["مميزة"], badge: "مميزة"
+    quantity: 10, inStock: true, isAvailable: true, tags: []
   },
   {
     id: 18002, storeId: 18, name: "عباية تركية فاخرة", description: "عباية تركية من أجود الخامات بتصميم راقي",
@@ -844,7 +848,7 @@ const eylulProducts: Product[] = [
     sizes: ["S", "M", "L", "XL"], availableSizes: ["S", "M", "L"],
     colors: [{name: "أسود", value: "#000000"}, {name: "بني غامق", value: "#8B4513"}, {name: "أزرق داكن", value: "#1E3A8A"}],
     rating: 4.9, reviews: 18, views: 167, likes: 89, orders: 14, category: "أزياء تركية",
-    inStock: true, isAvailable: true, tags: ["أكثر إعجاباً"], badge: "أكثر إعجاباً"
+    quantity: 10, inStock: true, isAvailable: true, tags: []
   },
   {
     id: 18003, storeId: 18, name: "بلوزة قطنية عصرية", description: "بلوزة قطنية تركية بقصة عصرية أنيقة",
@@ -852,7 +856,7 @@ const eylulProducts: Product[] = [
     sizes: ["S", "M", "L", "XL"], availableSizes: ["M", "L", "XL"],
     colors: [{name: "أبيض", value: "#FFFFFF"}, {name: "وردي فاتح", value: "#F9A8D4"}],
     rating: 4.6, reviews: 29, views: 234, likes: 98, orders: 23, category: "ملابس نسائية",
-    inStock: true, isAvailable: true, tags: ["جديد"], badge: "جديد"
+    quantity: 10, inStock: true, isAvailable: true, tags: []
   },
   {
     id: 18004, storeId: 18, name: "طقم محجبات تركية", description: "مجموعة محجبات تركية فاخرة بتصاميم متنوعة",
@@ -860,7 +864,7 @@ const eylulProducts: Product[] = [
     sizes: ["واحد"], availableSizes: ["واحد"],
     colors: [{name: "متنوع", value: "#8B5CF6"}],
     rating: 4.7, reviews: 33, views: 267, likes: 123, orders: 28, category: "محجبات",
-    inStock: true, isAvailable: true, tags: ["أكثر طلباً"], badge: "أكثر طلباً"
+    quantity: 10, inStock: true, isAvailable: true, tags: []
   },
   {
     id: 18005, storeId: 18, name: "جاكيت تركي شتوي", description: "جاكيت شتوي تركي عالي الجودة مناسب للطقس البارد",
@@ -868,7 +872,7 @@ const eylulProducts: Product[] = [
     sizes: ["S", "M", "L", "XL"], availableSizes: ["M", "L"],
     colors: [{name: "رمادي غامق", value: "#374151"}, {name: "أسود", value: "#000000"}],
     rating: 4.8, reviews: 15, views: 145, likes: 67, orders: 11, category: "ملابس نسائية",
-    inStock: true, isAvailable: true, tags: ["تخفيضات"], badge: "تخفيضات"
+    quantity: 10, inStock: true, isAvailable: true, tags: []
   }
 ];
 
@@ -880,7 +884,7 @@ const cozetboutiqueProducts: Product[] = [
     sizes: ["صغير", "متوسط", "كبير"], availableSizes: ["متوسط", "كبير"],
     colors: [{name: "أسود", value: "#000000"}, {name: "بيج", value: "#D4A574"}, {name: "بني", value: "#8B4513"}],
     rating: 4.9, reviews: 16, views: 178, likes: 89, orders: 12, category: "حقائب مميزة",
-    inStock: true, isAvailable: true, tags: ["مميزة"], badge: "مميزة"
+    quantity: 10, inStock: true, isAvailable: true, tags: []
   },
   {
     id: 19002, storeId: 19, name: "إكسسوار شعر ذهبي", description: "مجموعة إكسسوارات شعر أنيقة مطلية بالذهب",
@@ -888,7 +892,7 @@ const cozetboutiqueProducts: Product[] = [
     sizes: ["واحد"], availableSizes: ["واحد"],
     colors: [{name: "ذهبي", value: "#F59E0B"}, {name: "فضي", value: "#C0C0C0"}],
     rating: 4.7, reviews: 28, views: 234, likes: 123, orders: 21, category: "إكسسوارات فاخرة",
-    inStock: true, isAvailable: true, tags: ["جديد"], badge: "جديد"
+    quantity: 10, inStock: true, isAvailable: true, tags: []
   },
   {
     id: 19003, storeId: 19, name: "فستان سهرة فاخر", description: "فستان سهرة فاخر من أجود الأقمشة للمناسبات الخاصة",
@@ -896,7 +900,7 @@ const cozetboutiqueProducts: Product[] = [
     sizes: ["S", "M", "L", "XL"], availableSizes: ["M", "L"],
     colors: [{name: "أحمر عميق", value: "#7F1D1D"}, {name: "أزرق ملكي", value: "#1E3A8A"}, {name: "أسود", value: "#000000"}],
     rating: 4.9, reviews: 13, views: 145, likes: 67, orders: 10, category: "أزياء راقية",
-    inStock: true, isAvailable: true, tags: ["أكثر إعجاباً"], badge: "أكثر إعجاباً"
+    quantity: 10, inStock: true, isAvailable: true, tags: []
   },
   {
     id: 19004, storeId: 19, name: "عقد لؤلؤ طبيعي مطعم", description: "عقد من اللؤلؤ الطبيعي المطعم بالأحجار الكريمة",
@@ -904,7 +908,7 @@ const cozetboutiqueProducts: Product[] = [
     sizes: ["واحد"], availableSizes: ["واحد"],
     colors: [{name: "لؤلؤي طبيعي", value: "#FEF3C7"}],
     rating: 4.9, reviews: 11, views: 134, likes: 54, orders: 8, category: "مجوهرات",
-    inStock: true, isAvailable: true, tags: ["مميزة"], badge: "مميزة"
+    quantity: 10, inStock: true, isAvailable: true, tags: []
   },
   {
     id: 19005, storeId: 19, name: "شنطة سفر أنيقة", description: "شنطة سفر أنيقة من الجلد مع تفاصيل معدنية فاخرة",
@@ -912,7 +916,7 @@ const cozetboutiqueProducts: Product[] = [
     sizes: ["متوسط", "كبير"], availableSizes: ["متوسط", "كبير"],
     colors: [{name: "بني غامق", value: "#8B4513"}, {name: "أسود", value: "#000000"}],
     rating: 4.8, reviews: 24, views: 198, likes: 89, orders: 18, category: "حقائب مميزة",
-    inStock: true, isAvailable: true, tags: ["تخفيضات"], badge: "تخفيضات"
+    quantity: 10, inStock: true, isAvailable: true, tags: []
   }
 ];
 
@@ -924,7 +928,7 @@ const alwardaalbaydaProducts: Product[] = [
     sizes: ["50ml", "100ml"], availableSizes: ["50ml", "100ml"],
     colors: [{name: "وردي فاتح", value: "#F9A8D4"}],
     rating: 4.8, reviews: 31, views: 267, likes: 123, orders: 24, category: "عطور",
-    inStock: true, isAvailable: true, tags: ["مميزة"], badge: "مميزة"
+    quantity: 10, inStock: true, isAvailable: true, tags: []
   },
   {
     id: 16002, storeId: 16, name: "باقة ورود طبيعية", description: "باقة ورود حمراء طبيعية محفوظة بعناية لتدوم طويلاً",
@@ -932,7 +936,7 @@ const alwardaalbaydaProducts: Product[] = [
     sizes: ["12 وردة", "24 وردة"], availableSizes: ["12 وردة", "24 وردة"],
     colors: [{name: "أحمر", value: "#DC2626"}, {name: "وردي", value: "#EC4899"}, {name: "أبيض", value: "#FFFFFF"}],
     rating: 4.9, reviews: 42, views: 356, likes: 167, orders: 35, category: "ورود",
-    inStock: true, isAvailable: true, tags: ["أكثر طلباً"], badge: "أكثر طلباً"
+    quantity: 10, inStock: true, isAvailable: true, tags: []
   },
   {
     id: 16003, storeId: 16, name: "زيت ورد عضوي خالص", description: "زيت ورد عضوي خالص 100% للعناية بالبشرة والشعر",
@@ -940,7 +944,7 @@ const alwardaalbaydaProducts: Product[] = [
     sizes: ["30ml", "50ml"], availableSizes: ["30ml", "50ml"],
     colors: [{name: "طبيعي", value: "#FEF3C7"}],
     rating: 4.7, reviews: 26, views: 198, likes: 89, orders: 19, category: "زيوت طبيعية",
-    inStock: true, isAvailable: true, tags: ["جديد"], badge: "جديد"
+    quantity: 10, inStock: true, isAvailable: true, tags: []
   },
   {
     id: 16004, storeId: 16, name: "شموع عطرية بالورد", description: "مجموعة شموع عطرية بعبير الورد لأجواء رومانسية",
@@ -948,7 +952,7 @@ const alwardaalbaydaProducts: Product[] = [
     sizes: ["3 قطع", "6 قطع"], availableSizes: ["3 قطع", "6 قطع"],
     colors: [{name: "وردي", value: "#EC4899"}, {name: "أبيض", value: "#FFFFFF"}],
     rating: 4.6, reviews: 34, views: 245, likes: 112, orders: 27, category: "شموع",
-    inStock: true, isAvailable: true, tags: ["تخفيضات"], badge: "تخفيضات"
+    quantity: 10, inStock: true, isAvailable: true, tags: []
   },
   {
     id: 16005, storeId: 16, name: "عطر عود وورد فاخر", description: "عطر فاخر يجمع بين عبير العود والورد لعبير مميز يدوم طويلاً",
@@ -956,18 +960,19 @@ const alwardaalbaydaProducts: Product[] = [
     sizes: ["50ml", "100ml"], availableSizes: ["100ml"],
     colors: [{name: "ذهبي غامق", value: "#A16207"}],
     rating: 4.9, reviews: 18, views: 156, likes: 76, orders: 14, category: "عطور",
-    inStock: true, isAvailable: true, tags: ["أكثر إعجاباً"], badge: "أكثر إعجاباً"
+    quantity: 10, inStock: true, isAvailable: true, tags: []
   }
 ];
 
 
 // تصدير المنتجات الشاملة - استخدام المنتجات الحقيقية للمتاجر الخمسة
 export const allStoreProducts: Product[] = [
+  ...indeeshProducts, // منتجات انديش - المتجر الآلي الجديد
   ...nawaemProducts, // منتجات نواعم الفريدة والحصرية
   ...sheirineProducts, // منتجات شيرين الفريدة والحصرية
   ...deltaProducts, // منتجات دلتا ستور الفريدة والحصرية
   ...magnaBeautyProducts, // منتجات ماجنا بيوتي الفريدة والحصرية
-  ...allRealStoreProducts as Product[], // المنتجات الحقيقية للمتاجر الخمسة
+  ...allRealStoreProducts.map((p: RealProduct) => ({ ...p, quantity: p.quantity || 0 })) as Product[], // المنتجات الحقيقية للمتاجر الخمسة
   ...mkanekProducts,
   ...comfyProducts,
   ...maknoonProducts,

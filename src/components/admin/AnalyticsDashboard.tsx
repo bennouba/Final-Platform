@@ -180,7 +180,7 @@ const AnalyticsDashboard = () => {
   const highlights = useMemo(() => Object.values(analyticsHighlightConfigs), [analyticsHighlightConfigs]);
   const [activeHighlight, setActiveHighlight] = useState(() => highlights[0]?.id ?? "live");
   const activeConfig = analyticsHighlightConfigs[activeHighlight] ?? highlights[0];
-  const activeMode = activeConfig.mode;
+  const activeMode = activeConfig?.mode;
 
   const trafficSources = useMemo(
     () => [
@@ -258,7 +258,7 @@ const AnalyticsDashboard = () => {
           <CardHeader className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
             <div>
               <CardTitle>تحليلات الجلسات اللحظية</CardTitle>
-              <p className="text-sm text-muted-foreground">{activeConfig.label} بتركيز فوري لكل متغير مؤثر</p>
+              <p className="text-sm text-muted-foreground">{activeConfig?.label} بتركيز فوري لكل متغير مؤثر</p>
             </div>
             <Button variant="outline" size="sm" className="gap-2">
               <BarChart3 className="h-4 w-4" />
@@ -266,6 +266,7 @@ const AnalyticsDashboard = () => {
             </Button>
           </CardHeader>
           <CardContent className="space-y-6">
+            {activeMode && (
             <ResponsiveContainer width="100%" height={320}>
               <AreaChart data={activeMode.chartData}>
                 <defs>
@@ -291,6 +292,9 @@ const AnalyticsDashboard = () => {
                 <Line type="monotone" dataKey="secondary" stroke={activeMode.lineColor} strokeWidth={3} dot={false} yAxisId="secondary" name="secondary" />
               </AreaChart>
             </ResponsiveContainer>
+            )}
+            {activeMode && (
+            <>
             <div className="grid gap-3 sm:grid-cols-2 text-xs text-muted-foreground">
               {activeMode.badges.map((badge) => {
                 const Icon = badge.icon;
@@ -303,7 +307,7 @@ const AnalyticsDashboard = () => {
               })}
             </div>
             <div className="grid gap-3 sm:grid-cols-3">
-              {activeMode.summary.map((item) => (
+              {activeMode?.summary.map((item) => (
                 <div key={item.label} className="rounded-3xl border border-slate-200/70 dark:border-slate-800/50 bg-white/90 dark:bg-slate-900/40 px-4 py-3 space-y-2">
                   <p className="text-xs text-muted-foreground">{item.label}</p>
                   <p className="text-sm font-semibold text-slate-900 dark:text-white">{item.value}</p>
@@ -311,6 +315,8 @@ const AnalyticsDashboard = () => {
                 </div>
               ))}
             </div>
+            </>
+            )}
           </CardContent>
         </Card>
         <Card className="border-none bg-white/80 dark:bg-slate-900/50 shadow-lg">
@@ -384,7 +390,7 @@ const AnalyticsDashboard = () => {
                   <span>{formatNumber(stage.value)} زيارة</span>
                   <span className="text-emerald-600">معدل الاحتفاظ {stage.completion}</span>
                 </div>
-                <Progress value={(stage.value / funnelStages[0].value) * 100} className="mt-2 h-2.5" />
+                <Progress value={(stage.value / (funnelStages[0]?.value || 1)) * 100} className="mt-2 h-2.5" />
               </div>
             ))}
           </CardContent>

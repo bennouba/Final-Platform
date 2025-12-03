@@ -38,9 +38,62 @@ const StorePage: React.FC<StorePageProps> = ({ storeSlug, onBack, onProductClick
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('الكل');
+  const [storeAds, setStoreAds] = useState<any[]>([]);
+  const [liveProducts, setLiveProducts] = useState<any[]>([]);
 
   // البحث عن بيانات المتجر
   const store = storesData.find(s => s.slug === storeSlug);
+
+  // جلب الإعلانات من الـ API
+  const fetchAds = async () => {
+    try {
+      if (store?.id) {
+        const response = await fetch(`/api/ads/store/${storeSlug}`);
+        if (response.ok) {
+          const result = await response.json();
+          setStoreAds(result.data || []);
+        }
+      }
+    } catch (error) {
+      console.log('Failed to fetch ads');
+    }
+  };
+
+  // جلب المنتجات من الـ API
+  const fetchProducts = async () => {
+    try {
+      const apiUrl = import.meta.env.VITE_APP_API_URL || '/api';
+      const response = await fetch(`${apiUrl}/products?limit=200`);
+      if (response.ok) {
+        const result = await response.json();
+        const products = Array.isArray(result.data) ? result.data : [];
+        setLiveProducts(products);
+      }
+    } catch (error) {
+      console.log('Failed to fetch products');
+    }
+  };
+
+  useEffect(() => {
+    fetchAds();
+    fetchProducts();
+  }, [store?.id]);
+
+  // الاستماع لتحديثات المنتجات من واجهة التاجر
+  useEffect(() => {
+    const handleProductUpdate = () => {
+      fetchProducts();
+      fetchAds();
+    };
+
+    window.addEventListener('productUpdated', handleProductUpdate as EventListener);
+    window.addEventListener('storeAdsUpdated', handleProductUpdate as EventListener);
+
+    return () => {
+      window.removeEventListener('productUpdated', handleProductUpdate as EventListener);
+      window.removeEventListener('storeAdsUpdated', handleProductUpdate as EventListener);
+    };
+  }, []);
 
   // الحصول على إعدادات المتجر
   const getStoreConfig = (slug: string) => {
@@ -58,7 +111,11 @@ const StorePage: React.FC<StorePageProps> = ({ storeSlug, onBack, onProductClick
 
   const storeConfig = getStoreConfig(storeSlug);
   let storeProducts: any[] = [];
-  if (store) {
+  
+  // استخدام المنتجات من الـ API إذا كانت متاحة، وإلا استخدم البيانات المحلية
+  if (liveProducts.length > 0) {
+    storeProducts = liveProducts;
+  } else if (store) {
     switch (store.slug) {
       case 'nawaem':
         storeProducts = nawaemProducts;
@@ -86,7 +143,7 @@ const StorePage: React.FC<StorePageProps> = ({ storeSlug, onBack, onProductClick
 
   // تصفية المنتجات
   const filteredProducts = storeProducts.filter(product => {
-    const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = (product.name || product.nameAr).toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = selectedCategory === 'الكل' || product.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
@@ -196,6 +253,41 @@ const StorePage: React.FC<StorePageProps> = ({ storeSlug, onBack, onProductClick
         </div>
       </div>
 
+      {/* الإعلانات العائمة */}
+      {storeAds.filter(ad => ad.placement === 'floating').length > 0 && (
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b">
+          <div className="container mx-auto px-4 py-4">
+            <div className="flex gap-4 overflow-x-auto pb-2">
+              {storeAds.filter(ad => ad.placement === 'floating').map(ad => {
+                const template = [
+                  { id: 'adv1', image: '/Backup-platform/adv1.jpg' },
+                  { id: 'adv2', image: '/Backup-platform/adv2.jpg' },
+                  { id: 'adv3', image: '/Backup-platform/adv3.jpg' },
+                  { id: 'adv4', image: '/Backup-platform/adv4.jpg' },
+                  { id: 'adv5', image: '/Backup-platform/adv5.jpg' },
+                  { id: 'adv6', image: '/Backup-platform/adv6.jpg' },
+                  { id: 'adv7', image: '/Backup-platform/adv7.jpg' },
+                  { id: 'adv8', image: '/Backup-platform/adv8.jpg' },
+                  { id: 'adv9', image: '/Backup-platform/adv9.jpg' },
+                  { id: 'adv10', image: '/Backup-platform/adv10.jpg' },
+                  { id: 'adv11', image: '/Backup-platform/adv11.jpg' },
+                  { id: 'adv12', image: '/Backup-platform/adv12.jpg' },
+                ].find(t => t.id === ad.templateId);
+                return (
+                  <div key={ad.id} className="flex-shrink-0 bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow">
+                    <img src={template?.image} alt={ad.title} className="w-64 h-24 object-cover" />
+                    <div className="p-3">
+                      <h4 className="font-semibold text-sm text-gray-900">{ad.title}</h4>
+                      <p className="text-xs text-gray-600 line-clamp-1">{ad.description}</p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* المنتجات */}
       <div className="container mx-auto px-4 py-6">
         {filteredProducts.length === 0 ? (
@@ -209,13 +301,47 @@ const StorePage: React.FC<StorePageProps> = ({ storeSlug, onBack, onProductClick
             ? 'grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6' 
             : 'space-y-4'
           }>
-            {filteredProducts.map((product) => (
-              <ProductCard 
-                key={product.id}
-                product={product}
-                viewMode={viewMode}
-                onClick={() => onProductClick(product.id)}
-              />
+            {filteredProducts.map((product, index) => (
+              <React.Fragment key={`product-${product.id}`}>
+                {index === 4 && storeAds.filter(ad => ad.placement === 'grid').length > 0 && (
+                  <div className="col-span-2 md:col-span-3 lg:col-span-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {storeAds.filter(ad => ad.placement === 'grid').map(ad => {
+                        const template = [
+                          { id: 'adv1', image: '/Backup-platform/adv1.jpg' },
+                          { id: 'adv2', image: '/Backup-platform/adv2.jpg' },
+                          { id: 'adv3', image: '/Backup-platform/adv3.jpg' },
+                          { id: 'adv4', image: '/Backup-platform/adv4.jpg' },
+                          { id: 'adv5', image: '/Backup-platform/adv5.jpg' },
+                          { id: 'adv6', image: '/Backup-platform/adv6.jpg' },
+                          { id: 'adv7', image: '/Backup-platform/adv7.jpg' },
+                          { id: 'adv8', image: '/Backup-platform/adv8.jpg' },
+                          { id: 'adv9', image: '/Backup-platform/adv9.jpg' },
+                          { id: 'adv10', image: '/Backup-platform/adv10.jpg' },
+                          { id: 'adv11', image: '/Backup-platform/adv11.jpg' },
+                          { id: 'adv12', image: '/Backup-platform/adv12.jpg' },
+                        ].find(t => t.id === ad.templateId);
+                        return (
+                          <Card key={ad.id} className="overflow-hidden">
+                            <div className="aspect-video bg-gray-100">
+                              <img src={template?.image} alt={ad.title} className="w-full h-full object-cover" />
+                            </div>
+                            <CardContent className="p-4">
+                              <h3 className="font-semibold mb-2 text-sm">{ad.title}</h3>
+                              <p className="text-xs text-gray-600 line-clamp-2">{ad.description}</p>
+                            </CardContent>
+                          </Card>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+                <ProductCard 
+                  product={product}
+                  viewMode={viewMode}
+                  onClick={() => onProductClick(product.id)}
+                />
+              </React.Fragment>
             ))}
           </div>
         )}

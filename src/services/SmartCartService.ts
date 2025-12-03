@@ -77,7 +77,7 @@ class SmartCartService {
 
       return mergedCart;
     } catch (error) {
-      console.error('Error loading smart cart:', error);
+
       return [];
     }
   }
@@ -178,7 +178,7 @@ class SmartCartService {
       const cloudWishlist = this.loadWishlistFromCloud();
       return this.mergeWishlistData(wishlistData.items, cloudWishlist);
     } catch (error) {
-      console.error('Error loading smart wishlist:', error);
+
       return [];
     }
   }
@@ -231,7 +231,7 @@ class SmartCartService {
   // محاكاة مزامنة السحابة
   private syncToCloud(cartData: any): void {
     // في التطبيق الحقيقي: إرسال البيانات للخادم
-    console.log('Syncing cart to cloud:', cartData);
+
   }
 
   private loadFromCloud(): any[] {
@@ -240,7 +240,7 @@ class SmartCartService {
   }
 
   private syncWishlistToCloud(wishlistData: any): void {
-    console.log('Syncing wishlist to cloud:', wishlistData);
+
   }
 
   private loadWishlistFromCloud(): any[] {

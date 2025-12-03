@@ -3,6 +3,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import ExpiryAlertModal from '@/components/ExpiryAlertModal';
+import { ExpiryAlertProduct, isProductExpiringSoon } from '@/utils/expiryUtils';
 import {
   AlertCircle,
   ArrowLeft,
@@ -67,6 +69,30 @@ const ShopLoginPage: React.FC<ShopLoginPageProps> = ({
     email: '',
     phone: ''
   });
+  const [expiryAlertProducts, setExpiryAlertProducts] = useState<ExpiryAlertProduct[]>([]);
+  const [showExpiryAlert, setShowExpiryAlert] = useState(false);
+
+  const getExpiryAlertProducts = (subdomain: string): ExpiryAlertProduct[] => {
+    const storeKey = `store_${subdomain}`;
+    const storeData = JSON.parse(localStorage.getItem(storeKey) || '{}');
+    
+    if (!storeData.products || !Array.isArray(storeData.products)) {
+      return [];
+    }
+
+    return storeData.products
+      .filter((product: any) => product.endDate && isProductExpiringSoon(product.endDate, 60))
+      .map((product: any) => ({
+        id: product.id,
+        name: product.name,
+        quantity: product.quantity || 0,
+        endDate: product.endDate,
+        daysRemaining: Math.ceil((new Date(product.endDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)),
+        category: product.category || 'غير محدد',
+        originalPrice: product.originalPrice || product.price || 0
+      }))
+      .sort((a, b) => a.daysRemaining - b.daysRemaining);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -91,7 +117,6 @@ const ShopLoginPage: React.FC<ShopLoginPageProps> = ({
       // التحقق من بيانات مسؤول النظام
       if (userType === 'admin') {
         if (credentials.username === 'admin@eshro.ly' && credentials.password === 'admin123') {
-          console.log('Admin login successful');
           alert('تم تسجيل دخول مسؤول النظام بنجاح! 🎉');
           // في التطبيق الحقيقي، سيتم توجيه مسؤول النظام للوحة التحكم الرئيسية
           // هنا سنستخدم نفس نظام التاجر مؤقتاً لحين تطوير لوحة التحكم الإدارية الرئيسية
@@ -105,40 +130,163 @@ const ShopLoginPage: React.FC<ShopLoginPageProps> = ({
         }
       }
 
-      // في التطبيق الحقيقي، ستتم المعالجة عبر API
+      // معالجة تسجيل دخول التاجر
       if (userType === 'merchant') {
-        // البحث عن بيانات المتجر في localStorage
-        const stores = JSON.parse(localStorage.getItem('eshro_stores') || '[]');
-        const storeData = stores.find((store: any) =>
-          (store.email === credentials.username || store.phone === credentials.username) &&
-          store.password === credentials.password
+        // التحقق من بيانات التاجر المحفوظة في localStorage
+        const storedStores = JSON.parse(localStorage.getItem('eshro_stores') || '[]');
+        let merchantData = storedStores.find((store: any) =>
+          store.email === credentials.username && store.password === credentials.password
         );
 
-        if (storeData) {
+        // إذا لم يتم العثور على التاجر في eshro_stores، ابحث في مفاتيح merchant_*
+        if (!merchantData) {
+          // ابحث عن merchant_${email} أولاً
+          const merchantKey = `merchant_${credentials.username}`;
+          try {
+            const merchantCredentials = JSON.parse(localStorage.getItem(merchantKey) || '{}');
+            if (merchantCredentials.email === credentials.username &&
+                merchantCredentials.password === credentials.password) {
+              // ابحث عن بيانات المتجر المقابلة
+              const storeData = storedStores.find((store: any) => store.subdomain === merchantCredentials.subdomain);
+              if (storeData) {
+                merchantData = {
+                  ...storeData,
+                  ...merchantCredentials
+                };
+              } else {
+                // إذا لم يتم العثور على بيانات المتجر، أنشئ بيانات من بيانات التاجر
+                merchantData = {
+                  id: merchantCredentials.storeId || Date.now(),
+                  nameAr: merchantCredentials.storeName,
+                  nameEn: merchantCredentials.storeName,
+                  email: merchantCredentials.email,
+                  phone: merchantCredentials.phone,
+                  subdomain: merchantCredentials.subdomain,
+                  password: merchantCredentials.password,
+                  ownerName: merchantCredentials.ownerName,
+                  setupComplete: merchantCredentials.setupComplete
+                };
+              }
+            }
+          } catch (e) {
+            // تجاهل الأخطاء
+          }
+          
+          // إذا لم يتم العثور على البيانات، ابحث في جميع مفاتيح merchant_*
+          if (!merchantData) {
+            for (let i = 0; i < localStorage.length; i++) {
+              const key = localStorage.key(i);
+              if (key && key.startsWith('merchant_')) {
+                try {
+                  const merchantCredentials = JSON.parse(localStorage.getItem(key) || '{}');
+                  if (merchantCredentials.email === credentials.username &&
+                      merchantCredentials.password === credentials.password) {
+                    // ابحث عن بيانات المتجر المقابلة
+                    const storeData = storedStores.find((store: any) => store.subdomain === merchantCredentials.subdomain);
+                    if (storeData) {
+                      merchantData = {
+                        ...storeData,
+                        ...merchantCredentials
+                      };
+                    } else {
+                      // إذا لم يتم العثور على بيانات المتجر، أنشئ بيانات أساسية
+                      merchantData = {
+                        id: merchantCredentials.storeId || Date.now(),
+                        nameAr: merchantCredentials.storeName,
+                        nameEn: merchantCredentials.storeName,
+                        email: merchantCredentials.email,
+                        phone: merchantCredentials.phone,
+                        subdomain: merchantCredentials.subdomain,
+                        password: merchantCredentials.password,
+                        ownerName: merchantCredentials.ownerName,
+                        setupComplete: merchantCredentials.setupComplete
+                      };
+                    }
+                    break;
+                  }
+                } catch (e) {
+                  // تجاهل الأخطاء في تحليل JSON
+                  continue;
+                }
+              }
+            }
+          }
+        }
+
+        // التحقق من بيانات التاجر المحددة مسبقاً
+        const predefinedMerchants = {
+          nawaem: { email: "mounir@gmail.com", password: "mounir123", phone: "218910000001" },
+          sherine: { email: "salem@gmail.com", password: "salem123", phone: "218910000002" },
+          delta: { email: "majed@gmail.com", password: "majed123", phone: "218910000003" },
+          pretty: { email: "kamel@gmail.com", password: "kamel123", phone: "218910000004" },
+          magna: { email: "hasan@gmail.com", password: "hasan123", phone: "218910000005" },
+          indeesh: { email: "salem.masgher@gmail.com", password: "salem1234", phone: "218910000006" }
+        };
+
+        const isPredefinedMerchant = Object.values(predefinedMerchants).some(
+          merchant => merchant.email === credentials.username && merchant.password === credentials.password
+        );
+
+        if (merchantData || isPredefinedMerchant) {
+          // Check if store is fully set up (for new merchants)
+          if (merchantData && !isPredefinedMerchant && !merchantData.setupComplete) {
+            setError('يجب إكمال إعداد المتجر أولاً. يرجى إضافة المنتجات والصور قبل تسجيل الدخول.');
+            setIsLoading(false);
+            return;
+          }
+
           // حفظ بيانات المستخدم الحالي في localStorage
-          localStorage.setItem('eshro_current_user', JSON.stringify({
+          const userData = merchantData || {
             email: credentials.username,
+            name: 'تاجر جديد',
+            storeName: merchantData?.nameAr || 'متجر جديد',
+            subdomain: merchantData?.subdomain || 'new-store'
+          };
+
+          localStorage.setItem('eshro_current_user', JSON.stringify({
+            ...userData,
+            token: 'demo-token-' + Date.now(),
+            refreshToken: 'demo-refresh-token-' + Date.now(),
             userType: 'merchant',
             loginTime: new Date().toISOString()
           }));
 
-          console.log('Merchant login successful');
+
+          
+          const subdomain = userData.subdomain || merchantData?.subdomain;
+          if (subdomain) {
+            const expiryProducts = getExpiryAlertProducts(subdomain);
+            if (expiryProducts.length > 0) {
+              setExpiryAlertProducts(expiryProducts);
+              setShowExpiryAlert(true);
+            }
+          }
+          
           alert('تم تسجيل دخول التاجر بنجاح! 🎉');
           onLogin({ ...credentials, userType: 'merchant' });
           setIsLoading(false);
           return;
         } else {
-          // التحقق من وجود المستخدم بدون كلمة مرور صحيحة
-          const userExists = stores.find((store: any) => store.email === credentials.username || store.phone === credentials.username);
-          if (userExists) {
+          // التحقق من وجود البريد الإلكتروني بدون كلمة مرور صحيحة
+          const emailExists = storedStores.some((store: any) => store.email === credentials.username) ||
+                            Array.from({ length: localStorage.length }, (_, i) => localStorage.key(i))
+                              .filter(key => key && key.startsWith('merchant_'))
+                              .some(key => {
+                                try {
+                                  const merchantCredentials = JSON.parse(localStorage.getItem(key!) || '{}');
+                                  return merchantCredentials.email === credentials.username;
+                                } catch {
+                                  return false;
+                                }
+                              });
+
+          if (emailExists) {
             setError('كلمة المرور غير صحيحة');
-            setIsLoading(false);
-            return;
           } else {
-            setError('اسم المستخدم أو البريد الإلكتروني غير موجود');
-            setIsLoading(false);
-            return;
+            setError('البريد الإلكتروني غير مسجل في النظام');
           }
+          setIsLoading(false);
+          return;
         }
       }
 
@@ -151,7 +299,7 @@ const ShopLoginPage: React.FC<ShopLoginPageProps> = ({
         );
 
         if (userData) {
-          console.log('User login successful');
+
           alert('تم تسجيل دخول المستخدم بنجاح! 🎉');
           onLogin({ ...credentials, userType: 'user' });
           setIsLoading(false);
@@ -210,7 +358,6 @@ const ShopLoginPage: React.FC<ShopLoginPageProps> = ({
             scope: 'openid email profile',
             callback: (response: any) => {
               if (response.error) {
-                console.error('Google OAuth error:', response.error);
                 setError(`خطأ في Google OAuth: ${response.error_description || response.error}`);
                 setIsGoogleLoading(false);
                 return;
@@ -229,7 +376,6 @@ const ShopLoginPage: React.FC<ShopLoginPageProps> = ({
           tokenClient.requestAccessToken();
 
         } catch (sdkError) {
-          console.error('Google SDK error:', sdkError);
           // الرجوع للطريقة التقليدية
           redirectToGoogleOAuth(clientId);
         }
@@ -239,7 +385,6 @@ const ShopLoginPage: React.FC<ShopLoginPageProps> = ({
       }
 
     } catch (error) {
-      console.error('Google Sign-In error:', error);
       setError('فشل في تسجيل الدخول عبر Google. يرجى المحاولة مرة أخرى.');
       setIsGoogleLoading(false);
     }
@@ -315,7 +460,6 @@ const ShopLoginPage: React.FC<ShopLoginPageProps> = ({
 
         handleGoogleSignInSuccess({ access_token: response.credential, user: userInfo });
       } catch (error) {
-        console.error('Error decoding Google credential:', error);
         setError('فشل في معالجة بيانات Google.');
         setIsGoogleLoading(false);
       }
@@ -323,8 +467,6 @@ const ShopLoginPage: React.FC<ShopLoginPageProps> = ({
   };
 
   const handleGoogleSignInSuccess = (authResponse: any) => {
-    console.log('Google Sign-In successful:', authResponse);
-
     // محاكاة نجاح تسجيل الدخول
     alert('تم تسجيل الدخول بنجاح عبر Google! 🎉');
 
@@ -368,8 +510,6 @@ const ShopLoginPage: React.FC<ShopLoginPageProps> = ({
   };
 
   const handleGoogleAuthSuccess = (response: any) => {
-    console.log('Google OAuth successful:', response);
-
     // في التطبيق الحقيقي، سيتم إرسال التوكن للخادم للتحقق
     // وإنشاء/تحديث حساب المستخدم
 
@@ -409,7 +549,13 @@ const ShopLoginPage: React.FC<ShopLoginPageProps> = ({
   ];
 
   return (
-    <div className="min-h-screen bg-black relative overflow-hidden">
+    <>
+      <ExpiryAlertModal
+        isOpen={showExpiryAlert}
+        products={expiryAlertProducts}
+        onClose={() => setShowExpiryAlert(false)}
+      />
+      <div className="min-h-screen bg-black relative overflow-hidden">
       {/* خلفية ديناميكية محسنة */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute -top-40 -right-40 w-96 h-96 bg-gradient-to-br from-primary/20 to-primary/5 rounded-full blur-3xl animate-pulse"></div>
@@ -805,6 +951,7 @@ const ShopLoginPage: React.FC<ShopLoginPageProps> = ({
       )}
 
     </div>
+    </>
   );
 };
 

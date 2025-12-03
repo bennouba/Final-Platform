@@ -14,7 +14,10 @@ import {
   FileImage,
   Globe,
   BarChart3,
+  Store,
 } from 'lucide-react';
+import { enhancedDatabase } from '../utils/enhancedDatabase';
+import { authManager } from '../utils/authManager';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -62,6 +65,40 @@ const CatalogCategoriesView: React.FC<CatalogCategoriesViewProps> = ({
   const [isSaving, setIsSaving] = useState(false);
   const [modalError, setModalError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'basic' | 'seo' | 'images'>('basic');
+  const [merchantBusinessType, setMerchantBusinessType] = useState<string>('');
+
+  // Get merchant business type
+  useEffect(() => {
+    try {
+      const currentMerchant = authManager.getCurrentMerchant();
+      if (currentMerchant?.businessType) {
+        setMerchantBusinessType(currentMerchant.businessType);
+      } else if (storeData?.businessType) {
+        setMerchantBusinessType(storeData.businessType);
+      }
+    } catch (error) {
+
+    }
+  }, [storeData]);
+
+  // Get business type display name
+  const getBusinessTypeDisplay = (businessType: string) => {
+    const businessTypes: Record<string, string> = {
+      'beauty': 'الجمال والعناية',
+      'fashion': 'الأزياء والملابس',
+      'electronics': 'الإلكترونيات والأجهزة',
+      'cleaning': 'مواد التنظيف',
+      'food': 'المواد الغذائية',
+      'sports': 'الرياضة واللياقة',
+      'home': 'المنزل والحديقة',
+      'books': 'الكتب والقرطاسية',
+      'automotive': 'السيارات والدراجات',
+      'jewelry': 'المجوهرات والإكسسوارات',
+      'toys': 'الألعاب والهوايات',
+      'health': 'الصحة والعلاج'
+    };
+    return businessTypes[businessType] || businessType;
+  };
 
   // Form state
   const [categoryForm, setCategoryForm] = useState({
@@ -140,7 +177,7 @@ const CatalogCategoriesView: React.FC<CatalogCategoriesViewProps> = ({
       });
       setShowCategoryModal(true);
     } catch (error) {
-      console.error('Error opening modal:', error);
+
       alert('حدث خطأ في فتح نافذة إنشاء التصنيف');
     }
   };
@@ -190,6 +227,10 @@ const CatalogCategoriesView: React.FC<CatalogCategoriesViewProps> = ({
         return;
       }
 
+      // Get current merchant
+      const currentMerchant = authManager.getCurrentMerchant();
+      const merchantId = currentMerchant?.id || storeData?.id || 'unknown';
+      
       // Create category object
       const newCategory = {
         id: editingCategory ? editingCategory.id : Date.now().toString(),
@@ -208,9 +249,33 @@ const CatalogCategoriesView: React.FC<CatalogCategoriesViewProps> = ({
         seoDescriptionEn: categoryForm.seoDescriptionEn,
         slug: categoryForm.slug || categoryForm.nameEn.toLowerCase().replace(/\s+/g, '-'),
         sortOrder: categoryForm.sortOrder,
+        businessType: merchantBusinessType || 'general', // ربط بنوع النشاط التجاري
+        merchantId: merchantId,
         createdAt: editingCategory ? editingCategory.createdAt : new Date().toISOString().split('T')[0],
         updatedAt: new Date().toISOString().split('T')[0],
       };
+
+      // Save to enhanced database if merchant is available
+      try {
+        if (currentMerchant && !editingCategory) {
+          const categoryData = {
+            id: newCategory.id,
+            merchantId: merchantId,
+            nameAr: newCategory.nameAr,
+            nameEn: newCategory.nameEn,
+            descriptionAr: newCategory.descriptionAr,
+            businessType: merchantBusinessType || 'general',
+            sortOrder: newCategory.sortOrder,
+            isActive: newCategory.isActive,
+            productsCount: 0,
+            createdAt: newCategory.createdAt || new Date().toISOString(),
+            updatedAt: newCategory.updatedAt || new Date().toISOString()
+          };
+          enhancedDatabase.saveCategory(categoryData);
+        }
+      } catch (error) {
+
+      }
 
       if (editingCategory) {
         // Edit existing category
@@ -239,7 +304,7 @@ const CatalogCategoriesView: React.FC<CatalogCategoriesViewProps> = ({
       }, 100);
 
     } catch (error) {
-      console.error('Error saving category:', error);
+
       setModalError('فشل في حفظ التصنيف. يرجى المحاولة مرة أخرى');
     } finally {
       setIsSaving(false);
@@ -270,7 +335,17 @@ const CatalogCategoriesView: React.FC<CatalogCategoriesViewProps> = ({
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-3xl font-bold text-gray-900">التصنيفات ✨</h2>
-          <p className="text-gray-600 mt-1">إدارة تصنيفات متجرك مع إضافة صور وأوصاف مخصصة</p>
+          <div className="flex items-center gap-4 mt-1">
+            <p className="text-gray-600">إدارة تصنيفات متجرك مع إضافة صور وأوصاف مخصصة</p>
+            {merchantBusinessType && (
+              <div className="flex items-center gap-2 bg-gradient-to-r from-blue-50 to-indigo-50 px-3 py-1 rounded-full border border-blue-200">
+                <Store className="h-4 w-4 text-blue-600" />
+                <span className="text-sm font-medium text-blue-800">
+                  {getBusinessTypeDisplay(merchantBusinessType)}
+                </span>
+              </div>
+            )}
+          </div>
         </div>
         <Button
           onClick={handleAddCategory}

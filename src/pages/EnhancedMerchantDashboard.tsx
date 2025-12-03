@@ -1,11 +1,20 @@
 // واجهة تحكم التاجر المطورة - منصة إشرو
 // Enhanced Merchant Dashboard - EISHRO Platform
 // إعادة بناء شاملة من الصفر
+/* eslint-disable no-console */
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { MapContainer, Marker, Popup, TileLayer, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import ExpiryAlertWidget from '@/components/ExpiryAlertWidget';
+import { ExpiryAlertProduct, isProductExpiringSoon } from '@/utils/expiryUtils';
+import { loadStoreBySlug, clearStoreCache } from '@/utils/storeLoader';
+import { authManager } from '../utils/authManager';
+import { cleaningMaterialsSubcategories, getCleaningSubcategoryOptions } from '@/data/cleaningMaterialsSubcategories';
+import StoreSyncManager from '@/utils/storeSyncManager';
+import { categoryImageStorage } from '@/utils/categoryImageStorage';
+import { getDefaultProductImageSync, handleImageError } from '@/utils/imageUtils';
 
 // Google Maps API types declaration
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -23,6 +32,16 @@ const BiddingMapClickHandler = ({ onMapClick }: { onMapClick: (latlng: {lat: num
 
 // Different click handler for logistics map
 const LogisticsMapClickHandler = ({ onMapClick }: { onMapClick: (latlng: {lat: number, lng: number}) => void }) => {
+  useMapEvents({
+    click: (e) => {
+      onMapClick({ lat: e.latlng.lat, lng: e.latlng.lng });
+    },
+  });
+  return null;
+};
+
+// Click handler for warehouse map
+const WarehouseMapClickHandler = ({ onMapClick }: { onMapClick: (latlng: {lat: number, lng: number}) => void }) => {
   useMapEvents({
     click: (e) => {
       onMapClick({ lat: e.latlng.lat, lng: e.latlng.lng });
@@ -48,6 +67,8 @@ import { LoyaltyProgramView } from '@/components/LoyaltyProgramView';
 import { SubscriptionManagementView } from '@/components/SubscriptionManagementView';
 import { DigitalWalletView } from '@/components/DigitalWalletView';
 import { StoreSettingsView } from '@/components/StoreSettingsView';
+import { UnavailableOrdersView } from '@/components/UnavailableOrdersView';
+import SimplifiedSliderManager from '@/components/SimplifiedSliderManager';
 import {
     Activity,
     AlertTriangle,
@@ -272,7 +293,6 @@ type DashboardSection =
   | 'catalog-categories'
   | 'catalog-inventory'
   | 'catalog-stock-management'
-  | 'catalog-custom-fields'
   | 'customers-groups'
   | 'customers-reviews'
   | 'customers-questions'
@@ -336,6 +356,185 @@ interface FlattenedSection {
   required: boolean;
 }
 
+interface StoreInventoryProduct {
+  id: string | number;
+  name: string;
+  price?: number;
+  originalPrice?: number;
+  images?: string[];
+  category?: string;
+  inStock?: boolean;
+  quantity?: number;
+  productCode?: string;
+  description?: string;
+}
+
+interface StoreInventoryCategory {
+  id: string;
+  name: string;
+  description?: string;
+  productCount: number;
+  image?: string;
+  sortOrder: number;
+  isActive: boolean;
+}
+
+interface StoreInventorySnapshot {
+  products: StoreInventoryProduct[];
+  categories: StoreInventoryCategory[];
+  lastFetchedAt: string | null;
+}
+
+const FALLBACK_INVENTORY_PRODUCTS: StoreInventoryProduct[] = [
+  {
+    id: 'fallback-1',
+    name: 'فستان صيفي أنيق',
+    price: 89.99,
+    originalPrice: 120,
+    images: ['/assets/products/clothing/womens-dress-1.jpg'],
+    category: 'ملابس نسائية',
+    inStock: true,
+    quantity: 15,
+    productCode: 'WD001'
+  },
+  {
+    id: 'fallback-2',
+    name: 'قميص بولو كاجوال',
+    price: 24.99,
+    originalPrice: 32.5,
+    images: ['/assets/products/clothing/mens-polo-1.jpg'],
+    category: 'ملابس رجالية',
+    inStock: true,
+    quantity: 30,
+    productCode: 'MP001'
+  },
+  {
+    id: 'fallback-3',
+    name: 'فستان أطفال جميل',
+    price: 19.99,
+    originalPrice: 28.99,
+    images: ['/assets/products/clothing/kids-dress-1.jpg'],
+    category: 'ملابس أطفال',
+    inStock: true,
+    quantity: 12,
+    productCode: 'KD001'
+  },
+  {
+    id: 'fallback-4',
+    name: 'فستان سهرة فاخر',
+    price: 149.99,
+    originalPrice: 199.99,
+    images: ['/assets/products/clothing/womens-dress-1.jpg'],
+    category: 'فساتين مسائية',
+    inStock: true,
+    quantity: 8,
+    productCode: 'EVT001'
+  },
+  {
+    id: 'fallback-5',
+    name: 'طقم أطفال مميز',
+    price: 35,
+    originalPrice: 45,
+    images: ['/assets/products/clothing/kids-dress-1.jpg'],
+    category: 'ملابس أطفال',
+    inStock: true,
+    quantity: 18,
+    productCode: 'KD002'
+  }
+];
+
+const FALLBACK_INVENTORY_CATEGORIES: StoreInventoryCategory[] = [
+  {
+    id: 'fallback-cat-1',
+    name: 'ملابس نسائية',
+    description: 'أزياء وملابس عصرية للنساء',
+    image: '/assets/categories/womens-clothing.jpg',
+    productCount: 25,
+    sortOrder: 1,
+    isActive: true
+  },
+  {
+    id: 'fallback-cat-2',
+    name: 'ملابس رجالية',
+    description: 'ملابس أنيقة وعصرية للرجال',
+    image: '/assets/categories/mens-clothing.jpg',
+    productCount: 18,
+    sortOrder: 2,
+    isActive: true
+  },
+  {
+    id: 'fallback-cat-3',
+    name: 'ملابس أطفال',
+    description: 'ملابس مريحة وجميلة للأطفال',
+    image: '/assets/categories/kids-clothing.jpg',
+    productCount: 12,
+    sortOrder: 3,
+    isActive: true
+  },
+  {
+    id: 'fallback-cat-4',
+    name: 'إكسسوارات',
+    description: 'إكسسوارات مكملة لإطلالة متكاملة',
+    image: '/assets/categories/baby-clothing.jpg',
+    productCount: 8,
+    sortOrder: 4,
+    isActive: true
+  }
+];
+
+const formatPriceValue = (value?: number | string) => {
+  if (value === null || value === undefined || value === '') {
+    return '';
+  }
+  const numeric = typeof value === 'number' ? value : Number(value);
+  if (!Number.isFinite(numeric)) {
+    return '';
+  }
+  return `${numeric.toLocaleString('ar-LY', { minimumFractionDigits: 0, maximumFractionDigits: 2 })} د.ل`;
+};
+
+const computeDiscountPercent = (price?: number, originalPrice?: number) => {
+  if (typeof price !== 'number' || typeof originalPrice !== 'number' || originalPrice <= price) {
+    return null;
+  }
+  return Math.round(((originalPrice - price) / originalPrice) * 100);
+};
+
+const buildCategorySummaries = (
+  products: StoreInventoryProduct[],
+  categories: string[] | undefined,
+  slug: string
+): StoreInventoryCategory[] => {
+  const statsMap = new Map<string, { count: number; image?: string }>();
+  products.forEach((product) => {
+    const key = product.category || 'غير مصنف';
+    if (!statsMap.has(key)) {
+      statsMap.set(key, { count: 0 });
+    }
+    const entry = statsMap.get(key)!;
+    entry.count += 1;
+    if (!entry.image && Array.isArray(product.images) && product.images.length > 0) {
+      const [firstImage] = product.images as string[];
+      if (firstImage) {
+        entry.image = firstImage;
+      }
+    }
+  });
+  const ordered = Array.isArray(categories) && categories.length > 0 ? categories : Array.from(statsMap.keys());
+  return ordered.map((name, index) => {
+    const stat = statsMap.get(name) ?? { count: 0, image: undefined };
+    return {
+      id: `${slug || 'store'}-category-${index}`,
+      name,
+      description: `تصنيف ${name}`,
+      productCount: stat.count,
+      image: stat.image || getDefaultProductImageSync(slug),
+      sortOrder: index + 1,
+      isActive: stat.count > 0
+    };
+  });
+};
+
 const flattenMerchantSections = (sections = merchantSections): FlattenedSection[] => {
   const items: FlattenedSection[] = [];
   const traverse = (node: any) => {
@@ -354,6 +553,14 @@ const flattenMerchantSections = (sections = merchantSections): FlattenedSection[
 const MERCHANT_SECTION_LIST = flattenMerchantSections();
 const REQUIRED_SECTION_IDS = new Set(MERCHANT_SECTION_LIST.filter((section) => section.required).map((section) => section.id));
 
+const buildFullAccessPermissions = (): Record<string, boolean> => {
+  const permissions: Record<string, boolean> = {};
+  MERCHANT_SECTION_LIST.forEach((section) => {
+    permissions[section.id] = true;
+  });
+  return permissions;
+};
+
 const MERCHANT_PROFILE_MAP = new Map(merchantProfiles.map((profile) => [profile.id, profile]));
 const MERCHANT_PROFILE_ID_LOOKUP: Record<string, string> = {};
 MERCHANT_PROFILE_MAP.forEach((_, id) => {
@@ -370,8 +577,8 @@ const MERCHANT_ALIAS_ENTRIES: Array<[string, string]> = [
   ['sherine', 'sherine'],
   ['sheirine', 'sherine'],
   ['sherine.ly', 'sherine'],
+  ['salem.masgher@gmail.com', 'indeesh'],
   ['salem@gmail.com', 'sherine'],
-  ['salem', 'sherine'],
   ['pretty', 'pretty'],
   ['prettybeauty', 'pretty'],
   ['pretty-store', 'pretty'],
@@ -389,7 +596,12 @@ const MERCHANT_ALIAS_ENTRIES: Array<[string, string]> = [
   ['hasan@gmail.com', 'magna'],
   ['hasan', 'magna'],
   ['mejna', 'magna'],
-  ['megna', 'magna']
+  ['megna', 'magna'],
+  ['indeesh', 'indeesh'],
+  ['indeesh.ly', 'indeesh'],
+  ['andish', 'indeesh'],
+  ['indesh', 'indeesh'],
+  ['owner@indeesh.ly', 'indeesh']
 ];
 
 const MERCHANT_ALIAS_MAP = (() => {
@@ -426,7 +638,7 @@ const readStoredPermissions = (): StoreMatrix => {
       return parsed as StoreMatrix;
     }
   } catch (error) {
-    console.error('❌ Failed to read stored merchant permissions:', error);
+
   }
   return {};
 };
@@ -481,6 +693,13 @@ const mergeStoredPermissions = (stored?: StoreMatrix): StoreMatrix => {
     });
     merged[profile.id] = combined;
   });
+
+  Object.keys(stored).forEach((merchantId) => {
+    if (!merged[merchantId]) {
+      merged[merchantId] = { ...stored[merchantId] };
+    }
+  });
+
   return merged;
 };
 
@@ -492,26 +711,39 @@ const resolveMerchantIdFromAlias = (value?: string | null): string | null => {
   if (!raw) {
     return null;
   }
-  if (MERCHANT_ALIAS_MAP[raw]) {
-    return MERCHANT_ALIAS_MAP[raw];
+
+  const candidates = [
+    { form: raw, name: 'raw' },
+    { form: raw.replace(/\s+/g, ''), name: 'noSpaces' },
+    { form: raw.replace(/[^a-z0-9@.]/g, ''), name: 'keepEmail' }
+  ];
+
+  console.log('[resolveMerchantIdFromAlias] Testing candidates:', { value, raw, candidates });
+
+  for (const candidate of candidates) {
+    if (MERCHANT_ALIAS_MAP[candidate.form]) {
+      const result = MERCHANT_ALIAS_MAP[candidate.form] || null;
+      console.log('[resolveMerchantIdFromAlias] Found match:', { 
+        value, 
+        form: candidate.form, 
+        type: candidate.name,
+        result 
+      });
+      return result;
+    }
+    if (MERCHANT_PROFILE_ID_LOOKUP[candidate.form]) {
+      const result = MERCHANT_PROFILE_ID_LOOKUP[candidate.form] || null;
+      console.log('[resolveMerchantIdFromAlias] Found in MERCHANT_PROFILE_ID_LOOKUP:', { 
+        value, 
+        form: candidate.form,
+        type: candidate.name,
+        result 
+      });
+      return result;
+    }
   }
-  const noSpaces = raw.replace(/\s+/g, '');
-  if (MERCHANT_ALIAS_MAP[noSpaces]) {
-    return MERCHANT_ALIAS_MAP[noSpaces];
-  }
-  const alphanumeric = raw.replace(/[^a-z0-9]/g, '');
-  if (MERCHANT_ALIAS_MAP[alphanumeric]) {
-    return MERCHANT_ALIAS_MAP[alphanumeric];
-  }
-  if (MERCHANT_PROFILE_ID_LOOKUP[raw]) {
-    return MERCHANT_PROFILE_ID_LOOKUP[raw];
-  }
-  if (MERCHANT_PROFILE_ID_LOOKUP[noSpaces]) {
-    return MERCHANT_PROFILE_ID_LOOKUP[noSpaces];
-  }
-  if (MERCHANT_PROFILE_ID_LOOKUP[alphanumeric]) {
-    return MERCHANT_PROFILE_ID_LOOKUP[alphanumeric];
-  }
+
+  console.warn('[resolveMerchantIdFromAlias] No match found for value:', { value, raw, candidates: candidates.map(c => c.form) });
   return null;
 };
 
@@ -536,6 +768,7 @@ const resolveMerchantId = (merchant?: any): string | null => {
   pushCandidate(merchant.username);
   pushCandidate(merchant.nameEn);
   pushCandidate(merchant.nameAr);
+
   const seen = new Set<string>();
   for (const candidate of candidates) {
     if (!candidate || seen.has(candidate)) {
@@ -544,9 +777,15 @@ const resolveMerchantId = (merchant?: any): string | null => {
     seen.add(candidate);
     const resolved = resolveMerchantIdFromAlias(candidate);
     if (resolved) {
+      console.log('[resolveMerchantId] Resolved:', {
+        merchant: { id: merchant.id, subdomain: merchant.subdomain, email: merchant.email },
+        candidate: candidate,
+        resolved: resolved
+      });
       return resolved;
     }
   }
+  console.warn('[resolveMerchantId] Could not resolve merchant from candidates:', candidates);
   return null;
 };
 
@@ -559,7 +798,6 @@ const DASHBOARD_SECTION_ACCESS: Partial<Record<DashboardSection, string | string
   'catalog-categories': 'catalog-categories',
   'catalog-inventory': 'catalog-stock',
   'catalog-stock-management': 'catalog-stock-adjustments',
-  'catalog-custom-fields': 'catalog-custom-fields',
   'customers-groups': 'customers-groups',
   'customers-reviews': 'customers-reviews',
   'customers-questions': 'customers-questions',
@@ -597,7 +835,7 @@ const DASHBOARD_SECTION_ACCESS: Partial<Record<DashboardSection, string | string
 const NAV_GROUP_ACCESS = {
   overview: ['overview-root'],
   orders: ['orders-group', 'orders-all', 'orders-manual', 'orders-abandoned', 'orders-unavailable'],
-  catalog: ['catalog-group', 'catalog-products', 'catalog-categories', 'catalog-stock', 'catalog-stock-adjustments', 'catalog-custom-fields'],
+  catalog: ['catalog-group', 'catalog-products', 'catalog-categories', 'catalog-stock', 'catalog-stock-adjustments'],
   customers: ['customers-group', 'customers-all', 'customers-groups', 'customers-reviews', 'customers-questions'],
   marketing: ['marketing-group', 'marketing-hub', 'marketing-campaigns', 'marketing-coupons', 'marketing-loyalty'],
   analytics: ['analytics-group', 'analytics-dashboard', 'analytics-live', 'analytics-sales', 'analytics-stock', 'analytics-customers'],
@@ -650,6 +888,9 @@ const EnhancedMerchantDashboard: React.FC<{ currentMerchant?: any; onLogout?: ()
   const [financeExpanded, setFinanceExpanded] = useState(false);
   const [settingsExpanded, setSettingsExpanded] = useState(false);
   const [servicesExpanded, setServicesExpanded] = useState(false);
+  const [merchantStoreData, setMerchantStoreData] = useState<any>(currentMerchant?.storeData || null);
+  const [storeDataLoading, setStoreDataLoading] = useState(false);
+  const [storeDataError, setStoreDataError] = useState('');
 
   const shouldShowDefaultSection = useMemo(() => {
     if (DEFAULT_SECTION_EXCLUSIONS.includes(activeSection)) {
@@ -663,6 +904,11 @@ const EnhancedMerchantDashboard: React.FC<{ currentMerchant?: any; onLogout?: ()
   const [productModalOpen, setProductModalOpen] = useState(false);
   const [categoryModalOpen, setCategoryModalOpen] = useState(false);
   const [warehouseModalOpen, setWarehouseModalOpen] = useState(false);
+  const [discountModalOpen, setDiscountModalOpen] = useState(false);
+  const [selectedProductForDiscount, setSelectedProductForDiscount] = useState<any>(null);
+  const [inventorySnapshot, setInventorySnapshot] = useState<StoreInventorySnapshot>({ products: [], categories: [], lastFetchedAt: null });
+  const [inventoryLoading, setInventoryLoading] = useState(false);
+  const [inventoryError, setInventoryError] = useState('');
 
   // Analytics sub-view states
   const [activeAnalyticsView, setActiveAnalyticsView] = useState('نظرة عامة');
@@ -702,6 +948,7 @@ const EnhancedMerchantDashboard: React.FC<{ currentMerchant?: any; onLogout?: ()
   const [editingLogisticsIndex, setEditingLogisticsIndex] = useState<number | null>(null);
   const [logisticsLogoPreview, setLogisticsLogoPreview] = useState('');
   const [logisticsPendingCoordinates, setLogisticsPendingCoordinates] = useState<{lat: number; lng: number} | null>(null);
+  const [warehousePendingCoordinates, setWarehousePendingCoordinates] = useState<{lat: number; lng: number} | null>(null);
 
   const [biddingModalOpen, setBiddingModalOpen] = useState(false);
   const [showBiddingMapModal, setShowBiddingMapModal] = useState(false);
@@ -825,6 +1072,35 @@ const EnhancedMerchantDashboard: React.FC<{ currentMerchant?: any; onLogout?: ()
     gemini: ''
   });
 
+  const adTemplates = [
+    { id: 'adv1', image: '/Backup-platform/adv1.jpg' },
+    { id: 'adv2', image: '/Backup-platform/adv2.jpg' },
+    { id: 'adv3', image: '/Backup-platform/adv3.jpg' },
+    { id: 'adv4', image: '/Backup-platform/adv4.jpg' },
+    { id: 'adv5', image: '/Backup-platform/adv5.jpg' },
+    { id: 'adv6', image: '/Backup-platform/adv6.jpg' },
+    { id: 'adv7', image: '/Backup-platform/adv7.jpg' },
+    { id: 'adv8', image: '/Backup-platform/adv8.jpg' },
+    { id: 'adv9', image: '/Backup-platform/adv9.jpg' },
+    { id: 'adv10', image: '/Backup-platform/adv10.jpg' },
+    { id: 'adv11', image: '/Backup-platform/adv11.jpg' },
+    { id: 'adv12', image: '/Backup-platform/adv12.jpg' },
+  ];
+
+  const [adStep, setAdStep] = useState<'list' | 'create-step1' | 'create-step2'>('list');
+  const [selectedAdTemplate, setSelectedAdTemplate] = useState('');
+  const [adTitle, setAdTitle] = useState('');
+  const [adDescription, setAdDescription] = useState('');
+  const [adPlacement, setAdPlacement] = useState<'floating' | 'grid'>('floating');
+  const [publishedAds, setPublishedAds] = useState<Array<{
+    id: string;
+    templateId: string;
+    title: string;
+    description: string;
+    placement: 'floating' | 'grid';
+    createdAt: string;
+  }>>([]);
+
   // إصلاح أيقونة Leaflet
   React.useEffect(() => {
     L.Icon.Default.mergeOptions({
@@ -838,46 +1114,127 @@ const EnhancedMerchantDashboard: React.FC<{ currentMerchant?: any; onLogout?: ()
 
   const merchantId = useMemo(() => {
     const resolved = resolveMerchantId(currentMerchant);
+    console.log('[EnhancedMerchantDashboard] merchantId resolution:', {
+      currentMerchant: currentMerchant,
+      resolved: resolved,
+      subdomain: currentMerchant?.subdomain,
+      id: currentMerchant?.id,
+      email: currentMerchant?.email
+    });
+
     if (resolved) {
+      console.log('[EnhancedMerchantDashboard] Using resolved merchantId:', resolved);
       return resolved;
     }
     if (typeof window !== 'undefined') {
       try {
         const stored = window.localStorage.getItem('eshro_current_merchant');
+
         if (stored) {
           const parsed = JSON.parse(stored);
           const fallback = resolveMerchantId(parsed);
+
           if (fallback) {
+            console.log('[EnhancedMerchantDashboard] Using fallback merchantId from localStorage:', fallback);
             return fallback;
           }
         }
-      } catch {
+      } catch (error) {
+        console.error('[EnhancedMerchantDashboard] Error reading from localStorage:', error);
         return null;
       }
     }
+
     return null;
   }, [currentMerchant]);
 
   const merchantProfile = merchantId ? MERCHANT_PROFILE_MAP.get(merchantId) : undefined;
 
   const merchantStoreSlug = useMemo(() => {
+    let slug: string | null = null;
+    const reasons: string[] = [];
+
     if (currentMerchant?.subdomain) {
-      return currentMerchant.subdomain;
+      slug = currentMerchant.subdomain;
+      reasons.push(`from currentMerchant.subdomain: ${slug}`);
+    } else if (currentMerchant?.slug) {
+      slug = currentMerchant.slug;
+      reasons.push(`from currentMerchant.slug: ${slug}`);
+    } else if (currentMerchant?.storeSlug) {
+      slug = currentMerchant.storeSlug;
+      reasons.push(`from currentMerchant.storeSlug: ${slug}`);
+    } else if (currentMerchant?.id) {
+      slug = currentMerchant.id;
+      reasons.push(`from currentMerchant.id: ${slug}`);
+    } else if (merchantProfile?.id) {
+      slug = merchantProfile.id;
+      reasons.push(`from merchantProfile.id: ${slug}`);
+    } else if (merchantId) {
+      slug = merchantId;
+      reasons.push(`from merchantId: ${slug}`);
     }
-    if (currentMerchant?.slug) {
-      return currentMerchant.slug;
+
+    if (slug) {
+      console.log('[EnhancedMerchantDashboard] merchantStoreSlug determined:', slug, reasons);
+    } else {
+      console.warn('[EnhancedMerchantDashboard] merchantStoreSlug could not be determined');
     }
-    if (currentMerchant?.storeSlug) {
-      return currentMerchant.storeSlug;
-    }
-    if (merchantProfile?.id) {
-      return merchantProfile.id;
-    }
-    if (merchantId) {
-      return merchantId;
-    }
-    return 'nawaem';
+
+    return slug;
   }, [currentMerchant, merchantProfile, merchantId]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const slug = merchantStoreSlug ? merchantStoreSlug.trim() : null;
+    console.log('[EnhancedMerchantDashboard] useEffect: Loading store data for slug:', slug);
+
+    if (!slug) {
+      setMerchantStoreData(null);
+      setStoreDataError('لم يتم العثور على بيانات المتجر. يرجى التأكد من تسجيل دخولك بشكل صحيح');
+      console.warn('[EnhancedMerchantDashboard] No slug available');
+      return;
+    }
+
+    if (currentMerchant?.storeData && (currentMerchant.storeData.slug === slug || currentMerchant.storeData.storeSlug === slug)) {
+      setMerchantStoreData(currentMerchant.storeData);
+      setStoreDataError('');
+      console.log('[EnhancedMerchantDashboard] Using storeData from currentMerchant');
+      return;
+    }
+
+    console.log('[EnhancedMerchantDashboard] Loading store data from API/localStorage for:', slug);
+    setStoreDataLoading(true);
+    loadStoreBySlug(slug)
+      .then((data) => {
+        if (cancelled) {
+          console.log('[EnhancedMerchantDashboard] Request was cancelled');
+          return;
+        }
+        if (data) {
+          console.log('[EnhancedMerchantDashboard] Store data loaded successfully:', { slug: data.slug, name: data.name, nameAr: data.nameAr });
+          setMerchantStoreData(data);
+          setStoreDataError('');
+        } else {
+          setMerchantStoreData(null);
+          setStoreDataError('تعذر تحميل بيانات المتجر');
+        }
+      })
+      .catch(() => {
+        if (cancelled) {
+          return;
+        }
+        setMerchantStoreData(null);
+        setStoreDataError('تعذر تحميل بيانات المتجر');
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setStoreDataLoading(false);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [currentMerchant, merchantStoreSlug]);
 
   const merchantStoreName = useMemo(() => {
     if (currentMerchant?.nameAr) {
@@ -892,12 +1249,163 @@ const EnhancedMerchantDashboard: React.FC<{ currentMerchant?: any; onLogout?: ()
     return 'متجر إشرو';
   }, [currentMerchant, merchantProfile]);
 
+  const fetchStoreInventory = useCallback(async () => {
+    const slug = merchantStoreSlug?.trim();
+    if (!slug) {
+      setInventorySnapshot({ products: [], categories: [], lastFetchedAt: null });
+      setInventoryError('لم يتم تحديد متجر لعرض بيانات الكتالوج. سيتم عرض بيانات توضيحية.');
+      return;
+    }
+    setInventoryLoading(true);
+    setInventoryError('');
+    try {
+      const syncData = await StoreSyncManager.syncStoreData(slug);
+      
+      if (!syncData || !syncData.products || syncData.products.length === 0) {
+        throw new Error('No sync data available');
+      }
+
+      const sourceProducts = syncData.products;
+      const normalizedProducts: StoreInventoryProduct[] = sourceProducts.map((product: any) => {
+        const images = Array.isArray(product?.images)
+          ? product.images
+          : product?.image
+            ? [product.image]
+            : [];
+        const price = typeof product?.price === 'number' ? product.price : Number(product?.price) || undefined;
+        const originalPrice =
+          typeof product?.originalPrice === 'number' ? product.originalPrice : Number(product?.originalPrice) || undefined;
+        return {
+          ...product,
+          images,
+          price,
+          originalPrice,
+          inStock: typeof product?.inStock === 'boolean' ? product.inStock : product?.isAvailable !== false
+        } satisfies StoreInventoryProduct;
+      });
+      
+      const categorySummaries = buildCategorySummaries(normalizedProducts, syncData.categories, slug);
+      setInventorySnapshot({
+        products: normalizedProducts,
+        categories: categorySummaries,
+        lastFetchedAt: new Date().toISOString()
+      });
+    } catch (error) {
+      try {
+        const response = await fetch(`/assets/${encodeURIComponent(slug)}/store.json`, { cache: 'no-store' });
+        if (!response.ok) {
+          throw new Error(`STORE_ASSET_${response.status}`);
+        }
+        const payload = await response.json();
+        const sourceProducts = Array.isArray(payload?.products) ? payload.products : [];
+        const normalizedProducts: StoreInventoryProduct[] = sourceProducts.map((product: any) => {
+          const images = Array.isArray(product?.images)
+            ? product.images
+            : product?.image
+              ? [product.image]
+              : [];
+          const price = typeof product?.price === 'number' ? product.price : Number(product?.price) || undefined;
+          const originalPrice =
+            typeof product?.originalPrice === 'number' ? product.originalPrice : Number(product?.originalPrice) || undefined;
+          return {
+            ...product,
+            images,
+            price,
+            originalPrice,
+            inStock: typeof product?.inStock === 'boolean' ? product.inStock : product?.isAvailable !== false
+          } satisfies StoreInventoryProduct;
+        });
+        const categorySummaries = buildCategorySummaries(normalizedProducts, payload?.categories, slug);
+        setInventorySnapshot({
+          products: normalizedProducts,
+          categories: categorySummaries,
+          lastFetchedAt: new Date().toISOString()
+        });
+      } catch (fallbackError) {
+        setInventorySnapshot({ products: [], categories: [], lastFetchedAt: null });
+        setInventoryError('تعذر تحميل بيانات المنتجات، يتم عرض بيانات افتراضية.');
+      }
+    } finally {
+      setInventoryLoading(false);
+    }
+  }, [merchantStoreSlug]);
+
+  useEffect(() => {
+    fetchStoreInventory();
+    
+    if (merchantStoreSlug) {
+      StoreSyncManager.setupAutoSync(merchantStoreSlug, 5 * 60 * 1000);
+    }
+    
+    return () => {
+      if (merchantStoreSlug) {
+        StoreSyncManager.stopAutoSync(merchantStoreSlug);
+      }
+    };
+  }, [fetchStoreInventory, merchantStoreSlug]);
+
+  useEffect(() => {
+    if (!merchantStoreSlug) return;
+
+    const loadCategoryImages = async () => {
+      try {
+        const categories = inventorySnapshot.categories || [];
+        for (const category of categories) {
+          const imageKey = `category_image_${merchantStoreSlug}_${category.id}`;
+          const savedImage = await categoryImageStorage.get(imageKey);
+          if (savedImage && !sessionStorage.getItem(imageKey)) {
+            sessionStorage.setItem(imageKey, savedImage);
+          }
+        }
+      } catch (error) {
+        console.error('Error loading category images:', error);
+      }
+    };
+
+    loadCategoryImages();
+  }, [merchantStoreSlug, inventorySnapshot.categories]);
+
+  const hasInventoryResponse = Boolean(inventorySnapshot.lastFetchedAt);
+  const productsToDisplay = hasInventoryResponse ? inventorySnapshot.products : FALLBACK_INVENTORY_PRODUCTS;
+  const categoriesToDisplay = hasInventoryResponse ? inventorySnapshot.categories : FALLBACK_INVENTORY_CATEGORIES;
+  const formattedInventorySync = useMemo(() => {
+    if (!inventorySnapshot.lastFetchedAt) {
+      return '';
+    }
+    try {
+      return new Date(inventorySnapshot.lastFetchedAt).toLocaleString('ar-LY', { hour12: false });
+    } catch {
+      return '';
+    }
+  }, [inventorySnapshot.lastFetchedAt]);
+  const showProductsEmptyState = hasInventoryResponse && inventorySnapshot.products.length === 0;
+  const showCategoriesEmptyState = hasInventoryResponse && inventorySnapshot.categories.length === 0;
+
   const merchantOwnerName = useMemo(() => {
+    // أولاً محاولة جلب الاسم من قاعدة البيانات المحسنة
+    try {
+      const authSession = authManager.getSession();
+      if (authSession?.name) {
+        return authSession.name;
+      }
+      
+      const currentMerchantData = authManager.getCurrentMerchant();
+      if (currentMerchantData?.name) {
+        return currentMerchantData.name;
+      }
+    } catch (error) {
+
+    }
+
+    // إذا لم ينجح، استخدم البيانات الموجودة
     if (currentMerchant?.owner) {
       return currentMerchant.owner;
     }
     if (currentMerchant?.ownerName) {
       return currentMerchant.ownerName;
+    }
+    if (currentMerchant?.name) {
+      return currentMerchant.name;
     }
     if (merchantProfile && 'owner' in merchantProfile) {
       return (merchantProfile as any).owner ?? 'فريق إشرو';
@@ -1112,6 +1620,7 @@ const EnhancedMerchantDashboard: React.FC<{ currentMerchant?: any; onLogout?: ()
 
   const loadMerchantPermissions = useCallback(() => {
     if (!merchantId) {
+
       setMerchantModules(null);
       return;
     }
@@ -1120,27 +1629,45 @@ const EnhancedMerchantDashboard: React.FC<{ currentMerchant?: any; onLogout?: ()
       return;
     }
     try {
-      const raw = window.localStorage.getItem(MERCHANT_PERMISSIONS_KEY);
-      const parsed = raw ? (JSON.parse(raw) as StoreMatrix) : undefined;
-      const merged = mergeStoredPermissions(parsed);
-      setMerchantModules(merged[merchantId] ?? MERCHANT_DEFAULT_PERMISSIONS[merchantId] ?? null);
-    } catch {
+
+const raw = window.localStorage.getItem(MERCHANT_PERMISSIONS_KEY);
+const parsed = raw ? (JSON.parse(raw) as StoreMatrix) : {};
+
+let modules = parsed[merchantId] || null;
+
+      if (!modules) {
+        modules = buildFullAccessPermissions();
+        try {
+          const storedRaw = window.localStorage.getItem(MERCHANT_PERMISSIONS_KEY);
+          const storedMatrix = storedRaw ? JSON.parse(storedRaw) : {};
+          window.localStorage.setItem(
+            MERCHANT_PERMISSIONS_KEY,
+            JSON.stringify({
+              ...storedMatrix,
+              [merchantId]: modules
+            })
+          );
+        } catch (storageError) {
+
+        }
+      }
+
+
+      
+      if (modules && 'finance-wallet' in modules) {
+        void 0;
+      }
+      
+      setMerchantModules(modules);
+    } catch (error) {
+      void 0;
       setMerchantModules(MERCHANT_DEFAULT_PERMISSIONS[merchantId] ?? null);
     }
   }, [merchantId]);
 
-  useEffect(() => {
-    loadMerchantPermissions();
-  }, [loadMerchantPermissions]);
-
-  useEffect(() => {
-    if (!merchantModules && merchantId) {
-      const defaults = MERCHANT_DEFAULT_PERMISSIONS[merchantId];
-      if (defaults) {
-        setMerchantModules({ ...defaults });
-      }
-    }
-  }, [merchantId, merchantModules]);
+useEffect(() => {
+  loadMerchantPermissions();
+}, [merchantId, loadMerchantPermissions]);
 
   useEffect(() => {
     if (!merchantId || typeof window === 'undefined') {
@@ -1163,11 +1690,23 @@ const EnhancedMerchantDashboard: React.FC<{ currentMerchant?: any; onLogout?: ()
   const hasModuleAccess = useCallback(
     (ids: string | string[]) => {
       const list = Array.isArray(ids) ? ids : [ids];
-      const moduleSource = merchantModules ?? (merchantId ? MERCHANT_DEFAULT_PERMISSIONS[merchantId] ?? null : null);
+      
+      if (list.includes('finance-wallet')) {
+        void 0;
+      }
+      
+      if (!merchantId) {
+        void 0;
+        return list.some(id => REQUIRED_SECTION_IDS.has(id));
+      }
+      
+      const moduleSource = merchantModules ?? (MERCHANT_DEFAULT_PERMISSIONS[merchantId] ?? null);
       if (!moduleSource) {
+
         return true;
       }
-      return list.some((id) => {
+      
+      const result = list.some((id) => {
         if (!id) {
           return true;
         }
@@ -1175,10 +1714,29 @@ const EnhancedMerchantDashboard: React.FC<{ currentMerchant?: any; onLogout?: ()
           return true;
         }
         if (moduleSource[id] === undefined) {
-          return true;
+
+          return true; // New sections default to enabled
         }
-        return moduleSource[id];
+        const val = moduleSource[id];
+        return typeof val === 'boolean' ? val : true;
       });
+      
+      // Log permission checks for disabled sections
+      list.forEach(id => {
+        if (id && !REQUIRED_SECTION_IDS.has(id)) {
+          if (moduleSource[id] === false) {
+            void 0;
+          } else if (moduleSource[id] === true) {
+            void 0;
+          }
+        }
+      });
+      
+      if (list.includes('finance-wallet')) {
+        void 0;
+      }
+      
+      return result;
     },
     [merchantModules, merchantId]
   );
@@ -1252,28 +1810,15 @@ const EnhancedMerchantDashboard: React.FC<{ currentMerchant?: any; onLogout?: ()
 
 
 
-  // Filter states for sliders and ads
-   const [slidersFilter, setSlidersFilter] = useState('all');
+  // Filter states for ads
    const [adsFilter, setAdsFilter] = useState('all');
-   const [slidersStatusFilter, setSlidersStatusFilter] = useState('all');
    const [adsStatusFilter, setAdsStatusFilter] = useState('all');
 
-   // Slider and Ad modal states
-   const [sliderModalOpen, setSliderModalOpen] = useState(false);
+   // Ad modal states
    const [adModalOpen, setAdModalOpen] = useState(false);
-   const [currentSlider, setCurrentSlider] = useState<any>(null);
    const [currentAd, setCurrentAd] = useState<any>(null);
 
-   // Slider and Ad form states
-   const [sliderForm, setSliderForm] = useState({
-     title: '',
-     description: '',
-     link: '',
-     image: '',
-     order: 0,
-     status: 'active'
-   });
-
+   // Ad form states
    const [adForm, setAdForm] = useState({
      name: '',
      image: '',
@@ -1284,67 +1829,7 @@ const EnhancedMerchantDashboard: React.FC<{ currentMerchant?: any; onLogout?: ()
      expiryDate: ''
    });
 
-   // Slider and Ad data
-   const [sliders, setSliders] = useState([
-     {
-       id: 1,
-       name: 'البنرات الرئيسية',
-       status: 'مفعل',
-       date: '2025-10-20',
-       slides: 5,
-       store: 'نواعم',
-       description: 'سلايدر المنتجات المميزة لمتجر نواعم - التاجر مونير',
-       views: 1247,
-       clicks: 89,
-       owner: 'مونير',
-       images: [
-         '/PictureMerchantPortal/1.png',
-         '/PictureMerchantPortal/2.png',
-         '/PictureMerchantPortal/3.png',
-         '/PictureMerchantPortal/4.png',
-         '/PictureMerchantPortal/5.png'
-       ]
-     },
-     {
-       id: 2,
-       name: 'سلايدر المنتجات المميزة',
-       status: 'مفعل',
-       date: '2025-10-19',
-       slides: 5,
-       store: 'نواعم',
-       description: 'عرض المنتجات الأكثر مبيعاً في متجر نواعم',
-       views: 892,
-       clicks: 67,
-       owner: 'مونير',
-       images: [
-         '/PictureMerchantPortal/6.png',
-         '/PictureMerchantPortal/7.png',
-         '/PictureMerchantPortal/8.png',
-         '/PictureMerchantPortal/9.png',
-         '/PictureMerchantPortal/10.png'
-       ]
-     },
-     {
-       id: 3,
-       name: 'سلايدر العروض الخاصة',
-       status: 'مفعل',
-       date: '2025-10-18',
-       slides: 5,
-       store: 'نواعم',
-       description: 'العروض والتخفيضات الحالية للتاجر مونير',
-       views: 654,
-       clicks: 45,
-       owner: 'مونير',
-       images: [
-         '/PictureMerchantPortal/1.png',
-         '/PictureMerchantPortal/2.png',
-         '/PictureMerchantPortal/3.png',
-         '/PictureMerchantPortal/4.png',
-         '/PictureMerchantPortal/5.png'
-       ]
-     }
-   ]);
-
+   // Ad data
    const [ads, setAds] = useState([
      {
        id: 1,
@@ -1438,36 +1923,12 @@ const EnhancedMerchantDashboard: React.FC<{ currentMerchant?: any; onLogout?: ()
      }
    ]);
 
-  // Filter handlers with enhanced functionality
-  const handleSlidersFilterChange = (value: string) => {
-    setSlidersFilter(value);
-    console.log('Sliders filter changed to:', value);
-  };
-
+  // Filter handlers for ads
   const handleAdsFilterChange = (value: string) => {
     setAdsFilter(value);
-    console.log('Ads filter changed to:', value);
   };
 
-  // Enhanced filtering logic
-  const getFilteredSliders = () => {
-    let filtered = sliders;
-
-    if (slidersFilter === 'active') {
-      filtered = filtered.filter(slider => slider.status === 'مفعل');
-    } else if (slidersFilter === 'inactive') {
-      filtered = filtered.filter(slider => slider.status === 'غير مفعل');
-    } else if (slidersFilter === 'draft') {
-      filtered = filtered.filter(slider => slider.status === 'مسودة');
-    }
-
-    if (slidersStatusFilter !== 'all') {
-      filtered = filtered.filter(slider => slider.status === slidersStatusFilter);
-    }
-
-    return filtered;
-  };
-
+  // Enhanced filtering logic for ads
   const getFilteredAds = () => {
     let filtered = ads;
 
@@ -1484,158 +1945,6 @@ const EnhancedMerchantDashboard: React.FC<{ currentMerchant?: any; onLogout?: ()
     }
 
     return filtered;
-  };
-
-  // Slider handlers
-  const handleCreateSlider = () => {
-    setSliderForm({
-      title: '',
-      description: '',
-      link: '',
-      image: '',
-      order: sliders.length + 1,
-      status: 'active'
-    });
-    setSliderModalOpen(true);
-  };
-
-  const handleEditSlider = (slider: any) => {
-    setCurrentSlider(slider);
-    setSliderForm({
-      title: slider.name,
-      description: slider.description,
-      link: '',
-      image: '',
-      order: 0,
-      status: slider.status === 'مفعل' ? 'active' : 'inactive'
-    });
-    setSliderModalOpen(true);
-  };
-
-  const handleDeleteSlider = (sliderId: number) => {
-    if (confirm('هل أنت متأكد من حذف هذا السلايدر؟')) {
-      setSliders(prev => prev.filter(s => s.id !== sliderId));
-    }
-  };
-
-  const handleSaveSlider = () => {
-    if (!sliderForm.title.trim()) {
-      alert('يرجى إدخال عنوان السلايدر');
-      return;
-    }
-
-    const newSlider = {
-      id: currentSlider ? currentSlider.id : Date.now(),
-      name: sliderForm.title,
-      status: sliderForm.status === 'active' ? 'مفعل' : 'غير مفعل',
-      date: new Date().toLocaleDateString('en-LY'),
-      slides: 5,
-      store: 'نواعم',
-      description: sliderForm.description,
-      views: 0,
-      clicks: 0,
-      owner: 'مونير',
-      images: [
-        '/PictureMerchantPortal/1.png',
-        '/PictureMerchantPortal/2.png',
-        '/PictureMerchantPortal/3.png',
-        '/PictureMerchantPortal/4.png',
-        '/PictureMerchantPortal/5.png'
-      ]
-    };
-
-    if (currentSlider) {
-      setSliders(prev => prev.map(s => s.id === currentSlider.id ? newSlider : s));
-    } else {
-      setSliders(prev => [...prev, newSlider]);
-    }
-
-    setSliderModalOpen(false);
-    setCurrentSlider(null);
-  };
-
-  // Slider Management Functions
-  const [slideModalOpen, setSlideModalOpen] = useState(false);
-  const [currentSlide, setCurrentSlide] = useState<any>(null);
-  const [slideForm, setSlideForm] = useState({
-    title: '',
-    image: '',
-    link: '',
-    order: 0
-  });
-
-  const handleAddSlide = () => {
-    setSlideForm({
-      title: '',
-      image: '',
-      link: '',
-      order: 0
-    });
-    setCurrentSlide(null);
-    setSlideModalOpen(true);
-  };
-
-  const handleEditSlide = (slideIndex: number) => {
-    const slider = sliders[0]; // Current active slider
-    if (slider && slider.images[slideIndex]) {
-      setSlideForm({
-        title: `شريحة ${slideIndex + 1}`,
-        image: slider.images[slideIndex],
-        link: '',
-        order: slideIndex
-      });
-      setCurrentSlide({ sliderId: slider.id, slideIndex });
-      setSlideModalOpen(true);
-    }
-  };
-
-  const handleDeleteSlide = (slideIndex: number) => {
-    if (confirm(`هل أنت متأكد من حذف الشريحة رقم ${slideIndex + 1}؟`)) {
-      setSliders(prev => prev.map(slider => {
-        if (slider.id === 1) { // Update first slider for now
-          const newImages = [...slider.images];
-          newImages.splice(slideIndex, 1);
-          // Add a default image if needed
-          if (newImages.length === 0) {
-            newImages.push('/PictureMerchantPortal/1.png');
-          }
-          return { ...slider, images: newImages, slides: newImages.length };
-        }
-        return slider;
-      }));
-    }
-  };
-
-  const handleSaveSlide = () => {
-    if (!slideForm.title.trim()) {
-      alert('يرجى إدخال عنوان الشريحة');
-      return;
-    }
-
-    setSliders(prev => prev.map(slider => {
-      if (slider.id === 1) { // Update first slider for now
-        const newImages = [...slider.images];
-        if (currentSlide) {
-          newImages[currentSlide.slideIndex] = slideForm.image || '/PictureMerchantPortal/1.png';
-        } else {
-          newImages.push(slideForm.image || '/PictureMerchantPortal/1.png');
-        }
-        return { ...slider, images: newImages, slides: newImages.length };
-      }
-      return slider;
-    }));
-
-    setSlideModalOpen(false);
-    setCurrentSlide(null);
-  };
-
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      // In a real app, you would upload to server and get back the URL
-      const imageUrl = URL.createObjectURL(file);
-      setSlideForm({ ...slideForm, image: imageUrl });
-    }
   };
 
   // Ad handlers
@@ -1666,9 +1975,26 @@ const EnhancedMerchantDashboard: React.FC<{ currentMerchant?: any; onLogout?: ()
     setAdModalOpen(true);
   };
 
-  const handleDeleteAd = (adId: number) => {
+  const handleDeleteAd = async (adId: string | number) => {
     if (confirm('هل أنت متأكد من حذف هذا الإعلان؟')) {
-      setAds(prev => prev.filter(a => a.id !== adId));
+      try {
+        const storeId = merchantStoreData?.storeId || merchantStoreData?.id || currentMerchant?.id;
+        if (!storeId) return;
+
+        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+        const response = await fetch(`${apiUrl}/ads/store/${storeId}/${adId}`, {
+          method: 'DELETE',
+        });
+
+        if (response.ok) {
+          setPublishedAds(publishedAds.filter(ad => ad.id !== String(adId)));
+          alert('تم حذف الإعلان بنجاح');
+        } else {
+          alert('فشل حذف الإعلان');
+        }
+      } catch (error) {
+        alert('حدث خطأ أثناء حذف الإعلان');
+      }
     }
   };
 
@@ -1704,6 +2030,99 @@ const EnhancedMerchantDashboard: React.FC<{ currentMerchant?: any; onLogout?: ()
     setCurrentAd(null);
   };
 
+  const loadPublishedAds = async () => {
+    try {
+      const storeId = merchantStoreData?.storeId || merchantStoreData?.id || currentMerchant?.id;
+      if (!storeId) return;
+
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+      const response = await fetch(`${apiUrl}/ads/store/${storeId}`);
+      if (response.ok) {
+        const result = await response.json();
+        setPublishedAds(result.data || []);
+      }
+    } catch (error) {
+      // Silently fail to load ads
+    }
+  };
+
+  const handleStartAd = () => {
+    setAdStep('create-step1');
+    setSelectedAdTemplate('');
+    setAdTitle('');
+    setAdDescription('');
+  };
+
+  const handleSelectTemplate = (templateId: string) => {
+    setSelectedAdTemplate(templateId);
+  };
+
+  const handleSaveAdDraft = () => {
+    if (!adTitle.trim() || !adDescription.trim()) {
+      alert('يرجى ملء جميع الحقول');
+      return;
+    }
+    setAdStep('create-step2');
+  };
+
+  const handlePublishAd = async () => {
+    if (!selectedAdTemplate) {
+      alert('يرجى اختيار قالب');
+      return;
+    }
+
+    if (!adTitle.trim() || !adDescription.trim()) {
+      alert('يرجى ملء جميع الحقول المطلوبة');
+      return;
+    }
+
+    try {
+      const storeId = merchantStoreSlug || merchantStoreData?.slug || merchantStoreData?.storeSlug || merchantStoreData?.storeId || merchantStoreData?.id;
+      if (!storeId) {
+        alert('يرجى تحديد المتجر. تأكد من تسجيل دخولك بشكل صحيح');
+        return;
+      }
+
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+      const response = await fetch(`${apiUrl}/ads/store/${storeId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          templateId: selectedAdTemplate,
+          title: adTitle,
+          description: adDescription,
+          placement: adPlacement,
+        }),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        setPublishedAds([...publishedAds, result.data || {
+          id: `ad-${Date.now()}`,
+          templateId: selectedAdTemplate,
+          title: adTitle,
+          description: adDescription,
+          placement: adPlacement,
+          createdAt: new Date().toISOString()
+        }]);
+
+        setAdStep('list');
+        setSelectedAdTemplate('');
+        setAdTitle('');
+        setAdDescription('');
+        setAdPlacement('floating');
+
+        alert('تم نشر الإعلان بنجاح');
+      } else {
+        alert(`فشل نشر الإعلان: ${response.statusText}`);
+      }
+    } catch (error) {
+      alert('حدث خطأ أثناء نشر الإعلان. تحقق من اتصالك بالإنترنت');
+    }
+  };
+
   // Header state
   const [systemStatus, setSystemStatus] = useState<'online' | 'offline' | 'maintenance'>('online');
   const [unavailableOrdersCount, setUnavailableOrdersCount] = useState(0);
@@ -1711,6 +2130,7 @@ const EnhancedMerchantDashboard: React.FC<{ currentMerchant?: any; onLogout?: ()
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [chatInput, setChatInput] = useState('');
+  const [productRefreshTrigger, setProductRefreshTrigger] = useState(0);
 
   // Chatbot functionality
   const handleChatSubmit = (e: React.FormEvent) => {
@@ -1795,6 +2215,18 @@ const EnhancedMerchantDashboard: React.FC<{ currentMerchant?: any; onLogout?: ()
     return () => clearInterval(interval);
   }, []);
 
+  // Load store products from localStorage
+  const storeProducts = useMemo(() => {
+    try {
+      const storeSlug = currentMerchant?.subdomain || merchantId;
+      const storedProducts = localStorage.getItem(`store_products_${storeSlug}`);
+      return storedProducts ? JSON.parse(storedProducts) : [];
+    } catch (error) {
+
+      return [];
+    }
+  }, [currentMerchant, merchantId, productRefreshTrigger]);
+
   // Dynamic unavailable orders count
   useEffect(() => {
     const calculateUnavailableOrders = () => {
@@ -1832,7 +2264,14 @@ const EnhancedMerchantDashboard: React.FC<{ currentMerchant?: any; onLogout?: ()
   // Dynamic notifications
   useEffect(() => {
     const generateNotifications = () => {
-      const newNotifications = [];
+      const newNotifications: Array<{
+        id: number;
+        type: string;
+        title: string;
+        message: string;
+        time: string;
+        color: string;
+      }> = [];
 
       // Check if this is a new store
       const storeSlug = currentMerchant?.subdomain || merchantId;
@@ -1896,7 +2335,10 @@ const EnhancedMerchantDashboard: React.FC<{ currentMerchant?: any; onLogout?: ()
   const [productQuantity, setProductQuantity] = useState('');
   const [productDescription, setProductDescription] = useState('');
   const [productCategory, setProductCategory] = useState('');
+
   const [productSKU, setProductSKU] = useState('');
+  const [productImages, setProductImages] = useState<File[]>([]);
+  const [productImageUrls, setProductImageUrls] = useState<string[]>([]);
 
   // Warehouse Modal State
   const [warehouseName, setWarehouseName] = useState('');
@@ -1904,9 +2346,6 @@ const EnhancedMerchantDashboard: React.FC<{ currentMerchant?: any; onLogout?: ()
   const [warehouseCity, setWarehouseCity] = useState('');
   const [showMapModal, setShowMapModal] = useState(false);
   const [selectedCoordinates, setSelectedCoordinates] = useState<{lat: number, lng: number} | null>(null);
-  const [mapLoaded, setMapLoaded] = useState(false);
-  const [googleMap, setGoogleMap] = useState<any>(null);
-  const [mapMarker, setMapMarker] = useState<any>(null);
   const [warehouseForm, setWarehouseForm] = useState({
     name: '',
     location: '',
@@ -2091,9 +2530,9 @@ const EnhancedMerchantDashboard: React.FC<{ currentMerchant?: any; onLogout?: ()
       coordinates: null,
     });
     setSelectedCoordinates(null);
-    setGoogleMap(null);
-    setMapMarker(null);
-    setMapLoaded(false);
+    setLogisticsMap(null);
+    setLogisticsMarker(null);
+    setLogisticsMapLoaded(false);
     setWarehouseModalOpen(true);
   };
 
@@ -2144,9 +2583,9 @@ const EnhancedMerchantDashboard: React.FC<{ currentMerchant?: any; onLogout?: ()
       coordinates: null,
     });
     setSelectedCoordinates(null);
-    setGoogleMap(null);
-    setMapMarker(null);
-    setMapLoaded(false);
+    setLogisticsMap(null);
+    setLogisticsMarker(null);
+    setLogisticsMapLoaded(false);
 
     // رسالة تأكيد جميلة 🎉
     const coordinatesText = warehouseForm.coordinates
@@ -2156,315 +2595,44 @@ const EnhancedMerchantDashboard: React.FC<{ currentMerchant?: any; onLogout?: ()
     alert(`✅ تم إنشاء المخزن بنجاح!\n\n🏪 اسم المخزن: ${newWarehouse.name}\n📍 الموقع: ${newWarehouse.location}\n🌍 المدينة: ${newWarehouse.city}\n👨‍💼 المدير: ${warehouseForm.manager || 'غير محدد'}\n📞 الهاتف: ${warehouseForm.phone || 'غير محدد'}\n📧 البريد الإلكتروني: ${warehouseForm.email || 'غير محدد'}\n✅ الحالة: ${newWarehouse.status}\n🔢 الأولوية: ${newWarehouse.priority}\n${coordinatesText}`);
   };
 
-  const handleMapLocationSelect = useCallback((coordinates: {lat: number, lng: number}) => {
-    setSelectedCoordinates(coordinates);
-    setWarehouseForm(prev => ({...prev, coordinates}));
-    setShowMapModal(false);
-  }, [setSelectedCoordinates, setWarehouseForm, setShowMapModal]);
-
-  const handleMapSearch = () => {
-    const searchInput = document.getElementById('map-search') as HTMLInputElement;
-    const searchTerm = searchInput?.value;
-
-    if (searchTerm && googleMap) {
-      const googleMaps = (window as any).google?.maps;
-      if (googleMaps && googleMaps.places) {
-        const service = new googleMaps.places.PlacesService(googleMap);
-
-        const request = {
-          query: searchTerm + ', Libya',
-          fields: ['name', 'geometry', 'formatted_address'],
-          language: 'ar'
-        };
-
-        service.findPlaceFromQuery(request, (results: any, status: any) => {
-          if (status === googleMaps.places.PlacesServiceStatus.OK && results && results[0]) {
-            const place = results[0];
-            const coordinates = {
-              lat: place.geometry.location.lat(),
-              lng: place.geometry.location.lng()
-            };
-
-            googleMap.setCenter(coordinates);
-            googleMap.setZoom(15);
-            setSelectedCoordinates(coordinates);
-
-            if (mapMarker) {
-              mapMarker.setPosition(coordinates);
-            } else {
-              const marker = new googleMaps.Marker({
-                position: coordinates,
-                map: googleMap,
-                title: place.name,
-                draggable: true,
-                animation: googleMaps.Animation.DROP
-              });
-              setMapMarker(marker);
-            }
-          } else {
-            alert('لم يتم العثور على الموقع. يرجى التأكد من الاسم والمحاولة مرة أخرى.');
-          }
-        });
-      }
-    } else {
-      alert('يرجى إدخال اسم المكان للبحث عنه');
-    }
-  };
 
 
-  // Preload Google Maps script on mount for faster modal open
-  React.useEffect(() => {
-    try {
-      const googleLoaded = (window as any).google?.maps;
-      if (!googleLoaded && !document.getElementById('google-maps-sdk')) {
-        const script = document.createElement('script');
-        script.id = 'google-maps-sdk';
-        script.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyB41DRUbKWJHPxaFjMAwdrzWzbVKartNGg&libraries=places&language=ar&region=LY&callback=initGoogleMaps&loading=async`;
-        script.async = true;
-        script.defer = true;
-        document.head.appendChild(script);
-      }
-    } catch (error) {
-      console.error('Error loading Google Maps script:', error);
-    }
-  }, []);
 
-  // Initialize map when modal opens with faster loading
-  const initializeGoogleMap = useCallback(() => {
-    try {
-      const googleMaps = (window as any).google?.maps;
-      if (googleMaps && !googleMap) {
-        setMapLoaded(true);
-        const mapElement = document.getElementById('google-map');
-        if (mapElement) {
-          const map = new googleMaps.Map(mapElement, {
-            center: { lat: 32.8872, lng: 13.1913 }, // Center of Libya
-            zoom: 7,
-            mapTypeControl: true,
-            streetViewControl: false,
-            fullscreenControl: true,
-            zoomControl: true,
-            gestureHandling: 'greedy',
-            mapTypeId: googleMaps.MapTypeId.ROADMAP,
-            styles: [
-              {
-                featureType: 'poi',
-                stylers: [{ visibility: 'simplified' }]
-              },
-              {
-                featureType: 'road',
-                stylers: [{ visibility: 'simplified' }]
-              }
-            ]
-          });
-  
-          setGoogleMap(map);
-  
-          // Add click listener to map for immediate location selection
-          map.addListener('click', (event: any) => {
-            const coordinates = {
-              lat: event.latLng.lat(),
-              lng: event.latLng.lng()
-            };
-            setSelectedCoordinates(coordinates);
-  
-            // Update or create marker immediately
-            if (mapMarker) {
-              mapMarker.setPosition(coordinates);
-            } else {
-              const marker = new googleMaps.Marker({
-                position: coordinates,
-                map,
-                title: 'موقع المخزن المختار',
-                draggable: true,
-                animation: googleMaps.Animation.DROP
-              });
-              setMapMarker(marker);
-            }
-          });
-  
-          // Add Libya cities markers with enhanced styling and faster loading
-          const libyaCitiesData = [
-            { name: 'طرابلس', lat: 32.8872, lng: 13.1913, color: '#EF4444' },
-            { name: 'بنغازي', lat: 32.1167, lng: 20.0667, color: '#3B82F6' },
-            { name: 'مصراتة', lat: 32.3753, lng: 15.0925, color: '#10B981' },
-            { name: 'سبها', lat: 27.0389, lng: 14.4264, color: '#F59E0B' },
-            { name: 'الزاوية', lat: 32.7522, lng: 12.7278, color: '#8B5CF6' },
-            { name: 'زليتن', lat: 32.4667, lng: 14.5667, color: '#F97316' }
-          ];
-  
-          // Load city markers faster - reduced delay
-          libyaCitiesData.forEach((city, index) => {
-            setTimeout(() => {
-              const cityMarker = new googleMaps.Marker({
-                position: { lat: city.lat, lng: city.lng },
-                map,
-                title: city.name,
-                icon: {
-                  path: googleMaps.SymbolPath.CIRCLE,
-                  scale: 16,
-                  fillColor: city.color,
-                  fillOpacity: 1,
-                  strokeColor: 'white',
-                  strokeWeight: 4,
-                },
-                animation: googleMaps.Animation.DROP
-              });
-  
-              cityMarker.addListener('click', () => {
-                map.setCenter({ lat: city.lat, lng: city.lng });
-                map.setZoom(12);
-                handleMapLocationSelect({ lat: city.lat, lng: city.lng });
-              });
-            }, index * 100); // Reduced delay for faster loading
-          });
-        }
-      } else {
-        console.log('Google Maps not loaded yet, retrying...');
-        setTimeout(initializeGoogleMap, 150); // Aggressive retry for faster load
-      }
-    } catch (error) {
-      console.error('Error initializing Google Map:', error);
-      setMapLoaded(false);
-    }
-  }, [googleMap, setGoogleMap, setMapLoaded, setMapMarker, setSelectedCoordinates, handleMapLocationSelect, mapMarker]);
-  React.useEffect(() => {
-    if (showMapModal) {
-      setMapLoaded(false);
 
-      // Load Google Maps script if not already loaded
-      if (!(window as any).google?.maps) {
-        const script = document.createElement('script');
-        script.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyB41DRUbKWJHPxaFjMAwdrzWzbVKartNGg&libraries=places&language=ar&region=LY&callback=initGoogleMaps&loading=async`;
-        script.async = true;
-        script.defer = true;
-        document.head.appendChild(script);
 
-        // Global callback for when Google Maps loads
-        (window as any).initGoogleMaps = () => {
-          console.log('Google Maps loaded successfully');
-          initializeGoogleMap();
-        };
-      } else {
-        // Google Maps already loaded, initialize immediately
-        initializeGoogleMap();
-      }
-    }
-  }, [showMapModal, initializeGoogleMap]);
 
-  // Initialize logistics map when modal opens
+
+
+  // Initialize logistics map when modal opens (using react-leaflet with OpenStreetMap)
   const initializeLogisticsMap = useCallback(() => {
     try {
-      const googleMaps = (window as any).google?.maps;
-      if (googleMaps && !logisticsMap) {
-        console.log('Initializing logistics map...');
-        const mapElement = document.getElementById('logistics-google-map');
-        if (mapElement) {
-          console.log('Map element found, creating map...');
-          const map = new googleMaps.Map(mapElement, {
-            center: { lat: 32.8872, lng: 13.1913 },
-            zoom: 7,
-            mapTypeControl: true,
-            streetViewControl: false,
-            fullscreenControl: true,
-            zoomControl: true,
-            gestureHandling: 'greedy',
-            mapTypeId: googleMaps.MapTypeId.ROADMAP
-          });
 
-          // Add click listener to map
-          map.addListener('click', (event: any) => {
-            const coordinates = {
-              lat: event.latLng.lat(),
-              lng: event.latLng.lng()
-            };
-            console.log('Map clicked at:', coordinates);
-            setLogisticsSelectedCoordinates(coordinates);
+      // Map is initialized via react-leaflet component, just set loaded state
+      setLogisticsMapLoaded(true);
 
-            if (logisticsMarker) {
-              logisticsMarker.setPosition(coordinates);
-            } else {
-              const marker = new googleMaps.Marker({
-                position: coordinates,
-                map,
-                title: 'موقع الشركة المختار',
-                draggable: true,
-                animation: googleMaps.Animation.DROP
-              });
-              setLogisticsMarker(marker);
-            }
-          });
-
-          setLogisticsMap(map);
-          setLogisticsMapLoaded(true);
-          console.log('Logistics map initialized successfully');
-        } else {
-          console.error('Map element not found');
-          setTimeout(initializeLogisticsMap, 200);
-        }
-      } else if (!googleMaps) {
-        console.log('Google Maps not loaded yet, retrying...');
-        setTimeout(initializeLogisticsMap, 200);
-      } else {
-        console.log('Map already initialized');
-        setLogisticsMapLoaded(true);
-      }
     } catch (error) {
-      console.error('Error initializing Logistics Map:', error);
+
       setLogisticsMapLoaded(false);
     }
-  }, [logisticsMap, setLogisticsMap, setLogisticsMapLoaded, setLogisticsMarker, setLogisticsSelectedCoordinates, logisticsMarker]);
+  }, []);
   React.useEffect(() => {
     if (showLogisticsMapModal) {
       setLogisticsMapLoaded(false);
-
-      // Check if Google Maps is already loaded
-      if ((window as any).google?.maps) {
-        console.log('Google Maps already loaded, initializing logistics map');
+      // Initialize OpenStreetMap immediately (no external scripts needed)
+      setTimeout(() => {
         initializeLogisticsMap();
-      } else {
-        // Check if script is already added
-        const existingScript = document.querySelector('script[src*="maps.googleapis.com"]');
-        if (!existingScript) {
-          console.log('Loading Google Maps script for logistics');
-          const script = document.createElement('script');
-          script.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyB41DRUbKWJHPxaFjMAwdrzWzbVKartNGg&libraries=places&language=ar&region=LY&callback=initLogisticsGoogleMaps&loading=async`;
-          script.async = true;
-          script.defer = true;
-          document.head.appendChild(script);
-        }
-
-        // Define callback function
-        (window as any).initLogisticsGoogleMaps = () => {
-          console.log('Logistics Google Maps loaded successfully');
-          initializeLogisticsMap();
-        };
-
-        // If script is already loaded but callback not called yet, try initializing
-        setTimeout(() => {
-          if ((window as any).google?.maps && !logisticsMap) {
-            console.log('Google Maps available, initializing logistics map');
-            initializeLogisticsMap();
-          }
-        }, 1000);
-      }
+      }, 100);
     }
-  }, [showLogisticsMapModal, initializeLogisticsMap, logisticsMap]);
+  }, [showLogisticsMapModal, initializeLogisticsMap]);
 
-  
+  useEffect(() => {
+    if (activeSection === 'settings-ads') {
+      loadPublishedAds();
+    }
+  }, [merchantId, activeSection]);
 
-  // Global function for Google Maps callback
-  (window as any).initGoogleMaps = () => {
-    console.log('Google Maps loaded successfully');
-  };
+  // OpenStreetMap initialization (no external callbacks needed)
 
-  // Fallback function if Google Maps fails to load
-  const handleMapError = () => {
-    console.error('Failed to load Google Maps');
-    setMapLoaded(false);
-    // Show error message to user
-    alert('⚠️ تعذر تحميل خريطة جوجل مابس\n\nالأسباب المحتملة:\n• مشكلة في الاتصال بالإنترنت\n• تم حجب الخريطة في منطقتك\n• مشكلة مؤقتة في خدمة جوجل\n\nالحلول:\n• تأكد من الاتصال بالإنترنت\n• جرب فتح الخريطة مرة أخرى\n• يمكنك إدخال الإحداثيات يدوياً');
-  };
 
   // Logistics map initialization
 
@@ -2579,6 +2747,14 @@ const EnhancedMerchantDashboard: React.FC<{ currentMerchant?: any; onLogout?: ()
     setLogisticsPendingCoordinates(null);
   };
 
+  const confirmWarehouseCoordinates = () => {
+    if (!warehousePendingCoordinates) return;
+    const { lat, lng } = warehousePendingCoordinates;
+    setSelectedCoordinates({ lat, lng });
+    setWarehouseForm(prev => ({ ...prev, coordinates: { lat, lng } }));
+    setWarehousePendingCoordinates(null);
+  };
+
   const handleSaveLogistics = () => {
     if (!logisticsForm.name.trim()) {
       alert('يرجى إدخال اسم الشركة');
@@ -2687,7 +2863,7 @@ const EnhancedMerchantDashboard: React.FC<{ currentMerchant?: any; onLogout?: ()
     }
 
     // Add driver logic here with route information
-    console.log('Driver added:', biddingForm);
+
     setBiddingModalOpen(false);
 
     // Reset form
@@ -2764,7 +2940,7 @@ const EnhancedMerchantDashboard: React.FC<{ currentMerchant?: any; onLogout?: ()
       setBankAccounts(updatedAccounts);
 
       // Here you would typically save to database
-      console.log('Bank account updated:', editBankForm);
+
     }
 
     setEditBankModalOpen(false);
@@ -2853,6 +3029,7 @@ const EnhancedMerchantDashboard: React.FC<{ currentMerchant?: any; onLogout?: ()
           }
           .glass-effect {
             background: rgba(255, 255, 255, 0.25);
+            -webkit-backdrop-filter: blur(10px);
             backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.18);
           }
@@ -2913,7 +3090,7 @@ const EnhancedMerchantDashboard: React.FC<{ currentMerchant?: any; onLogout?: ()
                 <Select
                   value={warehouseForm.city}
                   onValueChange={(value) => {
-                    console.log('City selected:', value);
+
                     setWarehouseForm({ ...warehouseForm, city: value });
                   }}
                 >
@@ -3088,7 +3265,7 @@ const EnhancedMerchantDashboard: React.FC<{ currentMerchant?: any; onLogout?: ()
         </div>
       )}
 
-      {/* Google Maps Location Selection Modal */}
+      {/* Warehouse Location Selection Modal */}
       {showMapModal && (
         <div className="fixed inset-0 bg-black/60 dark:bg-black/80 flex items-center justify-center z-[9999]">
           <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 w-full max-w-4xl mx-4 shadow-2xl border border-slate-200 dark:border-slate-700 max-h-[90vh] overflow-hidden">
@@ -3106,41 +3283,60 @@ const EnhancedMerchantDashboard: React.FC<{ currentMerchant?: any; onLogout?: ()
             </div>
 
             <div className="space-y-4">
-              {/* Search Box */}
-              <div className="relative">
-                <Input
-                  id="map-search"
-                  placeholder="ابحث عن الموقع في ليبيا..."
-                  className="pr-10"
-                  onKeyPress={(e) => {
-                    if (e.key === 'Enter') {
-                      handleMapSearch();
-                    }
-                  }}
-                />
-                <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 cursor-pointer" onClick={handleMapSearch} />
-              </div>
-
               {/* Map Container */}
-              <div className="relative bg-gray-100 rounded-lg overflow-hidden h-[450px]">
-                {!mapLoaded ? (
-                  <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-50 to-green-50">
-                    <div className="text-center">
-                      <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                      <h4 className="text-xl font-bold text-gray-800 mb-2">جاري تحميل خريطة Google Maps</h4>
-                      <p className="text-gray-600 mb-2">يرجى الانتظار قليلاً...</p>
-                      <div className="flex justify-center items-center gap-1 text-sm text-gray-500">
-                        <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-                        <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse [animation-delay:0.2s]"></div>
-                        <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse [animation-delay:0.4s]"></div>
-                      </div>
+              <div className="relative bg-gray-100 rounded-lg overflow-hidden" style={{ height: '450px' }}>
+                <MapContainer
+                  center={[32.8872, 13.1913]}
+                  zoom={7}
+                  style={{ height: '100%', width: '100%' }}
+                >
+                  <WarehouseMapClickHandler onMapClick={({ lat, lng }) => setWarehousePendingCoordinates({ lat, lng })} />
+                  <TileLayer
+                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                  />
+                  {(warehousePendingCoordinates || selectedCoordinates) && (
+                    <Marker
+                      position={[
+                        warehousePendingCoordinates?.lat ?? selectedCoordinates?.lat ?? 32.8872,
+                        warehousePendingCoordinates?.lng ?? selectedCoordinates?.lng ?? 13.1913
+                      ]}
+                    >
+                      <Popup>الموقع المختار</Popup>
+                    </Marker>
+                  )}
+                  <Marker position={[32.8872, 13.1913]}>
+                    <Popup>طرابلس، ليبيا</Popup>
+                  </Marker>
+                </MapContainer>
+                <div className="absolute top-2 left-2 bg-white p-2 rounded shadow text-sm">
+                  انقر على الخريطة لتحديد موقع المخزن
+                </div>
+                {warehousePendingCoordinates && (
+                  <div className="absolute bottom-3 left-3 right-3 bg-white/95 backdrop-blur-sm border border-green-200 rounded-xl p-4 shadow-lg flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-semibold text-gray-800">إحداثيات غير مؤكدة</p>
+                      <p className="text-xs text-gray-600">
+                        {warehousePendingCoordinates.lat.toFixed(6)}, {warehousePendingCoordinates.lng.toFixed(6)}
+                      </p>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        className="bg-green-600 hover:bg-green-700 text-white"
+                        onClick={confirmWarehouseCoordinates}
+                      >
+                        تأكيد الموقع
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setWarehousePendingCoordinates(null)}
+                      >
+                        إلغاء
+                      </Button>
                     </div>
                   </div>
-                ) : (
-                  <div
-                    id="google-map"
-                    className="w-full h-full min-h-[450px]"
-                  ></div>
                 )}
               </div>
 
@@ -3580,19 +3776,7 @@ const EnhancedMerchantDashboard: React.FC<{ currentMerchant?: any; onLogout?: ()
                         إدارة تغيير المخزون
                       </button>
                     )}
-                    {hasModuleAccess('catalog-custom-fields') && (
-                      <button
-                        onClick={() => handleSectionChange('catalog-custom-fields')}
-                        className={`w-full flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-colors duration-200 ${
-                          activeSection === 'catalog-custom-fields'
-                            ? 'bg-blue-100 text-blue-800 dark:bg-slate-800 dark:text-blue-200'
-                            : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700 dark:text-slate-400 dark:hover:bg-slate-800/60 dark:hover:text-slate-50'
-                        }`}
-                      >
-                        <Layers className="ml-2 h-4 w-4" />
-                        الحقول المخصصة
-                      </button>
-                    )}
+
                   </div>
                 )}
               </div>
@@ -4161,6 +4345,30 @@ const EnhancedMerchantDashboard: React.FC<{ currentMerchant?: any; onLogout?: ()
               {/* Content based on active section */}
               {activeSection === 'overview' && (
                 <div className="space-y-6">
+                  {(() => {
+                    const storeKey = `store_${currentMerchant?.subdomain || ''}`;
+                    const storeData = JSON.parse(localStorage.getItem(storeKey) || '{}');
+                    const expiryProducts: ExpiryAlertProduct[] = (storeData.products || [])
+                      .filter((product: any) => product.endDate && isProductExpiringSoon(product.endDate, 60))
+                      .map((product: any) => ({
+                        id: product.id,
+                        name: product.name,
+                        quantity: product.quantity || 0,
+                        endDate: product.endDate,
+                        daysRemaining: Math.ceil((new Date(product.endDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)),
+                        category: product.category || 'غير محدد',
+                        originalPrice: product.originalPrice || product.price || 0
+                      }))
+                      .sort((a: any, b: any) => a.daysRemaining - b.daysRemaining);
+
+                    return expiryProducts.length > 0 && (
+                      <ExpiryAlertWidget
+                        products={expiryProducts}
+                        onViewAll={() => {}} 
+                      />
+                    );
+                  })()}
+
                   <div className="rounded-3xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 px-8 py-10 text-white shadow-2xl">
                     <div className="flex flex-col gap-8 md:flex-row md:items-center md:justify-between">
                       <div className="space-y-3">
@@ -4537,11 +4745,26 @@ const EnhancedMerchantDashboard: React.FC<{ currentMerchant?: any; onLogout?: ()
                           <Smartphone className="h-12 w-12 text-gray-400 mx-auto mb-3" />
                           <p className="text-gray-500 mb-4">معاينة المتجر</p>
                           <div className="flex gap-2 justify-center">
-                            <Button size="sm" variant="outline">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                // Open store in new tab for preview
+                                const storeUrl = `/${currentMerchant?.subdomain || 'store'}`;
+                                window.open(storeUrl, '_blank');
+                              }}
+                            >
                               <Eye className="h-4 w-4 mr-2" />
                               معاينة المتجر
                             </Button>
-                            <Button size="sm">
+                            <Button
+                              size="sm"
+                              onClick={() => {
+                                // Navigate to store page
+                                const storeUrl = `/${currentMerchant?.subdomain || 'store'}`;
+                                window.location.href = storeUrl;
+                              }}
+                            >
                               <Globe className="h-4 w-4 mr-2" />
                               فتح مباشر
                             </Button>
@@ -4779,7 +5002,265 @@ const EnhancedMerchantDashboard: React.FC<{ currentMerchant?: any; onLogout?: ()
                 </div>
               )}
 
-              {/* Orders Manual Section */}
+              {/* Catalog Products Section */}
+              {activeSection === 'catalog-products' && (
+                <div className="space-y-6">
+                  <div className="flex flex-wrap items-center justify-between gap-4">
+                    <div>
+                      <h2 className="text-2xl font-bold text-gray-900 dark:text-white">إدارة المنتجات</h2>
+                      <p className="text-gray-600 dark:text-gray-300">إضافة وتعديل وحذف المنتجات في متجرك</p>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-3">
+                      {inventoryLoading && (
+                        <Badge variant="outline" className="text-xs px-3 py-1">
+                          جاري تحميل بيانات المتجر...
+                        </Badge>
+                      )}
+                      {!inventoryLoading && formattedInventorySync && (
+                        <span className="text-xs text-gray-500">آخر تحديث: {formattedInventorySync}</span>
+                      )}
+                      <Button
+                        onClick={() => setProductModalOpen(true)}
+                        className="bg-blue-600 hover:bg-blue-700"
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        إضافة منتج جديد
+                      </Button>
+                    </div>
+                  </div>
+
+                  {inventoryError && (
+                    <div className="p-3 rounded-lg bg-amber-50 text-amber-800 text-sm">
+                      {inventoryError}
+                    </div>
+                  )}
+
+                  {showProductsEmptyState ? (
+                    <div className="text-center py-12">
+                      <Package className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                      <h3 className="text-lg font-medium text-gray-900 mb-2">لا توجد منتجات بعد</h3>
+                      <p className="text-gray-600 mb-4">ابدأ بإضافة منتجاتك الأولى لمتجرك</p>
+                      <Button onClick={() => setProductModalOpen(true)} className="bg-blue-600 hover:bg-blue-700">
+                        <Plus className="h-4 w-4 mr-2" />
+                        إضافة منتج جديد
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                      {productsToDisplay.map((product) => {
+                        const primaryImage = Array.isArray(product.images) && product.images.length > 0
+                          ? product.images[0]
+                          : getDefaultProductImageSync(merchantStoreSlug || undefined);
+                        const discountPercent = computeDiscountPercent(product.price, product.originalPrice);
+                        const quantityLabel = (() => {
+                          if (typeof product.quantity === 'number') {
+                            return product.quantity;
+                          }
+                          const stock = (product as any)?.stock;
+                          if (typeof stock === 'number') {
+                            return stock;
+                          }
+                          if (Array.isArray((product as any)?.availableSizes)) {
+                            return (product as any).availableSizes.length;
+                          }
+                          return null;
+                        })();
+                        return (
+                          <Card key={`${product.id}-${product.name}`} className="hover:shadow-lg transition-shadow">
+                            <CardContent className="p-4 space-y-3">
+                              <div className="relative h-44 rounded-xl overflow-hidden bg-gray-100">
+                                <img
+                                  src={primaryImage}
+                                  alt={product.name}
+                                  className="w-full h-full object-cover"
+                                  onError={(e) => handleImageError(e, merchantStoreSlug || undefined)}
+                                />
+                                {discountPercent && (
+                                  <div className="absolute top-2 right-2 bg-red-500 text-white px-2 py-1 rounded text-xs font-bold">
+                                    -{discountPercent}%
+                                  </div>
+                                )}
+                              </div>
+
+                              <div className="space-y-2">
+                                <h3 className="font-semibold text-sm line-clamp-2">{product.name}</h3>
+                                <p className="text-xs text-gray-500">{product.category || 'غير مصنف'}</p>
+
+                                <div className="flex items-center gap-2">
+                                  {product.price !== undefined && (
+                                    <span className="font-bold text-blue-600">{formatPriceValue(product.price)}</span>
+                                  )}
+                                  {product.originalPrice !== undefined && product.originalPrice !== product.price && (
+                                    <span className="text-xs text-gray-500 line-through">{formatPriceValue(product.originalPrice)}</span>
+                                  )}
+                                </div>
+
+                                <div className="flex items-center justify-between text-xs">
+                                  <span className={product.inStock === false ? 'text-red-600' : 'text-green-600'}>
+                                    {product.inStock === false ? 'غير متوفر' : 'متوفر'}
+                                  </span>
+                                  {quantityLabel !== null && quantityLabel !== undefined && (
+                                    <span className="text-gray-500">المخزون: {quantityLabel}</span>
+                                  )}
+                                </div>
+                              </div>
+
+                              <div className="flex gap-2">
+                                <Button size="sm" variant="outline" className="flex-1">
+                                  <Edit className="h-3 w-3 mr-1" />
+                                  تعديل
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="flex-1"
+                                  onClick={() => {
+                                    setSelectedProductForDiscount(product);
+                                    setDiscountModalOpen(true);
+                                  }}
+                                >
+                                  <Tag className="h-3 w-3 mr-1" />
+                                  خصم
+                                </Button>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Catalog Categories Section */}
+              {activeSection === 'catalog-categories' && (
+                <div className="space-y-6">
+                  <div className="flex flex-wrap items-center justify-between gap-4">
+                    <div>
+                      <h2 className="text-2xl font-bold text-gray-900 dark:text-white">إدارة التصنيفات</h2>
+                      <p className="text-gray-600 dark:text-gray-300">تنظيم وإدارة تصنيفات المنتجات في متجرك</p>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-3">
+                      {inventoryLoading && (
+                        <Badge variant="outline" className="text-xs px-3 py-1">
+                          جاري تحميل بيانات المتجر...
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+
+                  {inventoryError && (
+                    <div className="p-3 rounded-lg bg-amber-50 text-amber-800 text-sm">
+                      {inventoryError}
+                    </div>
+                  )}
+
+                  {showCategoriesEmptyState ? (
+                    <div className="text-center py-12">
+                      <Tag className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                      <h3 className="text-lg font-medium text-gray-900 mb-2">لا توجد تصنيفات بعد</h3>
+                      <p className="text-gray-600 mb-4">ابدأ بتنظيم منتجاتك في تصنيفات منظمة</p>
+                      <Button onClick={() => setCategoryModalOpen(true)} className="bg-green-600 hover:bg-green-700">
+                        <Plus className="h-4 w-4 mr-2" />
+                        إضافة تصنيف جديد
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                      {categoriesToDisplay.map((category) => (
+                        <Card key={category.id} className="hover:shadow-lg transition-shadow">
+                          <CardContent className="p-4 space-y-3">
+                            <div className="relative h-40 rounded-xl overflow-hidden bg-gray-100">
+                              <img
+                                src={(() => {
+                                  if (category.image) return category.image;
+                                  const imageKey = `category_image_${merchantStoreSlug}_${category.id}`;
+                                  const uploadedImage = sessionStorage.getItem(imageKey);
+                                  if (uploadedImage) return uploadedImage;
+                                  const productsInCategory = productsToDisplay?.filter((p: any) => p.category === category.id || p.category === category.name) || [];
+                                  const firstProductImage = (productsInCategory.length > 0 && productsInCategory[0]?.images?.length) 
+                                    ? productsInCategory[0].images[0]
+                                    : productsToDisplay?.[0]?.images?.[0] || getDefaultProductImageSync(merchantStoreSlug || undefined);
+                                  return firstProductImage;
+                                })()}
+                                alt={category.name}
+                                className="w-full h-full object-cover"
+                                onError={(e) => handleImageError(e, merchantStoreSlug || undefined)}
+                              />
+                              <div className="absolute top-2 right-2 bg-blue-500 text-white px-2 py-1 rounded text-xs">
+                                {category.productCount} منتج
+                              </div>
+                            </div>
+
+                            <div className="space-y-2">
+                              <h3 className="font-semibold text-sm">{category.name}</h3>
+                              <p className="text-xs text-gray-500 line-clamp-2">{category.description}</p>
+
+                              <div className="flex items-center justify-between text-xs">
+                                <span className={category.isActive ? 'text-green-600' : 'text-red-600'}>
+                                  {category.isActive ? 'نشط' : 'غير نشط'}
+                                </span>
+                                <span className="text-gray-500">ترتيب: {category.sortOrder}</span>
+                              </div>
+                            </div>
+
+                            <div className="flex gap-2 flex-col">
+                              <div className="flex gap-2">
+                                <Button size="sm" variant="outline" className="flex-1">
+                                  <Edit className="h-3 w-3 mr-1" />
+                                  تعديل
+                                </Button>
+                                <Button size="sm" variant="outline" className="flex-1">
+                                  <Tag className="h-3 w-3 mr-1" />
+                                  منتجات
+                                </Button>
+                              </div>
+                              <Button 
+                                size="sm" 
+                                variant="outline"
+                                className="w-full"
+                                onClick={() => {
+                                  const input = document.createElement('input');
+                                  input.type = 'file';
+                                  input.accept = '.webp,.jpg,.jpeg,.gif,.bmp,.tiff,.tif,.svg,.pdf,image/*';
+                                  input.onchange = (e: any) => {
+                                    const file = e.target.files?.[0];
+                                    if (!file) return;
+                                    if (file.size > 5 * 1024 * 1024) {
+                                      alert('حجم الصورة كبير جداً. الحد الأقصى 5 MB');
+                                      return;
+                                    }
+                                    const reader = new FileReader();
+                                    reader.onload = async (event: any) => {
+                                      const imageData = event.target?.result;
+                                      try {
+                                        const imageKey = `category_image_${merchantStoreSlug}_${category.id}`;
+                                        await categoryImageStorage.save(imageKey, imageData);
+                                        sessionStorage.setItem(imageKey, imageData);
+                                        setProductRefreshTrigger(prev => prev + 1);
+                                        console.log(`✅ تم رفع صورة الفئة: ${category.name}`);
+                                      } catch {
+                                        console.error('خطأ في حفظ الصورة');
+                                        alert('خطأ في حفظ الصورة. يرجى محاولة الصورة أصغر.');
+                                      }
+                                    };
+                                    reader.readAsDataURL(file);
+                                  };
+                                  input.click();
+                                }}
+                              >
+                                <Upload className="h-3 w-3 mr-1" />
+                                صورة الفئة
+                              </Button>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Orders Manual Section */}
               {activeSection === 'orders-manual' && (
                 <div className="space-y-6">
@@ -5285,6 +5766,17 @@ const EnhancedMerchantDashboard: React.FC<{ currentMerchant?: any; onLogout?: ()
                               />
                             </div>
 
+                            <div className="col-span-2">
+                              <Label htmlFor="product-description">وصف المنتج</Label>
+                              <Textarea
+                                id="product-description"
+                                placeholder="أدخل وصف تفصيلي للمنتج"
+                                value={productDescription}
+                                onChange={(e) => setProductDescription(e.target.value)}
+                                rows={3}
+                              />
+                            </div>
+
                             <div className="grid grid-cols-2 gap-2">
                               <div>
                                 <Label htmlFor="product-price">سعر المنتج *</Label>
@@ -5416,8 +5908,66 @@ const EnhancedMerchantDashboard: React.FC<{ currentMerchant?: any; onLogout?: ()
                                   <SelectItem value="fashion">أزياء</SelectItem>
                                   <SelectItem value="home">منزل وحديقة</SelectItem>
                                   <SelectItem value="sports">رياضة</SelectItem>
+                                  <SelectItem value="cleaning">مواد تنظيف</SelectItem>
                                 </SelectContent>
                               </Select>
+                            </div>
+
+                            {/* Product Images */}
+                            <div className="col-span-2">
+                              <Label>صور المنتج</Label>
+                              <div className="mt-2">
+                                <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-gray-400 transition-colors">
+                                  <Upload className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                                  <p className="text-sm text-gray-600 mb-2">اسحب وأفلت الصور هنا أو انقر للاختيار</p>
+                                  <p className="text-xs text-gray-500 mb-4">JPG, JPEG, PNG, WEBP, BMP, AVIF, PDF</p>
+                                  <input
+                                    type="file"
+                                    multiple
+                                    accept="image/jpeg,image/jpg,image/png,image/webp,image/bmp,image/avif,application/pdf"
+                                    onChange={(e) => {
+                                      const files = Array.from(e.target.files || []);
+                                      setProductImages(prev => [...prev, ...files]);
+                                      // Create preview URLs
+                                      const newUrls = files.map(file => URL.createObjectURL(file));
+                                      setProductImageUrls(prev => [...prev, ...newUrls]);
+                                    }}
+                                    className="hidden"
+                                    id="product-images"
+                                  />
+                                  <label htmlFor="product-images" className="cursor-pointer">
+                                    <Button type="button" variant="outline" size="sm">
+                                      اختر الصور
+                                    </Button>
+                                  </label>
+                                </div>
+
+                                {/* Image Previews */}
+                                {productImageUrls.length > 0 && (
+                                  <div className="mt-4 grid grid-cols-3 gap-2">
+                                    {productImageUrls.map((url, index) => (
+                                      <div key={index} className="relative group">
+                                        <img
+                                          src={url}
+                                          alt={`Product ${index + 1}`}
+                                          className="w-full h-20 object-cover rounded-lg border"
+                                        />
+                                        <button
+                                          type="button"
+                                          title="حذف الصورة"
+                                          onClick={() => {
+                                            setProductImages(prev => prev.filter((_, i) => i !== index));
+                                            setProductImageUrls(prev => prev.filter((_, i) => i !== index));
+                                          }}
+                                          className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                                        >
+                                          <X className="h-3 w-3" />
+                                        </button>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -5448,7 +5998,60 @@ const EnhancedMerchantDashboard: React.FC<{ currentMerchant?: any; onLogout?: ()
                           <Button variant="outline" onClick={() => setProductModalOpen(false)}>
                             إلغاء
                           </Button>
-                          <Button className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700">
+                          <Button
+                            className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700"
+                            onClick={() => {
+                              // Create product object
+                              const newProduct = {
+                                id: Date.now(),
+                                storeId: currentMerchant?.id || merchantId,
+                                name: productName,
+                                description: productDescription || 'وصف المنتج',
+                                price: parseFloat(productPrice) || 0,
+                                originalPrice: parseFloat(productPrice) || 0,
+                                images: productImageUrls.length > 0 ? productImageUrls : [getDefaultProductImageSync(merchantStoreSlug || undefined)],
+                                sizes: ['واحد'],
+                                availableSizes: ['واحد'],
+                                colors: [{ name: 'افتراضي', value: '#000000' }],
+                                rating: 0,
+                                reviews: 0,
+                                views: 0,
+                                likes: 0,
+                                orders: 0,
+                                category: productCategory,
+                                inStock: true,
+                                isAvailable: true,
+                                quantity: parseInt(productQuantity) || 0,
+                                tags: [],
+                                badge: null
+                              };
+
+                              // Save to localStorage
+                              const storeKey = `store_products_${currentMerchant?.subdomain || 'default'}`;
+                              const existingProducts = JSON.parse(localStorage.getItem(storeKey) || '[]');
+                              existingProducts.push(newProduct);
+                              localStorage.setItem(storeKey, JSON.stringify(existingProducts));
+
+                              // Reset form
+                              setProductName('');
+                              setProductPrice('');
+                              setProductQuantity('');
+                              setProductDescription('');
+                              setProductCategory('');
+                              setProductSKU('');
+                              setProductImages([]);
+                              setProductImageUrls([]);
+
+                              // Close modal
+                              setProductModalOpen(false);
+
+                              // Trigger refresh
+                              setProductRefreshTrigger(prev => prev + 1);
+
+                              // Show success message
+                              alert('تم إنشاء المنتج بنجاح!');
+                            }}
+                          >
                             <ShoppingBag className="h-4 w-4 mr-2" />
                             إنشاء المنتج
                           </Button>
@@ -5667,7 +6270,7 @@ const EnhancedMerchantDashboard: React.FC<{ currentMerchant?: any; onLogout?: ()
                                   onChange={(e) => {
                                     const file = e.target.files?.[0];
                                     if (file) {
-                                      console.log('Category image selected:', file.name);
+
                                       // هنا يمكن إضافة منطق رفع الصورة
                                     }
                                   }}
@@ -5698,7 +6301,7 @@ const EnhancedMerchantDashboard: React.FC<{ currentMerchant?: any; onLogout?: ()
                                   onChange={(e) => {
                                     const file = e.target.files?.[0];
                                     if (file) {
-                                      console.log('Background image selected:', file.name);
+
                                       // هنا يمكن إضافة منطق رفع الصورة الخلفية
                                     }
                                   }}
@@ -5721,12 +6324,15 @@ const EnhancedMerchantDashboard: React.FC<{ currentMerchant?: any; onLogout?: ()
                               <Label htmlFor="parent-category">التصنيف الرئيسي</Label>
                               <Select>
                                 <SelectTrigger>
-                                  <SelectValue placeholder="البحث عن التصنيف الرئيسي" />
+                                  <SelectValue placeholder="اختر التصنيف الفرعي" />
                                 </SelectTrigger>
                                 <SelectContent>
                                   <SelectItem value="none">لا يوجد تصنيف رئيسي</SelectItem>
-                                  <SelectItem value="electronics">إلكترونيات</SelectItem>
-                                  <SelectItem value="fashion">أزياء</SelectItem>
+                                  {cleaningMaterialsSubcategories.map((category) => (
+                                    <SelectItem key={category.id} value={category.id}>
+                                      {category.name}
+                                    </SelectItem>
+                                  ))}
                                 </SelectContent>
                               </Select>
                             </div>
@@ -7212,279 +7818,12 @@ const EnhancedMerchantDashboard: React.FC<{ currentMerchant?: any; onLogout?: ()
 
               {activeSection === 'orders-unavailable' && (
                 <div className="space-y-6">
-                  <div className="flex items-center justify-between">
-                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white">الطلبات الغير متوفرة</h2>
-                    <div className="flex items-center gap-2">
-                      <Button variant="outline" size="sm">
-                        <Filter className="h-4 w-4 mr-2" />
-                        فرز
-                      </Button>
-                      <Button variant="outline" size="sm">
-                        <Download className="h-4 w-4 mr-2" />
-                        تصدير
-                      </Button>
-                    </div>
-                  </div>
-
-                  {/* Unavailable Orders Statistics */}
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                    <Card className="shadow-lg">
-                      <CardContent className="p-6">
-                        <div className="text-center">
-                          <p className="text-3xl font-bold text-red-600 mb-1">5</p>
-                          <p className="text-sm text-gray-600">طلبات غير متوفرة</p>
-                          <p className="text-xs text-gray-500 mt-1">بالمتجر</p>
-                        </div>
-                      </CardContent>
-                    </Card>
-
-                    <Card className="shadow-lg">
-                      <CardContent className="p-6">
-                        <div className="text-center">
-                          <p className="text-3xl font-bold text-blue-600 mb-1">12</p>
-                          <p className="text-sm text-gray-600">إجمالي الكمية المطلوبة</p>
-                          <p className="text-xs text-gray-500 mt-1">منتجات مطلوبة</p>
-                        </div>
-                      </CardContent>
-                    </Card>
-
-                    <Card className="shadow-lg">
-                      <CardContent className="p-6">
-                        <div className="text-center">
-                          <p className="text-3xl font-bold text-green-600 mb-1">3</p>
-                          <p className="text-sm text-gray-600">منتجات تم توفيرها</p>
-                          <p className="text-sm text-gray-600 mt-1">هذا الشهر</p>
-                        </div>
-                      </CardContent>
-                    </Card>
-
-                    <Card className="shadow-lg">
-                      <CardContent className="p-6">
-                        <div className="text-center">
-                          <p className="text-3xl font-bold text-purple-600 mb-1">2</p>
-                          <p className="text-sm text-gray-600">طلبات ملغية</p>
-                          <p className="text-xs text-gray-500 mt-1">من العملاء</p>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </div>
-
-                  {/* Unavailable Orders Table */}
-                  <Card className="shadow-lg">
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <AlertTriangle className="h-5 w-5 text-red-600" />
-                        جدول الطلبات الغير متوفرة بالمتجر
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="overflow-x-auto">
-                        <table className="w-full text-sm">
-                          <thead>
-                            <tr className="border-b">
-                              <th className="text-right p-3 font-medium">كود المنتج</th>
-                              <th className="text-right p-3 font-medium">اسم المنتج</th>
-                              <th className="text-right p-3 font-medium">الكمية</th>
-                              <th className="text-right p-3 font-medium">تاريخ تقديم الطلب</th>
-                              <th className="text-right p-3 font-medium">وقت تقديم الطلب</th>
-                              <th className="text-right p-3 font-medium">حالة الطلب</th>
-                              <th className="text-right p-3 font-medium">الإجراءات</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {[
-                              {
-                                productCode: 'ESHRO-5556T-1005',
-                                productName: 'فستان ماكسي أحمر, Mango',
-                                quantity: 2,
-                                date: '20/09/2025',
-                                time: '12:30:27 مساءً',
-                                status: 'قيد الانتظار',
-                                customer: 'أحمد محمد',
-                                customerEmail: 'ahmed.salem@gmail.com',
-                                customerPhone: '0922682101'
-                              },
-                              {
-                                productCode: 'ESHRO-7721B-2008',
-                                productName: 'حذاء نسائي أنيق, ZARA',
-                                quantity: 1,
-                                date: '18/09/2025',
-                                time: '14:15:45 مساءً',
-                                status: 'المنتج متوفر',
-                                customer: 'فاطمة محمد',
-                                customerEmail: 'fatima.mohammed@hotmail.com',
-                                customerPhone: '0915234567'
-                              },
-                              {
-                                productCode: 'ESHRO-3399H-5003',
-                                productName: 'فستان سهرة طويل Hermes',
-                                quantity: 1,
-                                date: '15/09/2025',
-                                time: '09:20:12 صباحًا',
-                                status: 'ملغي',
-                                customer: 'عمر علي',
-                                customerEmail: 'omar.ali@gmail.com',
-                                customerPhone: '0918765432'
-                              }
-                            ].map((order, index) => (
-                              <tr key={index} className="border-b hover:bg-gray-50">
-                                <td className="p-3">
-                                  <p className="font-medium">{order.productCode}</p>
-                                </td>
-                                <td className="p-3">
-                                  <div>
-                                    <p className="font-medium">{order.productName}</p>
-                                  </div>
-                                </td>
-                                <td className="p-3">
-                                  <p className="font-bold">{order.quantity}</p>
-                                </td>
-                                <td className="p-3">{order.date}</td>
-                                <td className="p-3">{order.time}</td>
-                                <td className="p-3">
-                                  <Select>
-                                    <SelectTrigger className="w-full">
-                                      <SelectValue placeholder={order.status} />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="pending">قيد الانتظار</SelectItem>
-                                      <SelectItem value="available">المنتج متوفر</SelectItem>
-                                      <SelectItem value="cancelled">ملغي</SelectItem>
-                                      <SelectItem value="alternative">توفير بديل</SelectItem>
-                                    </SelectContent>
-                                  </Select>
-                                </td>
-                                <td className="p-3">
-                                  <div className="flex gap-1">
-                                    <Button size="sm" variant="outline">
-                                      <Trash2 className="h-4 w-4" />
-                                    </Button>
-                                    <Button size="sm" variant="outline">
-                                      <Edit className="h-4 w-4" />
-                                    </Button>
-                                    <Button size="sm" className="bg-green-600 hover:bg-green-700">
-                                      <Save className="h-4 w-4" />
-                                    </Button>
-                                  </div>
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-
-                      <div className="flex items-center justify-center mt-6">
-                        <div className="flex gap-2">
-                          <Button variant="outline" size="sm">1</Button>
-                          <Button variant="outline" size="sm">2</Button>
-                          <Button variant="outline" size="sm">3</Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  {/* Customer Details Modal/Card */}
-                  <Card className="shadow-lg bg-gradient-to-r from-blue-50 to-purple-50">
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2 text-blue-800">
-                        <User className="h-5 w-5" />
-                        تفاصيل العملاء والطلبات
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="space-y-4">
-                          <h4 className="font-bold text-gray-800">معلومات العميل</h4>
-                          <div className="space-y-2 text-sm">
-                            <div className="flex justify-between">
-                              <span className="text-gray-600">الاسم:</span>
-                              <span className="font-medium">أحمد محمد الليبي</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-gray-600">البريد الإلكتروني:</span>
-                              <span className="font-medium">ahmed.salem@gmail.com</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-gray-600">رقم الهاتف:</span>
-                              <span className="font-medium">+218 92 268 2101</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-gray-600">المدينة:</span>
-                              <span className="font-medium">طرابلس</span>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="space-y-4">
-                          <h4 className="font-bold text-gray-800">تفاصيل الطلب</h4>
-                          <div className="space-y-2 text-sm">
-                            <div className="flex justify-between">
-                              <span className="text-gray-600">كود المنتج:</span>
-                              <span className="font-medium">ESHRO-5556T-1005</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-gray-600">اسم المنتج:</span>
-                              <span className="font-medium">فستان ماكسي أحمر, Mango</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-gray-600">الكمية المطلوبة:</span>
-                              <span className="font-medium">2 قطعة</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-gray-600">تاريخ الطلب:</span>
-                              <span className="font-medium">20/09/2025 - 12:30 مساءً</span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="mt-6 pt-6 border-t">
-                        <div className="flex gap-2 justify-center">
-                          <Button className="bg-green-600 hover:bg-green-700">
-                            <Bell className="h-4 w-4 mr-2" />
-                            إشعار العميل بتوفر المنتج
-                          </Button>
-                          <Button variant="outline">
-                            <Mail className="h-4 w-4 mr-2" />
-                            إرسال رسالة للعميل
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  {/* Status Management Guide */}
-                  <Card className="shadow-lg bg-gradient-to-r from-yellow-50 to-orange-50">
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2 text-orange-800">
-                        <HelpCircle className="h-5 w-5" />
-                        دليل إدارة حالات الطلبات
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="space-y-4">
-                          <div className="p-4 bg-white rounded-lg border-l-4 border-l-gray-500">
-                            <h5 className="font-bold text-gray-800 mb-2">قيد الانتظار</h5>
-                            <p className="text-sm text-gray-600">المنتج غير متوفر حالياً في المخزن. يبقى الطلب في هذه الحالة حتى يتم توفير المنتج.</p>
-                          </div>
-                          <div className="p-4 bg-white rounded-lg border-l-4 border-l-green-500">
-                            <h5 className="font-bold text-green-800 mb-2">المنتج متوفر</h5>
-                            <p className="text-sm text-gray-600">تم توفير المنتج في المخزن. سيتم إرسال إشعار فوري للعميل لإتمام عملية الشراء.</p>
-                          </div>
-                        </div>
-                        <div className="space-y-4">
-                          <div className="p-4 bg-white rounded-lg border-l-4 border-l-red-500">
-                            <h5 className="font-bold text-red-800 mb-2">ملغي</h5>
-                            <p className="text-sm text-gray-600">تم إلغاء طلب العميل نهائياً. لن يتم إرسال أي إشعارات إضافية.</p>
-                          </div>
-                          <div className="p-4 bg-white rounded-lg border-l-4 border-l-blue-500">
-                            <h5 className="font-bold text-blue-800 mb-2">توفير بديل</h5>
-                            <p className="text-sm text-gray-600">سيتم اقتراح منتج بديل مشابه للعميل مع نفس المواصفات والجودة.</p>
-                          </div>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
+                  <UnavailableOrdersView
+                    storeSlug={merchantStoreSlug || undefined}
+                    storeData={{ slug: merchantStoreSlug, name: merchantStoreName }}
+                    setStoreData={() => {}}
+                    onSave={() => {}}
+                  />
                 </div>
               )}
 
@@ -7761,117 +8100,7 @@ const EnhancedMerchantDashboard: React.FC<{ currentMerchant?: any; onLogout?: ()
                 </div>
               )}
 
-              {activeSection === 'catalog-custom-fields' && (
-                <div className="space-y-6">
-                  <div className="flex items-center justify-between">
-                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white">الحقول المخصصة</h2>
-                    <Button className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white">
-                      <Plus className="h-4 w-4 mr-2" />
-                      إنشاء حقل جديد
-                    </Button>
-                  </div>
 
-                  {/* Custom Fields Interface */}
-                  <Card className="shadow-lg">
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <Layers className="h-5 w-5 text-blue-600" />
-                        إضافة بيانات مخصصة لمنتجاتك وتصنيفاتك
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-6">
-                        <div className="flex items-center space-x-2">
-                          <Checkbox id="disable-service" />
-                          <Label htmlFor="disable-service" className="text-sm">تعطيل الخدمة</Label>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          <div>
-                            <Label htmlFor="field-name-ar">اسم الحقل بالعربية</Label>
-                            <Input id="field-name-ar" placeholder="الاسم" />
-                          </div>
-                          <div>
-                            <Label htmlFor="field-name-en">اسم الحقل بالإنجليزية</Label>
-                            <Input id="field-name-en" placeholder="Name" />
-                          </div>
-                        </div>
-
-                        <div>
-                          <Label htmlFor="field-address">عنوان الحقل</Label>
-                          <Input id="field-address" placeholder="الدريبي، طرابلس" />
-                        </div>
-
-                        <div>
-                          <Label htmlFor="field-type">نوع الحقل</Label>
-                          <Select>
-                            <SelectTrigger>
-                              <SelectValue placeholder="نص" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="text">نص</SelectItem>
-                              <SelectItem value="textarea">نص منسق</SelectItem>
-                              <SelectItem value="date">تاريخ</SelectItem>
-                              <SelectItem value="number">رقم</SelectItem>
-                              <SelectItem value="image">صورة</SelectItem>
-                              <SelectItem value="table">جدول</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-
-                        <div className="space-y-3">
-                          <Label>العرض في:</Label>
-                          <div className="space-y-2">
-                            <div className="flex items-center space-x-2">
-                              <Checkbox id="merchant-dashboard" />
-                              <Label htmlFor="merchant-dashboard" className="text-sm">لوحة تحكم التاجر</Label>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              <Checkbox id="storefront" />
-                              <Label htmlFor="storefront" className="text-sm">واجهة المنصة</Label>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="flex justify-end gap-2">
-                          <Button variant="outline">إلغاء</Button>
-                          <Button className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700">حفظ الحقل</Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  {/* Field Types Preview */}
-                  <Card className="shadow-lg">
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <Eye className="h-5 w-5 text-purple-600" />
-                        عرض أنواع الحقول
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {[
-                          { type: 'نص', description: 'نص عادي قصير', preview: 'تجربة' },
-                          { type: 'نص منسق', description: 'نص مع تنسيق متقدم', preview: 'تجربة' },
-                          { type: 'تاريخ', description: '2025/09/25', preview: 'تجربة' },
-                          { type: 'رقم', description: '12345', preview: 'تجربة' },
-                          { type: 'صورة', description: 'رفع صورة', preview: 'تجربة' },
-                          { type: 'جدول', description: 'بيانات منظمة', preview: 'تجربة' }
-                        ].map((field, index) => (
-                          <div key={index} className="border rounded-lg p-4 text-center">
-                            <h4 className="font-bold text-sm mb-2">{field.type}</h4>
-                            <p className="text-xs text-gray-600 mb-3">{field.description}</p>
-                            <div className="bg-gray-100 rounded p-2">
-                              <p className="text-xs text-gray-800">{field.preview}</p>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-              )}
 
               {activeSection === 'customers-reviews' && (
                 <div className="space-y-6">
@@ -9502,7 +9731,7 @@ const EnhancedMerchantDashboard: React.FC<{ currentMerchant?: any; onLogout?: ()
                 </div>
               )}
 
-              {activeSection === 'finance-wallet' && (
+              {activeSection === 'finance-wallet' && hasModuleAccess('finance-wallet') && (
                 <DigitalWalletView
                   storeData={null}
                   setStoreData={() => {}}
@@ -9523,7 +9752,7 @@ const EnhancedMerchantDashboard: React.FC<{ currentMerchant?: any; onLogout?: ()
                 />
               )}
 
-              {activeSection === 'settings-pages' && (
+              {activeSection === 'settings-pages' && hasModuleAccess('settings-pages') && (
                 <div className="space-y-6">
                   {/* Header with Modern Design */}
                   <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 rounded-2xl p-8 text-white shadow-2xl">
@@ -9856,7 +10085,7 @@ const EnhancedMerchantDashboard: React.FC<{ currentMerchant?: any; onLogout?: ()
                 </div>
               )}
 
-              {activeSection === 'settings-menu' && (
+              {activeSection === 'settings-menu' && hasModuleAccess('settings-menu') && (
                 <div className="space-y-6">
                   {/* Header with Modern Design */}
                   <div className="bg-gradient-to-r from-purple-600 via-pink-600 to-rose-600 rounded-2xl p-8 text-white shadow-2xl">
@@ -10189,1184 +10418,260 @@ const EnhancedMerchantDashboard: React.FC<{ currentMerchant?: any; onLogout?: ()
               )}
 
               {activeSection === 'settings-sliders' && (
-                <div className="space-y-6">
-                  {/* Header with Modern Design */}
-                  <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 rounded-2xl p-8 text-white shadow-2xl">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h2 className="text-3xl font-bold mb-2">🎠 إدارة السلايدرز</h2>
-                        <p className="text-blue-100 text-lg">إنشاء وتعديل السلايدرز التفاعلية لمتجرك الإلكتروني</p>
-                      </div>
-                      <div className="hidden md:block">
-                        <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center">
-                          <Image className="h-10 w-10 text-white" />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Statistics Cards */}
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                    <Card className="hover-lift border-l-4 border-l-blue-500 shadow-lg">
-                      <CardContent className="p-6">
-                        <div className="text-center">
-                          <p className="text-3xl font-bold text-blue-600 mb-1">3</p>
-                          <p className="text-sm text-gray-600">إجمالي السلايدرز</p>
-                          <p className="text-xs text-gray-500 mt-1">البنرات الرئيسية • المنتجات المميزة • العروض الخاصة</p>
-                        </div>
-                      </CardContent>
-                    </Card>
-
-                    <Card className="hover-lift border-l-4 border-l-green-500 shadow-lg">
-                      <CardContent className="p-6">
-                        <div className="text-center">
-                          <p className="text-3xl font-bold text-green-600 mb-1">3</p>
-                          <p className="text-sm text-gray-600">السلايدرز المفعلة</p>
-                          <p className="text-xs text-green-600 mt-1">✅ مفعلة بالكامل للتاجر مونير</p>
-                        </div>
-                      </CardContent>
-                    </Card>
-
-                    <Card className="hover-lift border-l-4 border-l-purple-500 shadow-lg">
-                      <CardContent className="p-6">
-                        <div className="text-center">
-                          <p className="text-3xl font-bold text-purple-600 mb-1">0</p>
-                          <p className="text-sm text-gray-600">مسودة</p>
-                          <p className="text-xs text-gray-500 mt-1">لا توجد مسودات حالياً</p>
-                        </div>
-                      </CardContent>
-                    </Card>
-
-                    <Card className="hover-lift border-l-4 border-l-orange-500 shadow-lg">
-                      <CardContent className="p-6">
-                        <div className="text-center">
-                          <p className="text-3xl font-bold text-orange-600 mb-1">15</p>
-                          <p className="text-sm text-gray-600">إجمالي الشرائح</p>
-                          <p className="text-xs text-orange-600 mt-1">🖼️ صور حقيقية من منتجات متجر نواعم</p>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </div>
-
-                  {/* Enhanced Filter and Search Bar */}
-                  <Card className="shadow-lg">
-                    <CardContent className="p-6">
-                      <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-                        <div className="flex gap-4 items-center flex-1">
-                          {/* Filter Box - الكل */}
-                          <div className="flex items-center gap-2">
-                            <Label className="text-sm font-medium text-gray-700">مربع الكل للفلترة:</Label>
-                            <Select value={slidersFilter} onValueChange={handleSlidersFilterChange}>
-                              <SelectTrigger className="w-40">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="all">الكل</SelectItem>
-                                <SelectItem value="active">المفعل فقط</SelectItem>
-                                <SelectItem value="inactive">غير المفعل فقط</SelectItem>
-                                <SelectItem value="draft">المسودات فقط</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-
-                          {/* Filter Dropdown - القيمة/الحالة */}
-                          <div className="flex items-center gap-2">
-                            <Select value={slidersStatusFilter} onValueChange={setSlidersStatusFilter}>
-                              <SelectTrigger className="w-48">
-                                <SelectValue placeholder="فلترة بالحالة" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="all">جميع الحالات</SelectItem>
-                                <SelectItem value="مفعل">مفعل</SelectItem>
-                                <SelectItem value="غير مفعل">غير مفعل</SelectItem>
-                                <SelectItem value="مسودة">مسودة</SelectItem>
-                              </SelectContent>
-                            </Select>
-
-                            {/* Status Filter Input */}
-                            <div className="flex items-center gap-2">
-                              <Input placeholder="البحث في السلايدرز..." className="w-48" />
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="flex gap-2">
-                          <div className="relative">
-                            <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                            <Input placeholder="البحث في السلايدرز..." className="pr-10 w-64" />
-                          </div>
-                          <Button variant="outline" size="sm" className="hover:bg-blue-50">
-                            <RefreshCw className="h-4 w-4 mr-2" />
-                            تحديث
-                          </Button>
-                          <Button variant="outline" size="sm" className="hover:bg-green-50">
-                            <ArrowLeftRight className="h-4 w-4 mr-2" />
-                            فرز
-                          </Button>
-                          <Button
-                            className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white"
-                            onClick={handleCreateSlider}
-                          >
-                            <Plus className="h-4 w-4 mr-2" />
-                            إضافة سلايدر جديد
-                          </Button>
-                        </div>
-                      </div>
+                merchantStoreSlug ? (
+                  <SimplifiedSliderManager
+                    currentMerchant={currentMerchant}
+                    storeSlug={merchantStoreSlug}
+                  />
+                ) : (
+                  <Card className="border-2 border-red-300 bg-red-50">
+                    <CardContent className="py-12 text-center">
+                      <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+                      <h3 className="text-xl font-semibold text-red-900 mb-2">لم يتم تحديد المتجر</h3>
+                      <p className="text-red-700 mb-4">لا يمكن الوصول إلى بيانات متجرك. يرجى التأكد من تسجيل الدخول بشكل صحيح</p>
+                      <Button onClick={() => window.location.reload()} className="bg-red-600 hover:bg-red-700">
+                        إعادة تحميل الصفحة
+                      </Button>
                     </CardContent>
                   </Card>
-
-                  {/* Slider Modal */}
-                  {sliderModalOpen && (
-                    <div className="fixed inset-0 bg-black/60 dark:bg-black/80 flex items-center justify-center z-[9999]">
-                      <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 w-full max-w-2xl mx-4 shadow-2xl border border-slate-200 dark:border-slate-700">
-                        <div className="flex items-center justify-between mb-6">
-                          <h3 className="text-xl font-bold text-gray-900 dark:text-white">
-                            {currentSlider ? 'تعديل السلايدر' : 'إضافة سلايدر جديد'}
-                          </h3>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              setSliderModalOpen(false);
-                              setCurrentSlider(null);
-                            }}
-                            className="hover:bg-gray-100"
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </div>
-
-                        <div className="space-y-6">
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div>
-                              <Label htmlFor="slider-title">العنوان *</Label>
-                              <Input
-                                id="slider-title"
-                                placeholder="أدخل عنوان السلايدر"
-                                value={sliderForm.title}
-                                onChange={(e) => setSliderForm({...sliderForm, title: e.target.value})}
-                                className="mt-1"
-                              />
-                            </div>
-
-                            <div>
-                              <Label htmlFor="slider-link">الرابط</Label>
-                              <Input
-                                id="slider-link"
-                                placeholder="أدخل الرابط"
-                                value={sliderForm.link}
-                                onChange={(e) => setSliderForm({...sliderForm, link: e.target.value})}
-                                className="mt-1"
-                              />
-                            </div>
-                          </div>
-
-                          <div>
-                            <Label htmlFor="slider-description">الوصف</Label>
-                            <Textarea
-                              id="slider-description"
-                              placeholder="وصف مفصل للسلايدر"
-                              value={sliderForm.description}
-                              onChange={(e) => setSliderForm({...sliderForm, description: e.target.value})}
-                              className="mt-1"
-                              rows={3}
-                            />
-                          </div>
-
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div>
-                              <Label htmlFor="slider-order">الترتيب</Label>
-                              <Input
-                                id="slider-order"
-                                type="number"
-                                placeholder="0"
-                                value={sliderForm.order}
-                                onChange={(e) => setSliderForm({...sliderForm, order: Number(e.target.value)})}
-                                className="mt-1"
-                              />
-                            </div>
-
-                            <div>
-                              <Label>الحالة</Label>
-                              <Select value={sliderForm.status} onValueChange={(value) => setSliderForm({...sliderForm, status: value})}>
-                                <SelectTrigger className="mt-1">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="active">مفعل</SelectItem>
-                                  <SelectItem value="inactive">غير مفعل</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
-                          </div>
-
-                          <div>
-                            <Label>معاينة الصور (5 شرائح)</Label>
-                            <div className="grid grid-cols-5 gap-2 mt-2">
-                              {sliderForm.image ? (
-                                Array.from({length: 5}, (_, i) => (
-                                  <div key={i} className="aspect-square bg-gray-100 rounded-lg flex items-center justify-center">
-                                    <img
-                                      src={sliderForm.image}
-                                      alt={`شريحة ${i + 1}`}
-                                      className="w-full h-full object-cover rounded-lg"
-                                    />
-                                  </div>
-                                ))
-                              ) : (
-                                Array.from({length: 5}, (_, i) => (
-                                  <div key={i} className="aspect-square bg-gray-100 rounded-lg flex items-center justify-center border-2 border-dashed border-gray-300">
-                                    <span className="text-gray-400 text-sm">{i + 1}</span>
-                                  </div>
-                                ))
-                              )}
-                            </div>
-                            <p className="text-xs text-gray-500 mt-1">سيتم استخدام صور منتجات متجر نواعم الحقيقية</p>
-                          </div>
-
-                          <div className="flex gap-3 pt-4">
-                            <Button
-                              onClick={handleSaveSlider}
-                              className="flex-1 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600"
-                            >
-                              <Save className="h-4 w-4 mr-2" />
-                              {currentSlider ? 'تحديث السلايدر' : 'إنشاء السلايدر'}
-                            </Button>
-                            <Button
-                              variant="outline"
-                              onClick={() => {
-                                setSliderModalOpen(false);
-                                setCurrentSlider(null);
-                              }}
-                              className="transition-all duration-200 hover:bg-gray-50"
-                            >
-                              إلغاء
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Create New Slider Modal */}
-                  {categoryModalOpen && (
-                    <Card className="shadow-lg">
-                      <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                          <Plus className="h-5 w-5 text-blue-600" />
-                          إضافة سلايدر جديد
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent className="space-y-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          <div>
-                            <Label htmlFor="slider-title">العنوان</Label>
-                            <Input
-                              id="slider-title"
-                              placeholder="أدخل عنوان السلايدر"
-                              className="mt-1 text-right"
-                            />
-                          </div>
-
-                          <div>
-                            <Label htmlFor="slider-link">الرابط</Label>
-                            <Input
-                              id="slider-link"
-                              placeholder="أدخل الرابط للمتجر"
-                              className="mt-1 text-right"
-                            />
-                          </div>
-
-                          <div className="md:col-span-2">
-                            <Label htmlFor="slider-desc">الوصف</Label>
-                            <Textarea
-                              id="slider-desc"
-                              placeholder="وصف مفصل للسلايدر"
-                              className="mt-1 text-right"
-                              rows={3}
-                            />
-                          </div>
-
-                          <div>
-                            <Label htmlFor="slider-order">الترتيب</Label>
-                            <Input
-                              id="slider-order"
-                              type="number"
-                              placeholder="0"
-                              className="mt-1 text-right"
-                            />
-                            <p className="text-xs text-gray-500 mt-1">يتم تحديد قيمة لتغيير التسلسل الافتراضي</p>
-                          </div>
-
-                          <div className="md:col-span-2">
-                            <Label htmlFor="slider-image">صورة السلايدر</Label>
-                            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 transition-colors">
-                              <Image className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                              <p className="text-sm text-gray-600 mb-2">إختيار صور</p>
-                              <p className="text-xs text-gray-500 mb-4">رفع صورة من المرفقات</p>
-                              <p className="text-xs text-gray-500 mb-4">JPG, JPEG, PNG, WEBP, PDF</p>
-                              <input
-                                type="file"
-                                id="slider-image"
-                                accept="image/*,.pdf"
-                                className="hidden"
-                                aria-label="تحميل صورة السلايدر"
-                                onChange={(e) => {
-                                  const file = e.target.files?.[0];
-                                  if (file) {
-                                    console.log('Slider image selected:', file.name);
-                                  }
-                                }}
-                              />
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => document.getElementById('slider-image')?.click()}
-                              >
-                                <Upload className="h-4 w-4 mr-2" />
-                                إختيار صورة
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="flex gap-4 pt-4">
-                          <Button className="bg-green-600 hover:bg-green-700 flex-1">حفظ</Button>
-                          <Button variant="outline" className="flex-1">إلغاء</Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  )}
-
-                  {/* Sliders Table */}
-                  <Card className="shadow-lg">
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <Image className="h-5 w-5 text-blue-600" />
-                        قائمة السلايدرز
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="overflow-x-auto">
-                        <table className="w-full text-sm text-right">
-                          <thead className="bg-gray-50">
-                            <tr>
-                              <th className="p-3 text-right font-medium">الإسم</th>
-                              <th className="p-3 text-right font-medium">الحالة</th>
-                              <th className="p-3 text-right font-medium">التاريخ</th>
-                              <th className="p-3 text-right font-medium">المشاهدات</th>
-                              <th className="p-3 text-right font-medium">النقرات</th>
-                              <th className="p-3 text-right font-medium">الخيارات</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {getFilteredSliders().map((slider, index) => (
-                              <tr key={index} className="border-b hover:bg-gray-50">
-                                <td className="p-3">
-                                  <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 bg-gradient-to-br from-pink-100 to-purple-100 rounded-lg flex items-center justify-center">
-                                      <Image className="h-5 w-5 text-pink-600" />
-                                    </div>
-                                    <div>
-                                      <p className="font-medium text-gray-900 dark:text-white">{slider.name}</p>
-                                      <p className="text-xs text-gray-600">{slider.slides} شرائح • متجر {slider.store}</p>
-                                      <p className="text-xs text-blue-600">{slider.description}</p>
-                                    </div>
-                                  </div>
-                                </td>
-                                <td className="p-3">
-                                  <Badge className="bg-green-100 text-green-800 hover:bg-green-200 cursor-pointer">
-                                    ✅ {slider.status}
-                                  </Badge>
-                                </td>
-                                <td className="p-3 text-gray-900 dark:text-white">
-                                  <div className="flex items-center gap-2">
-                                    <Eye className="h-4 w-4 text-gray-400" />
-                                    <span className="font-medium">{slider.views?.toLocaleString()}</span>
-                                  </div>
-                                </td>
-                                <td className="p-3 text-gray-900 dark:text-white">
-                                  <div className="flex items-center gap-2">
-                                    <span className="font-medium">{slider.clicks}</span>
-                                  </div>
-                                </td>
-                                <td className="p-3">
-                                  <div className="flex gap-1">
-                                    <Button
-                                      size="sm"
-                                      className="bg-blue-600 hover:bg-blue-700 text-white"
-                                      title="تعديل"
-                                      onClick={() => handleEditSlider(slider)}
-                                    >
-                                      <Edit className="h-4 w-4" />
-                                    </Button>
-                                    <Button
-                                      size="sm"
-                                      className="bg-red-600 hover:bg-red-700 text-white"
-                                      title="حذف"
-                                      onClick={() => handleDeleteSlider(slider.id)}
-                                    >
-                                      <Trash2 className="h-4 w-4" />
-                                    </Button>
-                                    <Button
-                                      size="sm"
-                                      className="bg-green-600 hover:bg-green-700 text-white"
-                                      title="مشاهدة"
-                                    >
-                                      <Eye className="h-4 w-4" />
-                                    </Button>
-                                    <Button
-                                      size="sm"
-                                      className="bg-purple-600 hover:bg-purple-700 text-white"
-                                      title="حفظ"
-                                      onClick={handleSaveSlider}
-                                    >
-                                      <Save className="h-4 w-4" />
-                                    </Button>
-                                  </div>
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-
-                      <div className="flex justify-center items-center gap-2 mt-6">
-                        <span className="text-sm text-gray-600">عرض من خلال 1 الى 3 في 3 سجلات</span>
-                        {slidersFilter !== 'all' && (
-                          <div className="flex items-center gap-2 bg-pink-50 px-3 py-1 rounded-full">
-                            <span className="text-xs text-pink-700">الفلتر النشط:</span>
-                            <Badge className="bg-pink-100 text-pink-800 text-xs">
-                              {slidersFilter === 'active' ? 'المفعل فقط' :
-                               slidersFilter === 'inactive' ? 'غير المفعل فقط' :
-                               slidersFilter === 'draft' ? 'المسودات فقط' : slidersFilter}
-                            </Badge>
-                          </div>
-                        )}
-                        {slidersStatusFilter !== 'all' && (
-                          <div className="flex items-center gap-2 bg-green-50 px-3 py-1 rounded-full">
-                            <span className="text-xs text-green-700">حالة:</span>
-                            <Badge className="bg-green-100 text-green-800 text-xs">
-                              {slidersStatusFilter}
-                            </Badge>
-                          </div>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  {/* Enhanced Slider Preview */}
-                  <Card className="shadow-2xl bg-gradient-to-br from-pink-50 via-purple-50 to-indigo-50 border-2 border-pink-200">
-                    <CardHeader className="bg-gradient-to-r from-pink-500 to-purple-600 text-white">
-                      <CardTitle className="flex items-center gap-2 text-white">
-                        <Eye className="h-5 w-5" />
-                        معاينة السلايدرز - متجر نواعم 👗✨
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="bg-white rounded-lg p-8 border-2 border-pink-200">
-                        {/* Main Slider Display */}
-                        <div className="relative overflow-hidden rounded-lg mb-4" style={{ height: '400px' }}>
-                          <div
-                            className="flex transition-transform duration-500 ease-in-out h-full"
-                            id="slider-container"
-                            style={{
-                              transform: 'translateX(0%)',
-                              width: '500%' // 5 slides * 100% each
-                            }}
-                          >
-                            {/* Slide 1 - البنرات الرئيسية */}
-                            <div className="w-1/5 flex-shrink-0 bg-gradient-to-br from-pink-100 to-rose-100 flex items-center justify-center relative">
-                              <div className="text-center p-4">
-                                <div className="w-full h-40 bg-gradient-to-br from-pink-200 to-rose-200 rounded-2xl mx-auto mb-3 flex items-center justify-center shadow-lg overflow-hidden">
-                                  <img
-                                    src="/PictureMerchantPortal/1.png"
-                                    alt="البنرات الرئيسية - متجر نواعم"
-                                    className="w-full h-full object-cover"
-                                    onError={(e) => {
-                                      (e.target as HTMLImageElement).style.display = 'none';
-                                      (e.target as HTMLImageElement).parentElement!.innerHTML = '<span class="text-4xl">👗</span>';
-                                    }}
-                                  />
-                                </div>
-                                <h4 className="text-lg font-bold text-gray-800 mb-2">البنرات الرئيسية</h4>
-                                <p className="text-gray-700 text-sm mb-2">منتجات مميزة من متجر نواعم</p>
-                                <div className="bg-white/80 rounded-lg p-2 inline-block">
-                                  <p className="text-xs text-gray-600">✨ تشكيلة 2025 الجديدة</p>
-                                  <p className="text-xs text-pink-600 font-bold">خصم 20% على جميع المنتجات</p>
-                                </div>
-                              </div>
-                              <div className="absolute top-2 right-2 bg-green-500 text-white px-2 py-1 rounded-full text-xs font-bold">
-                                مفعل
-                              </div>
-                            </div>
-
-                            {/* Slide 2 - سلايدر المنتجات المميزة */}
-                            <div className="w-1/5 flex-shrink-0 bg-gradient-to-br from-blue-100 to-cyan-100 flex items-center justify-center relative">
-                              <div className="text-center p-4">
-                                <div className="w-full h-40 bg-gradient-to-br from-blue-200 to-cyan-200 rounded-2xl mx-auto mb-3 flex items-center justify-center shadow-lg overflow-hidden">
-                                  <img
-                                    src="/PictureMerchantPortal/2.png"
-                                    alt="سلايدر المنتجات المميزة - متجر نواعم"
-                                    className="w-full h-full object-cover"
-                                    onError={(e) => {
-                                      (e.target as HTMLImageElement).style.display = 'none';
-                                      (e.target as HTMLImageElement).parentElement!.innerHTML = '<span class="text-4xl">🛍️</span>';
-                                    }}
-                                  />
-                                </div>
-                                <h4 className="text-lg font-bold text-gray-800 mb-2">سلايدر المنتجات المميزة</h4>
-                                <p className="text-gray-700 text-sm mb-2">أحدث المنتجات في متجر نواعم</p>
-                                <div className="bg-white/80 rounded-lg p-2 inline-block">
-                                  <p className="text-xs text-gray-600">⭐ المنتجات الأكثر مبيعاً</p>
-                                  <p className="text-xs text-blue-600 font-bold">جودة عالية وأسعار مميزة</p>
-                                </div>
-                              </div>
-                              <div className="absolute top-2 right-2 bg-green-500 text-white px-2 py-1 rounded-full text-xs font-bold">
-                                مفعل
-                              </div>
-                            </div>
-
-                            {/* Slide 3 - سلايدر العروض الخاصة */}
-                            <div className="w-1/5 flex-shrink-0 bg-gradient-to-br from-green-100 to-emerald-100 flex items-center justify-center relative">
-                              <div className="text-center p-4">
-                                <div className="w-full h-40 bg-gradient-to-br from-green-200 to-emerald-200 rounded-2xl mx-auto mb-3 flex items-center justify-center shadow-lg overflow-hidden">
-                                  <img
-                                    src="/PictureMerchantPortal/3.png"
-                                    alt="سلايدر العروض الخاصة - متجر نواعم"
-                                    className="w-full h-full object-cover"
-                                    onError={(e) => {
-                                      (e.target as HTMLImageElement).style.display = 'none';
-                                      (e.target as HTMLImageElement).parentElement!.innerHTML = '<span class="text-4xl">🎀</span>';
-                                    }}
-                                  />
-                                </div>
-                                <h4 className="text-lg font-bold text-gray-800 mb-2">سلايدر العروض الخاصة</h4>
-                                <p className="text-gray-700 text-sm mb-2">عروض وتخفيضات حصرية</p>
-                                <div className="bg-white/80 rounded-lg p-2 inline-block">
-                                  <p className="text-xs text-gray-600">💫 خصومات تصل إلى 50%</p>
-                                  <p className="text-xs text-green-600 font-bold">لفترة محدودة فقط</p>
-                                </div>
-                              </div>
-                              <div className="absolute top-2 right-2 bg-green-500 text-white px-2 py-1 rounded-full text-xs font-bold">
-                                مفعل
-                              </div>
-                            </div>
-
-                            {/* Slide 4 - إكسسوارات */}
-                            <div className="w-1/5 flex-shrink-0 bg-gradient-to-br from-yellow-100 to-orange-100 flex items-center justify-center relative">
-                              <div className="text-center p-4">
-                                <div className="w-full h-40 bg-gradient-to-br from-yellow-200 to-orange-200 rounded-2xl mx-auto mb-3 flex items-center justify-center shadow-lg overflow-hidden">
-                                  <img
-                                    src="/PictureMerchantPortal/4.png"
-                                    alt="إكسسوارات مميزة - متجر نواعم"
-                                    className="w-full h-full object-cover"
-                                    onError={(e) => {
-                                      (e.target as HTMLImageElement).style.display = 'none';
-                                      (e.target as HTMLImageElement).parentElement!.innerHTML = '<span class="text-4xl">💍</span>';
-                                    }}
-                                  />
-                                </div>
-                                <h4 className="text-lg font-bold text-gray-800 mb-2">إكسسوارات مميزة</h4>
-                                <p className="text-gray-700 text-sm mb-2">تشكيلة واسعة من الإكسسوارات</p>
-                                <div className="bg-white/80 rounded-lg p-2 inline-block">
-                                  <p className="text-xs text-gray-600">✨ تصاميم فريدة وعصرية</p>
-                                  <p className="text-xs text-orange-600 font-bold">أسعار تبدأ من 50 دينار</p>
-                                </div>
-                              </div>
-                              <div className="absolute top-2 right-2 bg-green-500 text-white px-2 py-1 rounded-full text-xs font-bold">
-                                مفعل
-                              </div>
-                            </div>
-
-                            {/* Slide 5 - مجوهرات */}
-                            <div className="w-1/5 flex-shrink-0 bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center relative">
-                              <div className="text-center p-4">
-                                <div className="w-full h-40 bg-gradient-to-br from-indigo-200 to-purple-200 rounded-2xl mx-auto mb-3 flex items-center justify-center shadow-lg overflow-hidden">
-                                  <img
-                                    src="/PictureMerchantPortal/5.png"
-                                    alt="مجوهرات فاخرة - متجر نواعم"
-                                    className="w-full h-full object-cover"
-                                    onError={(e) => {
-                                      (e.target as HTMLImageElement).style.display = 'none';
-                                      (e.target as HTMLImageElement).parentElement!.innerHTML = '<span class="text-4xl">💎</span>';
-                                    }}
-                                  />
-                                </div>
-                                <h4 className="text-lg font-bold text-gray-800 mb-2">مجوهرات فاخرة</h4>
-                                <p className="text-gray-700 text-sm mb-2">تشكيلة راقية من المجوهرات</p>
-                                <div className="bg-white/80 rounded-lg p-2 inline-block">
-                                  <p className="text-xs text-gray-600">👑 تصاميم فريدة وحصرية</p>
-                                  <p className="text-xs text-purple-600 font-bold">ضمان جودة وأصالة</p>
-                                </div>
-                              </div>
-                              <div className="absolute top-2 right-2 bg-green-500 text-white px-2 py-1 rounded-full text-xs font-bold">
-                                مفعل
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Navigation Dots */}
-                          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2">
-                            {[0, 1, 2, 3, 4].map((dot) => (
-                              <button
-                                key={dot}
-                                className={`w-3 h-3 rounded-full transition-colors ${dot === 0 ? 'bg-pink-500' : 'bg-gray-300 hover:bg-gray-400'}`}
-                                aria-label={`الانتقال إلى الشريحة ${dot + 1}`}
-                                onClick={() => {
-                                  const container = document.getElementById('slider-container');
-                                  if (container) {
-                                    container.style.transform = `translateX(-${dot * 20}%)`;
-                                  }
-                                }}
-                              />
-                            ))}
-                          </div>
-
-                          {/* Navigation Arrows */}
-                          <button
-                            className="absolute left-4 top-1/2 transform -translate-y-1/2 w-12 h-12 bg-white/90 rounded-full flex items-center justify-center hover:bg-white transition-all shadow-lg hover:shadow-xl"
-                            aria-label="السابق"
-                            onClick={() => {
-                              const container = document.getElementById('slider-container');
-                              if (container) {
-                                const currentTransform = container.style.transform || 'translateX(0%)';
-                                const currentValue = parseInt(currentTransform.replace('translateX(-', '').replace('%)', ''));
-                                const newValue = Math.max(0, currentValue - 20);
-                                container.style.transform = `translateX(-${newValue}%)`;
-                              }
-                            }}
-                          >
-                            <svg className="w-6 h-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                            </svg>
-                          </button>
-                          <button
-                            aria-label="التالي"
-                            className="absolute right-4 top-1/2 transform -translate-y-1/2 w-12 h-12 bg-white/90 rounded-full flex items-center justify-center hover:bg-white transition-all shadow-lg hover:shadow-xl"
-                            onClick={() => {
-                              const container = document.getElementById('slider-container');
-                              if (container) {
-                                const currentTransform = container.style.transform || 'translateX(0%)';
-                                const currentValue = parseInt(currentTransform.replace('translateX(-', '').replace('%)', ''));
-                                const newValue = Math.min(80, currentValue + 20); // Max 80% (4 slides * 20%)
-                                container.style.transform = `translateX(-${newValue}%)`;
-                              }
-                            }}
-                          >
-                            <svg className="w-6 h-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                            </svg>
-                          </button>
-                        </div>
-
-                        <div className="text-center mb-6">
-                           <div className="flex items-center justify-center gap-4 mb-4 flex-wrap">
-                             <Badge className="bg-gradient-to-r from-green-500 to-green-600 text-white px-4 py-2 shadow-lg">
-                               ✅ جميع السلايدرز مفعلة بالكامل
-                             </Badge>
-                             <Badge className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 py-2 shadow-lg">
-                               🏪 متجر نواعم - 5 شرائح
-                             </Badge>
-                             <Badge className="bg-gradient-to-r from-purple-500 to-purple-600 text-white px-4 py-2 shadow-lg">
-                               👨‍💼 التاجر مونير
-                             </Badge>
-                           </div>
-                           <p className="text-sm text-gray-600">يمكنك تعديل أي شريحة أو إضافة شرائح جديدة من خلال الأزرار أدناه</p>
-                           <div className="mt-4 flex items-center justify-center gap-2">
-                             <div className="w-2 h-2 bg-pink-500 rounded-full animate-pulse"></div>
-                             <span className="text-xs text-gray-500">جميع الصور من منتجات حقيقية في متجر نواعم</span>
-                           </div>
-
-                           {/* Slider Statistics */}
-                           <div className="mt-6 grid grid-cols-3 gap-4 max-w-md mx-auto">
-                             <div className="bg-white/50 rounded-lg p-3 text-center">
-                               <p className="text-lg font-bold text-gray-800">{getFilteredSliders().reduce((sum, slider) => sum + (slider.views || 0), 0).toLocaleString()}</p>
-                               <p className="text-xs text-gray-600">إجمالي المشاهدات</p>
-                             </div>
-                             <div className="bg-white/50 rounded-lg p-3 text-center">
-                               <p className="text-lg font-bold text-gray-800">{getFilteredSliders().reduce((sum, slider) => sum + (slider.clicks || 0), 0)}</p>
-                               <p className="text-xs text-gray-600">إجمالي النقرات</p>
-                             </div>
-                             <div className="bg-white/50 rounded-lg p-3 text-center">
-                               <p className="text-lg font-bold text-gray-800">{getFilteredSliders().length}</p>
-                               <p className="text-xs text-gray-600">السلايدرز النشطة</p>
-                             </div>
-                           </div>
-                         </div>
-                         </div>
-
-                        <div>{/* Slider Management Options */}
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                          <Button className="bg-pink-600 hover:bg-pink-700 text-white flex flex-col items-center gap-2 h-auto py-3">
-                            <Plus className="h-5 w-5" />
-                            <span className="font-bold">إضافة شريحة جديدة</span>
-                          </Button>
-                          <Button className="bg-blue-600 hover:bg-blue-700 text-white flex flex-col items-center gap-2 h-auto py-3">
-                            <Edit className="h-5 w-5" />
-                            <span className="font-bold">تعديل الشرائح الحالية</span>
-                          </Button>
-                          <Button className="bg-red-600 hover:bg-red-700 text-white flex flex-col items-center gap-2 h-auto py-3">
-                            <Trash2 className="h-5 w-5" />
-                            <span className="font-bold">حذف شريحة</span>
-                          </Button>
-                          <Button className="bg-green-600 hover:bg-green-700 text-white flex flex-col items-center gap-2 h-auto py-3">
-                            <Upload className="h-5 w-5" />
-                            <span className="font-bold">رفع صور جديدة</span>
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
+                )
               )}
 
               {activeSection === 'settings-ads' && (
                 <div className="space-y-6">
-                  {/* Header with Modern Design */}
-                  <div className="bg-gradient-to-br from-green-600 via-blue-600 to-purple-600 rounded-2xl p-8 text-white shadow-2xl relative overflow-hidden">
-                    <div className="absolute inset-0 bg-black/10"></div>
-                    <div className="relative z-10 flex items-center justify-between">
-                      <div>
-                        <h2 className="text-3xl font-bold mb-2">📢 إدارة الإعلانات</h2>
-                        <p className="text-green-100 text-lg">إنشاء وتعديل الإعلانات التفاعلية لمتجرك الإلكتروني</p>
-                        <div className="flex items-center gap-4 mt-4">
-                          <Badge className="bg-white/20 text-white px-3 py-1">🏪 التاجر مونير</Badge>
-                          <Badge className="bg-white/20 text-white px-3 py-1">📊 236 زيارة</Badge>
-                          <Badge className="bg-white/20 text-white px-3 py-1">✅ 5 إعلانات مفعلة</Badge>
+                  {!merchantStoreSlug ? (
+                    <Card className="border-2 border-red-300 bg-red-50">
+                      <CardContent className="py-12 text-center">
+                        <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+                        <h3 className="text-xl font-semibold text-red-900 mb-2">لم يتم تحديد المتجر</h3>
+                        <p className="text-red-700 mb-4">لا يمكن الوصول إلى بيانات متجرك. يرجى التأكد من تسجيل الدخول بشكل صحيح</p>
+                        <Button onClick={() => window.location.reload()} className="bg-red-600 hover:bg-red-700">
+                          إعادة تحميل الصفحة
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  ) : (
+                    <>
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <h2 className="text-2xl font-bold">إدارة الإعلانات</h2>
+                          <p className="text-gray-600">أنشئ وأدر إعلانات متجرك بسهولة</p>
                         </div>
+                        <Button onClick={handleStartAd} className="bg-green-600 hover:bg-green-700">
+                          <Plus className="h-4 w-4 ml-2" />
+                          إعلان جديد
+                        </Button>
                       </div>
-                      <div className="hidden md:block">
-                        <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
-                          <Megaphone className="h-10 w-10 text-white" />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
 
-                  {/* Statistics Cards */}
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                    <Card className="hover-lift border-l-4 border-l-green-500 shadow-lg">
-                      <CardContent className="p-6">
-                        <div className="text-center">
-                          <p className="text-3xl font-bold text-green-600 mb-1">6</p>
-                          <p className="text-sm text-gray-600">إجمالي الإعلانات</p>
-                          <p className="text-xs text-green-600 mt-1">🏪 للتاجر مونير - متجر نواعم</p>
-                        </div>
-                      </CardContent>
-                    </Card>
-
-                    <Card className="hover-lift border-l-4 border-l-blue-500 shadow-lg">
-                      <CardContent className="p-6">
-                        <div className="text-center">
-                          <p className="text-3xl font-bold text-blue-600 mb-1">5</p>
-                          <p className="text-sm text-gray-600">الإعلانات المفعلة</p>
-                          <p className="text-xs text-blue-600 mt-1">✅ مفعلة بالكامل</p>
-                        </div>
-                      </CardContent>
-                    </Card>
-
-                    <Card className="hover-lift border-l-4 border-l-purple-500 shadow-lg">
-                      <CardContent className="p-6">
-                        <div className="text-center">
-                          <p className="text-3xl font-bold text-purple-600 mb-1">1</p>
-                          <p className="text-sm text-gray-600">مسودة</p>
-                          <p className="text-xs text-purple-600 mt-1">قيد المراجعة</p>
-                        </div>
-                      </CardContent>
-                    </Card>
-
-                    <Card className="hover-lift border-l-4 border-l-orange-500 shadow-lg">
-                      <CardContent className="p-6">
-                        <div className="text-center">
-                          <p className="text-3xl font-bold text-orange-600 mb-1">236</p>
-                          <p className="text-sm text-gray-600">إجمالي الزيارات</p>
-                          <p className="text-xs text-orange-600 mt-1">👀 معدل تفاعل عالي</p>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </div>
-
-                  {/* Enhanced Filter and Search Bar */}
-                  <Card className="shadow-lg">
-                    <CardContent className="p-6">
-                      <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-                        <div className="flex gap-4 items-center flex-1">
-                          {/* Filter Box - الكل */}
-                          <div className="flex items-center gap-2">
-                            <Label className="text-sm font-medium text-gray-700">مربع الكل للفلترة:</Label>
-                            <Select value={adsFilter} onValueChange={handleAdsFilterChange}>
-                              <SelectTrigger className="w-40">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="all">الكل</SelectItem>
-                                <SelectItem value="active">المفعل فقط</SelectItem>
-                                <SelectItem value="inactive">غير المفعل فقط</SelectItem>
-                                <SelectItem value="draft">المسودات فقط</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-
-                          {/* Filter Dropdown - القيمة/الحالة */}
-                          <div className="flex items-center gap-2">
-                            <Select value={adsStatusFilter} onValueChange={setAdsStatusFilter}>
-                              <SelectTrigger className="w-48">
-                                <SelectValue placeholder="فلترة بالحالة" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="all">جميع الحالات</SelectItem>
-                                <SelectItem value="مفعل">مفعل</SelectItem>
-                                <SelectItem value="غير مفعل">غير مفعل</SelectItem>
-                                <SelectItem value="مسودة">مسودة</SelectItem>
-                              </SelectContent>
-                            </Select>
-
-                            {/* Status Filter Input */}
-                            <div className="flex items-center gap-2">
-                              <Input placeholder="البحث في الإعلانات..." className="w-48" />
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="flex gap-2">
-                          <div className="relative">
-                            <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                            <Input placeholder="البحث في الإعلانات..." className="pr-10 w-64" />
-                          </div>
-                          <Button variant="outline" size="sm" className="hover:bg-blue-50">
-                            <RefreshCw className="h-4 w-4 mr-2" />
-                            تحديث
-                          </Button>
-                          <Button variant="outline" size="sm" className="hover:bg-green-50">
-                            <ArrowLeftRight className="h-4 w-4 mr-2" />
-                            فرز
-                          </Button>
-                          <Button
-                            className="bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white"
-                            onClick={handleCreateAd}
-                          >
-                            <Plus className="h-4 w-4 mr-2" />
-                            إضافة إعلان جديد
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  {/* Ad Modal */}
-                  {adModalOpen && (
-                    <div className="fixed inset-0 bg-black/60 dark:bg-black/80 flex items-center justify-center z-[9999]">
-                      <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 w-full max-w-2xl mx-4 shadow-2xl border border-slate-200 dark:border-slate-700">
-                        <div className="flex items-center justify-between mb-6">
-                          <h3 className="text-xl font-bold text-gray-900 dark:text-white">
-                            {currentAd ? 'تعديل الإعلان' : 'إضافة إعلان جديد'}
-                          </h3>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              setAdModalOpen(false);
-                              setCurrentAd(null);
-                            }}
-                            className="hover:bg-gray-100"
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </div>
-
-                        <div className="space-y-6">
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div>
-                              <Label htmlFor="ad-name">اسم الإعلان *</Label>
-                              <Input
-                                id="ad-name"
-                                placeholder="أدخل اسم الإعلان"
-                                value={adForm.name}
-                                onChange={(e) => setAdForm({...adForm, name: e.target.value})}
-                                className="mt-1"
-                              />
-                            </div>
-
-                            <div>
-                              <Label htmlFor="ad-link">الرابط</Label>
-                              <Input
-                                id="ad-link"
-                                placeholder="الرابط الخاص بالمتجر"
-                                value={adForm.link}
-                                onChange={(e) => setAdForm({...adForm, link: e.target.value})}
-                                className="mt-1"
-                              />
-                            </div>
-                          </div>
-
-                          <div>
-                            <Label htmlFor="ad-image">صورة الإعلان</Label>
-                            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-green-400 transition-colors">
-                              <Image className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                              <p className="text-sm text-gray-600 mb-2">رفع أو سحب الملف أو الصور</p>
-                              <p className="text-xs text-gray-500 mb-4">JPG, JPEG, PNG, WEBP, PDF</p>
-                              <input
-                                type="file"
-                                id="ad-image"
-                                accept="image/*,.pdf"
-                                className="hidden"
-                                aria-label="تحميل صورة الإعلان"
-                                onChange={(e) => {
-                                  const file = e.target.files?.[0];
-                                  if (file) {
-                                    console.log('Ad image selected:', file.name);
-                                    setAdForm({...adForm, image: URL.createObjectURL(file)});
-                                  }
-                                }}
-                              />
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => document.getElementById('ad-image')?.click()}
-                              >
-                                <Upload className="h-4 w-4 mr-2" />
-                                إختيار صورة
-                              </Button>
-                            </div>
-                            {adForm.image && (
-                              <div className="mt-2">
-                                <img
-                                  src={adForm.image}
-                                  alt="معاينة الإعلان"
-                                  className="w-full h-32 object-cover rounded-lg"
-                                />
-                              </div>
-                            )}
-                          </div>
-
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div>
-                              <Label htmlFor="ad-order">الترتيب</Label>
-                              <Input
-                                id="ad-order"
-                                type="number"
-                                placeholder="0"
-                                value={adForm.order}
-                                onChange={(e) => setAdForm({...adForm, order: Number(e.target.value)})}
-                                className="mt-1"
-                              />
-                              <p className="text-xs text-gray-500 mt-1">يتم تحديد الترتيب التسلسلي للتغيير الافتراضي</p>
-                            </div>
-
-                            <div>
-                              <Label>الحالة</Label>
-                              <Select value={adForm.status} onValueChange={(value) => setAdForm({...adForm, status: value})}>
-                                <SelectTrigger className="mt-1">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="active">مفعل</SelectItem>
-                                  <SelectItem value="inactive">غير مفعل</SelectItem>
-                                  <SelectItem value="draft">مسودة</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
-                          </div>
-
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div>
-                              <Label htmlFor="ad-location">الموقع</Label>
-                              <Select value={adForm.location} onValueChange={(value) => setAdForm({...adForm, location: value})}>
-                                <SelectTrigger className="mt-1">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="not-specified">غير محدد</SelectItem>
-                                  <SelectItem value="specified">محدد</SelectItem>
-                                  <SelectItem value="product-sidebar">الشريط الجانبي للمنتج</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
-
-                            <div>
-                              <Label htmlFor="ad-expiry-date">تاريخ انتهاء الإعلان</Label>
-                              <Input
-                                id="ad-expiry-date"
-                                type="date"
-                                value={adForm.expiryDate}
-                                onChange={(e) => setAdForm({...adForm, expiryDate: e.target.value})}
-                                className="mt-1"
-                              />
-                            </div>
-                          </div>
-
-                          <div className="flex gap-3 pt-4">
-                            <Button
-                              onClick={handleSaveAd}
-                              className="flex-1 bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600"
-                            >
-                              <Save className="h-4 w-4 mr-2" />
-                              {currentAd ? 'تحديث الإعلان' : 'إنشاء الإعلان'}
+                      {publishedAds.length === 0 ? (
+                        <Card className="border-dashed border-2">
+                          <CardContent className="py-12 text-center">
+                            <Megaphone className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                            <h3 className="text-xl font-semibold mb-2">لا توجد إعلانات منشورة</h3>
+                            <p className="text-gray-600 mb-6">ابدأ بإنشاء إعلانك الأول</p>
+                            <Button onClick={handleStartAd} className="bg-blue-600 hover:bg-blue-700">
+                              <Plus className="h-4 w-4 ml-2" />
+                              إنشاء إعلان
                             </Button>
-                            <Button
-                              variant="outline"
-                              onClick={() => {
-                                setAdModalOpen(false);
-                                setCurrentAd(null);
-                              }}
-                              className="transition-all duration-200 hover:bg-gray-50"
-                            >
-                              إلغاء
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Advertisements Table */}
-                  <Card className="shadow-lg">
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <Image className="h-5 w-5 text-green-600" />
-                        قائمة الإعلانات
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="overflow-x-auto">
-                        <table className="w-full text-sm text-right">
-                          <thead className="bg-gray-50">
-                            <tr>
-                              <th className="p-3 text-right font-medium">الصورة</th>
-                              <th className="p-3 text-right font-medium">الإسم</th>
-                              <th className="p-3 text-right font-medium">الزيارات</th>
-                              <th className="p-3 text-right font-medium">النقرات</th>
-                              <th className="p-3 text-right font-medium">معدل النقر</th>
-                              <th className="p-3 text-right font-medium">إنتهاء الصلاحية</th>
-                              <th className="p-3 text-right font-medium">الحالة</th>
-                              <th className="p-3 text-right font-medium">الخيارات</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {getFilteredAds().map((ad, index) => (
-                              <tr key={index} className="border-b hover:bg-gray-50">
-                                <td className="p-3">
-                                  <div className="w-16 h-12 bg-gradient-to-br from-green-100 to-blue-100 rounded-lg flex items-center justify-center">
-                                    <Image className="h-6 w-6 text-green-600" />
-                                  </div>
-                                </td>
-                                <td className="p-3">
-                                  <div>
-                                    <p className="font-medium text-gray-900 dark:text-white">{ad.name}</p>
-                                    <p className="text-xs text-gray-600">🏪 متجر نواعم • التاجر مونير</p>
-                                    <p className="text-xs text-blue-600">{ad.location}</p>
-                                  </div>
-                                </td>
-                                <td className="p-3">
-                                  <div className="flex items-center gap-2">
-                                    <Eye className="h-4 w-4 text-gray-400" />
-                                    <span className="font-medium text-gray-900 dark:text-white">{ad.views?.toLocaleString()}</span>
-                                  </div>
-                                </td>
-                                <td className="p-3 text-gray-900 dark:text-white">
-                                  <span className="font-medium">{ad.clicks}</span>
-                                </td>
-                                <td className="p-3">
-                                  <Badge className="bg-blue-100 text-blue-800 text-xs">
-                                    {ad.ctr}
-                                  </Badge>
-                                </td>
-                                <td className="p-3 text-gray-900 dark:text-white">{ad.expiryDate}</td>
-                                <td className="p-3">
-                                  <Badge className={
-                                    ad.status === 'مفعل' ? 'bg-green-100 text-green-800 hover:bg-green-200 cursor-pointer' :
-                                    ad.status === 'مسودة' ? 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200 cursor-pointer' :
-                                    'bg-gray-100 text-gray-800'
-                                  }>
-                                    {ad.status === 'مفعل' ? '✅ مفعل' : ad.status === 'مسودة' ? '📝 مسودة' : ad.status}
-                                  </Badge>
-                                </td>
-                                <td className="p-3">
-                                  <div className="flex gap-1">
+                          </CardContent>
+                        </Card>
+                      ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                          {publishedAds.map(ad => {
+                            const template = adTemplates.find(t => t.id === ad.templateId);
+                            return (
+                              <Card key={ad.id} className="overflow-hidden">
+                                <div className="aspect-video bg-gray-100 overflow-hidden">
+                                  <img src={template?.image} alt={ad.title} className="w-full h-full object-cover" />
+                                </div>
+                                <CardContent className="p-4">
+                                  <h3 className="font-semibold mb-2">{ad.title}</h3>
+                                  <p className="text-sm text-gray-600 mb-4 line-clamp-2">{ad.description}</p>
+                                  <div className="flex gap-2">
                                     <Button
+                                      variant="outline"
                                       size="sm"
-                                      className="bg-blue-600 hover:bg-blue-700 text-white"
-                                      onClick={() => handleEditAd(ad)}
-                                    >
-                                      <Edit className="h-4 w-4" />
-                                    </Button>
-                                    <Button
-                                      size="sm"
-                                      className="bg-green-600 hover:bg-green-700 text-white"
-                                    >
-                                      <Eye className="h-4 w-4" />
-                                    </Button>
-                                    <Button
-                                      size="sm"
-                                      className="bg-purple-600 hover:bg-purple-700 text-white"
-                                    >
-                                      <Copy className="h-4 w-4" />
-                                    </Button>
-                                    <Button
-                                      size="sm"
-                                      className="bg-red-600 hover:bg-red-700 text-white"
+                                      className="flex-1 text-red-600 hover:text-red-700"
                                       onClick={() => handleDeleteAd(ad.id)}
                                     >
-                                      <Trash2 className="h-4 w-4" />
+                                      <Trash2 className="h-4 w-4 ml-1" />
+                                      حذف
                                     </Button>
                                   </div>
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
+                                </CardContent>
+                              </Card>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </>
+                  )}
+
+                  {adStep === 'create-step1' && (
+                    <>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h2 className="text-2xl font-bold">الخطوة 1: اختيار القالب والنص</h2>
+                          <p className="text-gray-600">اختر قالباً وأضف نصوص إعلانك</p>
+                        </div>
+                        <Button variant="outline" onClick={() => setAdStep('list')}>
+                          <X className="h-4 w-4 ml-2" />
+                          إلغاء
+                        </Button>
                       </div>
 
-                      <div className="flex justify-center items-center gap-2 mt-6">
-                        <span className="text-sm text-gray-600">عرض من خلال 1 الى 6 في 6 سجلات</span>
-                        {adsFilter !== 'all' && (
-                          <div className="flex items-center gap-2 bg-green-50 px-3 py-1 rounded-full">
-                            <span className="text-xs text-green-700">الفلتر النشط:</span>
-                            <Badge className="bg-green-100 text-green-800 text-xs">
-                              {adsFilter === 'active' ? 'المفعل فقط' :
-                               adsFilter === 'inactive' ? 'غير المفعل فقط' :
-                               adsFilter === 'draft' ? 'المسودات فقط' : adsFilter}
-                            </Badge>
-                          </div>
-                        )}
-                        {adsStatusFilter !== 'all' && (
-                          <div className="flex items-center gap-2 bg-blue-50 px-3 py-1 rounded-full">
-                            <span className="text-xs text-blue-700">حالة:</span>
-                            <Badge className="bg-blue-100 text-blue-800 text-xs">
-                              {adsStatusFilter}
-                            </Badge>
-                          </div>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
+                      <div className="space-y-6">
+                        <Card>
+                          <CardHeader>
+                            <CardTitle>النصوص الإعلانية</CardTitle>
+                          </CardHeader>
+                          <CardContent className="space-y-4">
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                              <div>
+                                <label className="block font-semibold mb-2">عنوان الإعلان</label>
+                                <Input
+                                  value={adTitle}
+                                  onChange={(e) => setAdTitle(e.target.value.slice(0, 100))}
+                                  placeholder="أدخل عنوان جذاب..."
+                                  maxLength={100}
+                                />
+                                <p className="text-xs text-gray-500 mt-1">{adTitle.length} / 100</p>
+                              </div>
+                              <div>
+                                <label className="block font-semibold mb-2">نص الإعلان</label>
+                                <Textarea
+                                  value={adDescription}
+                                  onChange={(e) => setAdDescription(e.target.value.slice(0, 300))}
+                                  placeholder="اكتب نص الإعلان..."
+                                  rows={3}
+                                  maxLength={300}
+                                />
+                                <p className="text-xs text-gray-500 mt-1">{adDescription.length} / 300</p>
+                              </div>
+                            </div>
+                            <div className="flex gap-3 pt-4">
+                              <Button onClick={handleSaveAdDraft} className="flex-1 bg-green-600 hover:bg-green-700">
+                                <Check className="h-4 w-4 ml-2" />
+                                متابعة
+                              </Button>
+                              <Button variant="outline" onClick={() => setAdStep('list')} className="flex-1">
+                                إلغاء
+                              </Button>
+                            </div>
+                          </CardContent>
+                        </Card>
 
-                  {/* Enhanced Advertisement Performance */}
-                  <Card className="shadow-lg bg-gradient-to-r from-green-50 to-blue-50">
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <BarChart3 className="h-5 w-5 text-green-600" />
-                        أداء الإعلانات
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div className="text-center p-4 bg-white rounded-lg">
-                          <p className="text-2xl font-bold text-green-600 mb-1">342</p>
-                          <p className="text-sm text-gray-600">إجمالي الزيارات</p>
-                        </div>
-                        <div className="text-center p-4 bg-white rounded-lg">
-                          <p className="text-2xl font-bold text-blue-600 mb-1">5.2%</p>
-                          <p className="text-sm text-gray-600">معدل النقر</p>
-                        </div>
-                        <div className="text-center p-4 bg-white rounded-lg">
-                          <p className="text-2xl font-bold text-purple-600 mb-1">1,847 د.ل</p>
-                          <p className="text-sm text-gray-600">الإيرادات المحققة</p>
-                        </div>
+                        <Card>
+                          <CardHeader>
+                            <CardTitle>اختيار القالب</CardTitle>
+                            <p className="text-sm text-gray-600 mt-1">اختر أحد القوالب المتاحة أدناه</p>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="overflow-x-auto pb-2">
+                              <div className="flex gap-4 pb-2 min-w-max">
+                                {adTemplates.map(template => (
+                                  <button
+                                    key={template.id}
+                                    onClick={() => handleSelectTemplate(template.id)}
+                                    className={`flex-shrink-0 rounded-lg border-2 transition overflow-hidden ${
+                                      selectedAdTemplate === template.id
+                                        ? 'border-blue-500 ring-2 ring-blue-300'
+                                        : 'border-gray-200 hover:border-blue-300'
+                                    }`}
+                                  >
+                                    <div className="w-48 h-32 bg-gray-100">
+                                      <img src={template.image} alt={template.id} className="w-full h-full object-cover" />
+                                    </div>
+                                    <div className="p-2 bg-white">
+                                      <p className="text-xs font-semibold text-center">{template.id}</p>
+                                    </div>
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
                       </div>
-                    </CardContent>
-                  </Card>
+                    </>
+                  )}
+
+                  {adStep === 'create-step2' && (
+                    <>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h2 className="text-2xl font-bold">الخطوة 2: اختيار مكان الظهور</h2>
+                          <p className="text-gray-600">حدد أين سيظهر إعلانك في متجرك</p>
+                        </div>
+                        <Button variant="outline" onClick={() => setAdStep('create-step1')}>
+                          <ChevronLeft className="h-4 w-4 ml-2" />
+                          رجوع
+                        </Button>
+                      </div>
+
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <Card>
+                          <CardHeader>
+                            <CardTitle>ملخص الإعلان</CardTitle>
+                          </CardHeader>
+                          <CardContent className="space-y-4">
+                            <div className="p-4 bg-gray-50 rounded-lg">
+                              <img src={adTemplates.find(t => t.id === selectedAdTemplate)?.image} alt="preview" className="w-full h-32 object-cover rounded mb-4" />
+                            </div>
+                            <div>
+                              <p className="text-sm text-gray-600">العنوان</p>
+                              <p className="font-semibold">{adTitle}</p>
+                            </div>
+                            <div>
+                              <p className="text-sm text-gray-600">النص</p>
+                              <p className="text-sm text-gray-700">{adDescription}</p>
+                            </div>
+                          </CardContent>
+                        </Card>
+
+                        <Card>
+                          <CardHeader>
+                            <CardTitle>مكان الظهور</CardTitle>
+                          </CardHeader>
+                          <CardContent className="space-y-4">
+                            <div className="space-y-3">
+                              <button
+                                onClick={() => setAdPlacement('floating')}
+                                className={`w-full p-4 rounded-lg border-2 transition text-left ${
+                                  adPlacement === 'floating'
+                                    ? 'border-blue-500 bg-blue-50'
+                                    : 'border-gray-200 hover:border-gray-300'
+                                }`}
+                              >
+                                <p className="font-semibold">🎯 شريط عائم في الأعلى</p>
+                                <p className="text-sm text-gray-600">يظهر في أعلى الصفحة</p>
+                              </button>
+                              <button
+                                onClick={() => setAdPlacement('grid')}
+                                className={`w-full p-4 rounded-lg border-2 transition text-left ${
+                                  adPlacement === 'grid'
+                                    ? 'border-blue-500 bg-blue-50'
+                                    : 'border-gray-200 hover:border-gray-300'
+                                }`}
+                              >
+                                <p className="font-semibold">📦 بين المنتجات</p>
+                                <p className="text-sm text-gray-600">يظهر وسط قائمة المنتجات</p>
+                              </button>
+                            </div>
+
+                            <div className="pt-4 border-t space-y-3">
+                              <Button onClick={handlePublishAd} className="w-full bg-green-600 hover:bg-green-700">
+                                <Upload className="h-4 w-4 ml-2" />
+                                المزامنة والنشر
+                              </Button>
+                              <Button variant="outline" onClick={() => setAdStep('create-step1')} className="w-full">
+                                إلغاء
+                              </Button>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </div>
+                    </>
+                  )}
                 </div>
               )}
 
@@ -11769,7 +11074,7 @@ const EnhancedMerchantDashboard: React.FC<{ currentMerchant?: any; onLogout?: ()
                 </div>
               )}
 
-              {activeSection === 'settings-pages' && (
+              {activeSection === 'settings-pages' && hasModuleAccess('settings-pages') && (
                 <div className="space-y-6">
                   <h2 className="text-2xl font-bold text-gray-900 dark:text-white">الصفحات</h2>
                   <Card className="shadow-lg">
@@ -11784,7 +11089,7 @@ const EnhancedMerchantDashboard: React.FC<{ currentMerchant?: any; onLogout?: ()
                 </div>
               )}
 
-              {activeSection === 'settings-menu' && (
+              {activeSection === 'settings-menu' && hasModuleAccess('settings-menu') && (
                 <div className="space-y-6">
                   <h2 className="text-2xl font-bold text-gray-900 dark:text-white">القائمة</h2>
                   <Card className="shadow-lg">
@@ -12328,7 +11633,7 @@ const EnhancedMerchantDashboard: React.FC<{ currentMerchant?: any; onLogout?: ()
                 </div>
               )}
 
-              {activeSection === 'services-shipping-policies' && (
+              {activeSection === 'services-shipping-policies' && hasModuleAccess('logistics-awb') && (
                 <div className="space-y-6">
                   {/* Enhanced Header */}
                   <div className="bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 rounded-2xl p-8 text-white shadow-2xl">
@@ -15862,6 +15167,84 @@ const EnhancedMerchantDashboard: React.FC<{ currentMerchant?: any; onLogout?: ()
             </Button>
             <Button onClick={handleCreateTicket} className="bg-orange-600 hover:bg-orange-700">
               إنشاء التذكرة
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Discount Modal */}
+      <Dialog open={discountModalOpen} onOpenChange={setDiscountModalOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Tag className="h-5 w-5 text-orange-600" />
+              إدارة الخصومات - {selectedProductForDiscount?.name}
+            </DialogTitle>
+            <DialogDescription>
+              إضافة أو تعديل خصومات على المنتج مع تحديد الفترة الزمنية
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="discount-type">نوع الخصم</Label>
+              <Select defaultValue="season_end">
+                <SelectTrigger>
+                  <SelectValue placeholder="اختر نوع الخصم" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="season_end">نهاية الموسم</SelectItem>
+                  <SelectItem value="eid_al_fitr">عيد الفطر المبارك</SelectItem>
+                  <SelectItem value="summer">موسم الصيف</SelectItem>
+                  <SelectItem value="spring">موسم الربيع</SelectItem>
+                  <SelectItem value="new_year">بداية عام جديد</SelectItem>
+                  <SelectItem value="store_clearance">تصفية محل</SelectItem>
+                  <SelectItem value="custom">خصم مخصص</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="discount-percent">نسبة الخصم (%)</Label>
+              <Input
+                id="discount-percent"
+                type="number"
+                min="0"
+                max="100"
+                placeholder="مثال: 25"
+              />
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="discount-period">فترة الخصم (أيام)</Label>
+              <Select defaultValue="30">
+                <SelectTrigger>
+                  <SelectValue placeholder="اختر الفترة" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="7">أسبوع واحد</SelectItem>
+                  <SelectItem value="14">أسبوعين</SelectItem>
+                  <SelectItem value="30">شهر واحد</SelectItem>
+                  <SelectItem value="60">شهرين</SelectItem>
+                  <SelectItem value="90">3 أشهر</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="p-4 bg-blue-50 rounded-lg">
+              <h4 className="font-medium text-blue-800 mb-2">معاينة الخصم</h4>
+              <div className="text-sm text-blue-600">
+                <div>السعر الأصلي: {selectedProductForDiscount?.price || 0} د.ل</div>
+                <div>السعر بعد الخصم: {Math.round((selectedProductForDiscount?.price || 0) * 0.75)} د.ل</div>
+                <div>توفير: {Math.round((selectedProductForDiscount?.price || 0) * 0.25)} د.ل</div>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDiscountModalOpen(false)}>
+              إلغاء
+            </Button>
+            <Button className="bg-orange-600 hover:bg-orange-700">
+              تطبيق الخصم
             </Button>
           </DialogFooter>
         </DialogContent>

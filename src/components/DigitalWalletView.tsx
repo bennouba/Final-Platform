@@ -228,7 +228,7 @@ export const DigitalWalletView: React.FC<DigitalWalletViewProps> = ({
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
             >
-              <Card className="relative overflow-hidden bg-gradient-to-br from-blue-50 to-indigo-100 border-blue-200 hover:shadow-2xl transition-all duration-300 group transform hover:scale-105">
+              <Card className="relative overflow-hidden bg-gradient-to-br from-blue-50 to-indigo-100 border-blue-200 hover:shadow-2xl transition-shadow transition-transform duration-300 group transform hover:scale-105">
                 <div className="absolute top-0 left-0 w-32 h-32 bg-gradient-to-br from-blue-400/20 to-indigo-500/20 rounded-full -translate-y-16 -translate-x-16 group-hover:scale-125 transition-transform duration-300 animate-pulse"></div>
                 <CardContent className="p-6 relative">
                   <div className="flex items-center justify-between mb-4">
@@ -431,7 +431,7 @@ export const DigitalWalletView: React.FC<DigitalWalletViewProps> = ({
                               alt={method.name}
                               className="w-full h-full object-contain"
                               onError={(e) => {
-                                console.error('Failed to load image:', method.icon);
+
                                 e.currentTarget.style.display = 'none';
                                 e.currentTarget.parentElement!.innerHTML = '<span class="text-3xl">🏦</span>';
                               }}

@@ -35,6 +35,24 @@ const MerchantWelcomePopup: React.FC<MerchantWelcomePopupProps> = ({
   storeData,
   loginHistory
 }) => {
+  // Get business type display name
+  const getBusinessTypeDisplay = (businessType: string) => {
+    const businessTypes: Record<string, string> = {
+      'beauty': 'الجمال والعناية',
+      'fashion': 'الأزياء والملابس',
+      'electronics': 'الإلكترونيات والأجهزة',
+      'cleaning': 'مواد التنظيف',
+      'food': 'المواد الغذائية',
+      'sports': 'الرياضة واللياقة',
+      'home': 'المنزل والحديقة',
+      'books': 'الكتب والقرطاسية',
+      'automotive': 'السيارات والدراجات',
+      'jewelry': 'المجوهرات والإكسسوارات',
+      'toys': 'الألعاب والهوايات',
+      'health': 'الصحة والعلاج'
+    };
+    return businessTypes[businessType] || businessType;
+  };
   const [currentStep, setCurrentStep] = useState(0);
   const [showConfetti, setShowConfetti] = useState(false);
 
@@ -58,6 +76,11 @@ const MerchantWelcomePopup: React.FC<MerchantWelcomePopupProps> = ({
             <p className="text-xl text-gray-700 font-bold">
               تم إنشاء متجرك <span className="bg-gradient-to-r from-primary to-orange-500 bg-clip-text text-transparent text-2xl">{storeData.nameAr}</span> بنجاح! 🎊
             </p>
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-3 rounded-lg border border-blue-200">
+              <p className="text-sm text-gray-700">
+                🎯 <strong>نشاط متجرك:</strong> {getBusinessTypeDisplay(storeData.businessType || 'لم يتم تحديد النشاط')}
+              </p>
+            </div>
             <p className="text-gray-600 text-lg">
               الآن أنت جزء من أكبر منصة تجارة إلكترونية في ليبيا 🚀
             </p>

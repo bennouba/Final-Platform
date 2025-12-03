@@ -59,6 +59,9 @@ const InventoryNotificationsView: React.FC<InventoryNotificationsViewProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [activeFilter, setActiveFilter] = useState('all');
   const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [lowStockAlerts, setLowStockAlerts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const [settingsForm, setSettingsForm] = useState({
     delayTime: 60,
@@ -70,6 +73,33 @@ const InventoryNotificationsView: React.FC<InventoryNotificationsViewProps> = ({
     smsEnabled: false,
     emailEnabled: false,
   });
+
+  React.useEffect(() => {
+    fetchLowStockProducts();
+  }, [storeData]);
+
+  const fetchLowStockProducts = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const storeId = storeData?.slug || storeData?.id || storeData?.storeSlug;
+      if (!storeId) {
+        setError('معرف المتجر غير محدد');
+        return;
+      }
+
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+      const response = await fetch(`${apiUrl}/inventory/store/${storeId}/low-stock`);
+      if (response.ok) {
+        const result = await response.json();
+        setLowStockAlerts(result.data || []);
+      }
+    } catch (err) {
+      console.error('Error fetching low stock products:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const notifications: InventoryNotification[] = [
     {
@@ -161,17 +191,69 @@ const InventoryNotificationsView: React.FC<InventoryNotificationsViewProps> = ({
         </Button>
       </div>
 
+      {error && (
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {error}
+        </div>
+      )}
+
+      {/* Low Stock Alerts */}
+      {lowStockAlerts.length > 0 && (
+        <Card className="border-yellow-200 bg-yellow-50">
+          <CardHeader>
+            <CardTitle className="text-yellow-900 flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-yellow-600" />
+              تنبيهات المخزون المنخفض
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {lowStockAlerts.map((alert) => (
+                <div key={alert.id} className="border border-yellow-300 rounded-lg p-4 bg-white">
+                  <div className="flex items-start justify-between mb-2">
+                    <h4 className="font-semibold text-gray-900 truncate">{alert.name}</h4>
+                    <Badge className={alert.type === 'out_of_stock' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'}>
+                      {alert.type === 'out_of_stock' ? 'نفاد المخزون' : 'مخزون منخفض'}
+                    </Badge>
+                  </div>
+                  <p className="text-sm text-gray-600 mb-2">SKU: {alert.sku}</p>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600">الكمية الحالية:</span>
+                    <span className={`font-bold ${alert.quantity === 0 ? 'text-red-600' : 'text-yellow-600'}`}>
+                      {alert.quantity}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">عدد الإشعارات المسجلة</p>
-                <p className="text-3xl font-bold text-gray-900">120 شخص</p>
-                <p className="text-sm text-gray-600">خلال الشهر الجاري</p>
+                <p className="text-sm font-medium text-gray-600">المخزون المنخفض</p>
+                <p className="text-3xl font-bold text-yellow-600">{lowStockAlerts.length}</p>
+                <p className="text-sm text-gray-600">منتج يحتاج إعادة تخزين</p>
               </div>
-              <Users className="h-8 w-8 text-blue-600" />
+              <AlertCircle className="h-8 w-8 text-yellow-600" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">نفاد المخزون</p>
+                <p className="text-3xl font-bold text-red-600">{lowStockAlerts.filter(a => a.type === 'out_of_stock').length}</p>
+                <p className="text-sm text-gray-600">منتج غير متوفر</p>
+              </div>
+              <Package className="h-8 w-8 text-red-600" />
             </div>
           </CardContent>
         </Card>
@@ -192,22 +274,10 @@ const InventoryNotificationsView: React.FC<InventoryNotificationsViewProps> = ({
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">المبيعات</p>
-                <p className="text-3xl font-bold text-gray-900">0 د.ل</p>
-              </div>
-              <DollarSign className="h-8 w-8 text-purple-600" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
                 <p className="text-sm font-medium text-gray-600">معدل التحويل</p>
                 <p className="text-3xl font-bold text-gray-900">0%</p>
               </div>
-              <Package className="h-8 w-8 text-orange-600" />
+              <DollarSign className="h-8 w-8 text-purple-600" />
             </div>
           </CardContent>
         </Card>

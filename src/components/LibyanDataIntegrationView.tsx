@@ -108,14 +108,14 @@ const LibyanDataIntegrationView: React.FC<LibyanDataIntegrationViewProps> = ({ s
     };
 
     // In real app, this would save to the appropriate data file
-    console.log('Saving item:', modalType, newItem);
+
     setShowAddModal(false);
     onSave();
   };
 
   const handleDeleteItem = (itemId: string, type: 'city' | 'area' | 'bank') => {
     // In real app, this would delete from the appropriate data file
-    console.log('Deleting item:', type, itemId);
+
     onSave();
   };
 

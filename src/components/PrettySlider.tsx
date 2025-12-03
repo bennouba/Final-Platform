@@ -138,7 +138,7 @@ const PrettySlider: React.FC<PrettySliderProps> = ({
   };
 
   return (
-    <div className={`relative h-[600px] md:h-[800px] overflow-hidden bg-gradient-to-br ${storeColors.background}`}>
+    <div className={`relative h-[500px] md:h-[600px] overflow-hidden bg-gradient-to-br ${storeColors.background}`}>
       {/* خلفية متحركة لمتجر بريتي */}
       <div className="absolute inset-0">
         <div className={`absolute inset-0 bg-gradient-to-r ${storeColors.accent}/20 via-current/10 to-current/20`}></div>
@@ -197,7 +197,7 @@ const PrettySlider: React.FC<PrettySliderProps> = ({
             type="button"
             onClick={prevSlide}
             aria-label="الشريحة السابقة"
-            className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white/90 backdrop-blur-sm hover:bg-white p-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 border-2 border-rose-200 hover:border-rose-400 z-50"
+            className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white/90 backdrop-blur-sm hover:bg-white p-3 rounded-full shadow-lg hover:shadow-xl transition-colors duration-300 border-2 border-rose-200 hover:border-rose-400 z-50"
           >
             <ArrowLeft className="h-6 w-6 text-gray-700" />
           </button>
@@ -205,7 +205,7 @@ const PrettySlider: React.FC<PrettySliderProps> = ({
             type="button"
             onClick={nextSlide}
             aria-label="الشريحة التالية"
-            className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white/90 backdrop-blur-sm hover:bg-white p-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 border-2 border-rose-200 hover:border-rose-400 z-50"
+            className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white/90 backdrop-blur-sm hover:bg-white p-3 rounded-full shadow-lg hover:shadow-xl transition-colors duration-300 border-2 border-rose-200 hover:border-rose-400 z-50"
           >
             <ArrowRight className="h-6 w-6 text-gray-700" />
           </button>
@@ -221,8 +221,8 @@ const PrettySlider: React.FC<PrettySliderProps> = ({
               type="button"
               onClick={() => goToSlide(index)}
               aria-label={`الانتقال إلى الشريحة ${index + 1}`}
-              aria-pressed={index === activeSlide ? 'true' : 'false'}
-              className={`transition-all duration-300 rounded-full ${
+              aria-pressed={index === activeSlide}
+              className={`transition-colors duration-300 rounded-full ${
                 index === activeSlide
                   ? 'w-10 h-3 bg-gradient-to-r from-rose-400 to-pink-500'
                   : 'w-3 h-3 bg-white/60 hover:bg-white/80'
@@ -238,8 +238,8 @@ const PrettySlider: React.FC<PrettySliderProps> = ({
           type="button"
           onClick={() => setIsAutoPlaying(!isAutoPlaying)}
           aria-label={isAutoPlaying ? 'إيقاف التشغيل التلقائي' : 'تشغيل السلايدر تلقائيًا'}
-          aria-pressed={isAutoPlaying ? 'true' : 'false'}
-          className={`p-2 rounded-full backdrop-blur-sm border transition-all duration-300 ${
+          aria-pressed={isAutoPlaying}
+          className={`p-2 rounded-full backdrop-blur-sm border transition-colors duration-300 ${
             isAutoPlaying
               ? 'bg-green-500/90 border-green-300 text-white'
               : 'bg-white/90 border-gray-300 text-gray-600'

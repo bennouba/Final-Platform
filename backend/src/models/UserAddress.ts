@@ -13,7 +13,7 @@ interface UserAddressAttributes {
   updatedAt?: Date;
 }
 
-interface UserAddressCreationAttributes extends Optional<UserAddressAttributes, 'id' | 'createdAt' | 'updatedAt'> {}
+type UserAddressCreationAttributes = Optional<UserAddressAttributes, 'id' | 'createdAt' | 'updatedAt'>;
 
 class UserAddress extends Model<UserAddressAttributes, UserAddressCreationAttributes> implements UserAddressAttributes {
   declare id: string;

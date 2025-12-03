@@ -42,7 +42,7 @@ export const SlidersManagementView: React.FC<SlidersManagementViewProps> = ({
 
   const handleAddSlider = () => {
     // Here you would typically save the new slider
-    console.log('Adding new slider:', newSlider);
+
     setShowAddSlider(false);
     setNewSlider({ name: '', description: '', status: 'غير مفعل' });
   };

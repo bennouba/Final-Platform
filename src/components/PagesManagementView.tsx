@@ -43,7 +43,7 @@ export const PagesManagementView: React.FC<PagesManagementViewProps> = ({
 
   const handleAddPage = () => {
     // Here you would typically save the new page
-    console.log('Adding new page:', newPage);
+
     setShowAddPage(false);
     setNewPage({ name: '', content: '', seoTitle: '', seoDescription: '', status: 'غير مفعل' });
   };

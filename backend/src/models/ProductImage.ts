@@ -11,7 +11,7 @@ interface ProductImageAttributes {
   createdAt?: Date;
 }
 
-interface ProductImageCreationAttributes extends Optional<ProductImageAttributes, 'id' | 'createdAt'> {}
+type ProductImageCreationAttributes = Optional<ProductImageAttributes, 'id' | 'createdAt'>;
 
 class ProductImage extends Model<ProductImageAttributes, ProductImageCreationAttributes> implements ProductImageAttributes {
   declare id: number;

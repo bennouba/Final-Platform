@@ -3,6 +3,8 @@ import sequelize, { testConnection, syncDatabase } from '@config/database';
 import { initializeModels } from '@models/index';
 import config from '@config/environment';
 import logger from '@utils/logger';
+import { populateSliders } from '@migrations/populateSliders';
+import { fixSliderPaths } from '@migrations/fixSliderPaths';
 
 const PORT = config.port;
 
@@ -23,13 +25,27 @@ const startServer = async (): Promise<void> => {
     }
 
     logger.info('📊 Synchronizing database schema...');
-    await syncDatabase(false);
+    await syncDatabase(false).catch((error) => {
+      logger.warn('⚠️ Database sync failed, continuing without sync:', error.message);
+    });
+
+    logger.info('📦 Fixing slider paths and populating default sliders for existing stores...');
+    try {
+      await fixSliderPaths();
+      await populateSliders();
+    } catch (error) {
+      logger.warn('⚠️ Slider migration failed, continuing:', error);
+    }
 
     const server = app.listen(PORT, (): void => {
       logger.info(`✅ Server is running on http://localhost:${PORT}`);
       logger.info(`🏥 Health check: http://localhost:${PORT}/health`);
       logger.info(`📚 API prefix: ${config.apiPrefix}`);
     });
+
+    server.requestTimeout = 600000;
+    server.headersTimeout = 600000;
+    server.keepAliveTimeout = 65000;
 
     process.on('unhandledRejection', (reason: any, promise: Promise<any>): void => {
       logger.error('🔥 Unhandled Rejection at:', promise, 'reason:', reason);

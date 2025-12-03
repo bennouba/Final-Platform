@@ -1,0 +1,52 @@
+{
+  "id": 1763895960002,
+  "storeId": 2,
+  "slug": "sheirine",
+  "name": "شيرين",
+  "subdomain": "sheirine",
+  "storeSlug": "sheirine",
+  "nameAr": "شيرين",
+  "nameEn": "Sheirine",
+  "description": "متجر شيرين للمجوهرات والإكسسوارات الفاخرة",
+  "icon": "✨",
+  "color": "from-pink-400 to-purple-600",
+  "logo": "/assets/stores/sheirine.webp",
+  "categories": [
+    "All",
+    "Engagement Rings",
+    "Jewelry Sets",
+    "Bracelets",
+    "Necklaces and Chains",
+    "Earrings",
+    "Rings",
+    "Hair Jewelry",
+    "Leggings",
+    "Body Jewelry and Accessories"
+  ],
+  "products": [],
+  "sliderImages": [
+    {
+      "id": "sheirine-banner1",
+      "title": "مجوهرات فاخرة وأصلية من شيرين",
+      "subtitle": "",
+      "buttonText": "تسوق الآن",
+      "image": "/assets/sheirine/jewelry-set-1.jpg"
+    },
+    {
+      "id": "sheirine-banner2",
+      "title": "خواتم الخطوبة والزواج الأنيقة",
+      "subtitle": "",
+      "buttonText": "تسوق الآن",
+      "image": "/assets/sheirine/ring2.jpg"
+    },
+    {
+      "id": "sheirine-banner3",
+      "title": "أحذية نسائية عصرية وراقية",
+      "subtitle": "",
+      "buttonText": "تسوق الآن",
+      "image": "/assets/sheirine/casual-shoes.png"
+    }
+  ],
+  "status": "active",
+  "createdAt": "2025-11-24T10:45:00.000Z"
+}

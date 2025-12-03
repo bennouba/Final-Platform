@@ -2,8 +2,8 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 
 interface TabsContextValue {
-  value?: string;
-  onValueChange?: (v: string) => void;
+  value?: string | undefined;
+  onValueChange?: ((v: string) => void) | undefined;
 }
 const TabsContext = React.createContext<TabsContextValue>({});
 
