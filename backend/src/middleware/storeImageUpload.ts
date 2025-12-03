@@ -3,6 +3,7 @@ import path from 'path';
 import fs from 'fs';
 import crypto from 'crypto';
 import { promises as fsPromises } from 'fs';
+import { sanitizeFilename, isPathSafe } from '@utils/file-security';
 
 const getTempUploadDir = () => {
   let basePath = process.cwd();
@@ -38,11 +39,14 @@ const storage = multer.diskStorage({
     }
   },
   filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname);
-    const baseName = file.originalname.replace(ext, '').replace(/\s+/g, '-');
-    const cleanedName = `${baseName}${ext}`;
-    (file as any).originalFilenameSanitized = cleanedName;
-    cb(null, cleanedName);
+    try {
+      const { sanitizedName } = sanitizeFilename(file.originalname);
+      (file as any).originalFilenameSanitized = sanitizedName;
+      (file as any).originalFilenameUnsafe = file.originalname;
+      cb(null, sanitizedName);
+    } catch (error) {
+      cb(new Error('Failed to sanitize filename'), file.originalname);
+    }
   }
 });
 
@@ -86,7 +90,7 @@ export const uploadSliderImages = storeImageUpload.array('sliderImages', 50);
 
 const calculateFileHash = async (filePath: string): Promise<string> => {
   return new Promise((resolve, reject) => {
-    const hash = crypto.createHash('md5');
+    const hash = crypto.createHash('sha256');
     const stream = fs.createReadStream(filePath);
     stream.on('data', (data) => hash.update(data));
     stream.on('end', () => resolve(hash.digest('hex')));
@@ -170,51 +174,62 @@ export const moveUploadedFiles = async (
     const skippedCount = fileArray.length - dedupedFiles.length;
     if (skippedCount > 0) {
       stats.duplicatesSkipped += skippedCount;
-
     }
 
     const movedArray: Express.Multer.File[] = [];
 
     for (const file of dedupedFiles) {
-      const oldPath = file.path;
-      let finalFilename = file.filename;
-      
-      if (fs.existsSync(path.join(targetDir, finalFilename))) {
-        const existingPath = path.join(targetDir, finalFilename);
-        const ext = path.extname(finalFilename);
-        const baseName = finalFilename.replace(ext, '');
-        let counter = 1;
-        
-        while (fs.existsSync(path.join(targetDir, `${baseName}-${counter}${ext}`))) {
-          counter++;
-        }
-        finalFilename = `${baseName}-${counter}${ext}`;
-
-      }
-
-      const newPath = path.join(targetDir, finalFilename);
-
       try {
-        await fsPromises.rename(oldPath, newPath);
-        movedArray.push({
-          ...file,
-          filename: finalFilename,
-          path: newPath,
-          destination: targetDir
-        });
-        
+        const oldPath = file.path;
+        const finalFilename = file.filename;
+
+        const newPath = path.join(targetDir, finalFilename);
+
+        if (!isPathSafe(newPath, path.join(process.cwd(), 'backend'))) {
+          throw new Error('Unsafe path detected - potential security threat');
+        }
+
+        if (fs.existsSync(newPath)) {
+          const ext = path.extname(finalFilename);
+          const baseName = finalFilename.replace(ext, '');
+          let counter = 1;
+
+          let uniquePath = newPath;
+          while (fs.existsSync(uniquePath)) {
+            uniquePath = path.join(targetDir, `${baseName}-${counter}${ext}`);
+            counter++;
+          }
+
+          await fsPromises.rename(oldPath, uniquePath);
+
+          movedArray.push({
+            ...file,
+            filename: path.basename(uniquePath),
+            path: uniquePath,
+            destination: targetDir
+          });
+        } else {
+          await fsPromises.rename(oldPath, newPath);
+
+          movedArray.push({
+            ...file,
+            filename: finalFilename,
+            path: newPath,
+            destination: targetDir
+          });
+        }
+
         stats.movedFiles++;
         if (imageType === 'products') stats.productImages++;
         else if (imageType === 'sliders') stats.sliderImages++;
         else if (imageType === 'logo') stats.logoFiles++;
-        
 
       } catch (error) {
         const errorMsg = (error as Error).message;
 
-        failedMoves.push({ 
-          file: finalFilename, 
-          error: errorMsg 
+        failedMoves.push({
+          file: file.filename,
+          error: errorMsg
         });
       }
     }
@@ -224,38 +239,25 @@ export const moveUploadedFiles = async (
     }
   }
 
-
-
-
-
-
-
-
-
-  if (failedMoves.length > 0 && stats.movedFiles === 0) {
-    const failedList = failedMoves.map(f => `${f.file}: ${f.error}`).join('\n    ');
-    const errorMsg = `Failed to move ${failedMoves.length} file(s):\n    ${failedList}`;
-
+     if (failedMoves.length > 0 && stats.movedFiles === 0) {
+    const failedList = failedMoves.map(f => `${f.file}: ${f.error}`).join('\n');
+    const errorMsg = `Failed to move ${failedMoves.length} file(s):\n  
+      ${failedList}`;
     throw new Error(errorMsg);
-  } else if (failedMoves.length > 0) {
-    void 0;
   }
 
   return movedFiles;
 };
 
-export const cleanupTempUploads = async (): Promise<void> => {
-  try {
-    if (fs.existsSync(tempUploadDir)) {
+     export const cleanupTempUploads = async (): Promise<void> => {
+      try {
+       if (fs.existsSync(tempUploadDir)) {
       const files = await fsPromises.readdir(tempUploadDir);
       if (files.length > 0) {
-
         await fsPromises.rm(tempUploadDir, { recursive: true, force: true });
-
       }
     }
   } catch (error) {
-
   }
 };
 

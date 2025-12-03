@@ -10,7 +10,8 @@ interface EncryptionConfig {
 
 class SecurityManager {
   private config: EncryptionConfig;
-  private encryptionKey: Buffer;
+  private modernEncryptionKey: Buffer;
+  private legacyEncryptionKey: Buffer;
   private readonly SENSITIVE_FIELDS = [
     'password',
     'credit_card',
@@ -28,94 +29,156 @@ class SecurityManager {
       saltRounds: 12
     };
 
-    // Generate or load encryption key
-    this.encryptionKey = this.getEncryptionKey();
+    this.modernEncryptionKey = this.getModernKey();
+    this.legacyEncryptionKey = this.getLegacyKey();
   }
 
-  /**
-   * Get or generate encryption key
-   */
-  private getEncryptionKey(): Buffer {
+  private getModernKey(): Buffer {
     const keyEnv = process.env.ENCRYPTION_KEY;
     if (keyEnv) {
       return Buffer.from(keyEnv, 'hex');
     }
 
-    // Generate new key (in production, this should be stored securely)
     const key = crypto.randomBytes(this.config.keyLength);
     logger.warn('⚠️  Using generated encryption key. Set ENCRYPTION_KEY environment variable for production!');
     return key;
   }
 
-  /**
-   * Encrypt sensitive data
-   */
-  encrypt(text: string): string {
+  private getLegacyKey(): Buffer {
+    const keyEnv = process.env.LEGACY_ENCRYPTION_KEY || process.env.ENCRYPTION_KEY;
+    if (keyEnv) {
+      return Buffer.from(keyEnv, 'hex');
+    }
+
+    return crypto.randomBytes(this.config.keyLength);
+  }
+
+  private encryptModern(text: string): string {
     try {
       const iv = crypto.randomBytes(this.config.ivLength);
-      const cipher = crypto.createCipher(this.config.algorithm, this.encryptionKey);
+      const cipher = crypto.createCipheriv(this.config.algorithm, this.modernEncryptionKey, iv);
 
       let encrypted = cipher.update(text, 'utf8', 'hex');
       encrypted += cipher.final('hex');
 
-      // Return format: iv:encrypted
-      return iv.toString('hex') + ':' + encrypted;
+      const authTag = cipher.getAuthTag();
+
+      return `v2:${iv.toString('hex')}:${encrypted}:${authTag.toString('hex')}`;
     } catch (error) {
-      logger.error('Encryption failed:', error);
+      logger.error('Modern encryption failed:', error);
       throw new Error('Failed to encrypt data');
     }
   }
 
-  /**
-   * Decrypt sensitive data
-   */
-  decrypt(encryptedText: string): string {
+  private decryptModern(encryptedText: string): string {
     try {
       const parts = encryptedText.split(':');
-      if (parts.length !== 2) {
-        throw new Error('Invalid encrypted data format');
+      if (parts[0] !== 'v2' || parts.length !== 4) {
+        throw new Error('Invalid modern encryption format');
       }
 
-      const iv = Buffer.from(parts[0], 'hex');
-      const encrypted = parts[1];
+      const [, iv, encrypted, authTag] = parts;
 
-      const decipher = crypto.createDecipher(this.config.algorithm, this.encryptionKey);
+      const decipher = crypto.createDecipheriv(
+        this.config.algorithm,
+        this.modernEncryptionKey,
+        Buffer.from(iv, 'hex')
+      );
+
+      decipher.setAuthTag(Buffer.from(authTag, 'hex'));
+
       let decrypted = decipher.update(encrypted, 'hex', 'utf8');
       decrypted += decipher.final('utf8');
 
       return decrypted;
+    } catch (error) {
+      logger.error('Modern decryption failed:', error);
+      throw new Error('Failed to decrypt data');
+    }
+  }
+
+  private encryptLegacy(text: string): string {
+    try {
+      const cipher = crypto.createCipher('aes-256-gcm', this.legacyEncryptionKey);
+      let encrypted = cipher.update(text, 'utf8', 'hex');
+      encrypted += cipher.final('hex');
+
+      return `v1:${encrypted}`;
+    } catch (error) {
+      logger.error('Legacy encryption failed:', error);
+      throw new Error('Failed to encrypt data');
+    }
+  }
+
+  private decryptLegacy(encryptedText: string): string {
+    try {
+      const parts = encryptedText.split(':');
+      if (parts[0] !== 'v1') {
+        throw new Error('Invalid legacy encryption format');
+      }
+
+      const decipher = crypto.createDecipher('aes-256-gcm', this.legacyEncryptionKey);
+      let decrypted = decipher.update(parts[1], 'hex', 'utf8');
+      decrypted += decipher.final('utf8');
+
+      return decrypted;
+    } catch (error) {
+      logger.error('Legacy decryption failed:', error);
+      throw new Error('Failed to decrypt data');
+    }
+  }
+
+  encrypt(text: string): string {
+    return this.encryptModern(text);
+  }
+
+  decrypt(encryptedText: string): string {
+    try {
+      if (!encryptedText) {
+        throw new Error('Cannot decrypt empty text');
+      }
+
+      const version = encryptedText.split(':')[0];
+
+      switch (version) {
+        case 'v2':
+          return this.decryptModern(encryptedText);
+        case 'v1':
+          return this.decryptLegacy(encryptedText);
+        default:
+          logger.warn('Unknown encryption version, trying legacy...');
+          return this.decryptLegacy(encryptedText);
+      }
     } catch (error) {
       logger.error('Decryption failed:', error);
       throw new Error('Failed to decrypt data');
     }
   }
 
-  /**
-   * Hash password using bcrypt
-   */
+  migrateEncryption(oldEncrypted: string): string {
+    try {
+      const decrypted = this.decryptLegacy(oldEncrypted);
+      return this.encryptModern(decrypted);
+    } catch (error) {
+      logger.error('Encryption migration failed:', error);
+      throw new Error('Failed to migrate encryption');
+    }
+  }
+
   async hashPassword(password: string): Promise<string> {
     const bcrypt = await import('bcryptjs');
     return bcrypt.hash(password, this.config.saltRounds);
   }
 
-  /**
-   * Verify password against hash
-   */
   async verifyPassword(password: string, hash: string): Promise<boolean> {
     const bcrypt = await import('bcryptjs');
     return bcrypt.compare(password, hash);
   }
 
-  /**
-   * Generate secure random token
-   */
   generateSecureToken(length: number = 32): string {
     return crypto.randomBytes(length).toString('hex');
   }
 
-  /**
-   * Sanitize data by removing sensitive fields
-   */
   sanitizeData(data: any, fields: string[] = this.SENSITIVE_FIELDS): any {
     if (!data || typeof data !== 'object') {
       return data;
@@ -132,9 +195,6 @@ class SecurityManager {
     return sanitized;
   }
 
-  /**
-   * Check if data contains sensitive information
-   */
   containsSensitiveData(data: any): boolean {
     if (!data || typeof data !== 'object') {
       return false;
@@ -145,9 +205,6 @@ class SecurityManager {
     );
   }
 
-  /**
-   * Generate secure hash for payment verification
-   */
   generatePaymentHash(data: Record<string, any>, secret: string): string {
     const sortedKeys = Object.keys(data).sort();
     const values = sortedKeys.map(key => String(data[key])).join('');
@@ -157,9 +214,6 @@ class SecurityManager {
       .digest('hex');
   }
 
-  /**
-   * Validate data integrity
-   */
   validateDataIntegrity(data: any, expectedHash: string, secret: string): boolean {
     try {
       const calculatedHash = this.generatePaymentHash(data, secret);
@@ -172,21 +226,7 @@ class SecurityManager {
       return false;
     }
   }
-
-  /**
-   * Rate limiting helper
-   */
-  generateRateLimitKey(identifier: string, action: string): string {
-    return crypto.createHash('sha256')
-      .update(`${identifier}:${action}:${Date.now()}`)
-      .digest('hex');
-  }
 }
 
-// Export singleton instance
-const securityManager = new SecurityManager();
-
+export const securityManager = new SecurityManager();
 export default securityManager;
-
-// Export class for testing
-export { SecurityManager };
