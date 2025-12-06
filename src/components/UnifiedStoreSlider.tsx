@@ -62,7 +62,16 @@ const UnifiedStoreSlider: React.FC<UnifiedStoreSliderProps> = ({
   
     // Show static/cached data immediately
     if (staticConfig?.sliders) {
-      setSliders(staticConfig.sliders);
+      const mappedSliders = staticConfig.sliders.map((slider: any) => ({
+        id: slider.id,
+        title: slider.title,
+        subtitle: slider.subtitle,
+        buttonText: slider.buttonText,
+        imagePath: slider.image || slider.imagePath,
+        image: slider.image || slider.imagePath,
+        sortOrder: slider.sortOrder,
+      }));
+      setSliders(mappedSliders);
     } else {
       const savedSliders = localStorage.getItem(storageKey);
       if (savedSliders) {
@@ -102,7 +111,7 @@ const UnifiedStoreSlider: React.FC<UnifiedStoreSliderProps> = ({
         localStorage.setItem(storageKey, JSON.stringify(loadedSliders));
       }
     } catch (error) {
-      console.error('Error loading sliders from backend:', error);
+      // Silent error handling - use cached data
     }
   };
   

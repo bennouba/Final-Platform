@@ -873,10 +873,10 @@ const ProductCard: React.FC<{
               {/* الصورة الحالية */}
               <LazyImage
                 key={`${product.id}-${currentImageIndex}`}
-                src={product.images[currentImageIndex]}
+                src={product.images[currentImageIndex] || ''}
                 alt={`${product.name} - صورة ${currentImageIndex + 1}`}
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                onError={(e) => handleImageError(e, storeSlug)}              
+                onError={() => {}}              
               />
               
               {/* أزرار التنقل بين الصور */}
@@ -1110,10 +1110,10 @@ const ProductCard: React.FC<{
               <div className="w-full h-64 bg-gray-100 relative">
                 {product.images && product.images.length > 0 ? (
                   <LazyImage
-                    src={product.images[currentImageIndex]}
+                    src={product.images[currentImageIndex] || ''}
                     alt={product.name}
                     className="w-full h-full object-cover"
-                    onError={(e) => handleImageError(e, storeSlug)}
+                    onError={() => {}}
                   />
                 ) : (
                   <LazyImage
