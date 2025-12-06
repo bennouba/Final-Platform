@@ -34,6 +34,7 @@
 |------|--------|
 | `CLOUD_DEPLOYMENT.md` | خطوات نشر على Render (Backend) و Vercel (Frontend) |
 | `PRODUCTION_CHECKLIST.md` | قائمة التحقق النهائي قبل إطلاق الإنتاج |
+| `ENVIRONMENT_VARIABLES.md` | توثيق شاملة لمتغيرات البيئة على كل المنصات |
 
 ### ⭐ قسم الميزات الرئيسية
 ملفات موجودة في: `FEATURES/`
@@ -50,6 +51,7 @@
 |------|--------|
 | `QUICK_DIAGNOSIS.md` | أوامر تشخيص سريعة للمشاكل الشائعة |
 | `FAQ.md` | الأسئلة الشائعة والإجابات المفصلة |
+| `PRODUCTION_SYNC_FIX.md` | توثيق شاملة لمشكلة عدم مزامنة البيانات والحل المتخذ |
 
 ### 🏗️ قسم البنية المعمارية
 ملفات موجودة في: `ARCHITECTURE/`
@@ -183,7 +185,9 @@ docs/
 |---------|-----------------|---------|
 | **تثبيت** | install, setup, config | SETUP_GUIDES/ |
 | **نشر** | deploy, production, cloud | DEPLOYMENT/ |
+| **متغيرات البيئة** | environment, variables, backend, frontend | DEPLOYMENT/ENVIRONMENT_VARIABLES.md |
 | **خطأ** | error, bug, debug, issue | TROUBLESHOOTING/ |
+| **مزامنة GitHub** | sync, git, production, data | TROUBLESHOOTING/PRODUCTION_SYNC_FIX.md |
 | **ميزة** | feature, badge, store | FEATURES/ |
 | **تصميم** | architecture, design, structure | ARCHITECTURE/ |
 | **أمان** | security, encrypt, password | SECURITY/ |
@@ -210,6 +214,8 @@ docs/
 - ✅ تحديث جميع الروابط والمراجع
 - ✅ إنشاء ملفات أساسية في كل مجلد
 - ✅ إزالة الملفات المؤقتة والقديمة
+- ✅ **توثيق شاملة لمشكلة Production Sync وحلها** ⭐
+- ✅ **توثيق متغيرات البيئة لـ Render و Vercel** ⭐
 
 ---
 
