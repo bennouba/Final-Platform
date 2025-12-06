@@ -8,6 +8,66 @@ import { calculatePagination } from '@utils/helpers';
 import logger from '@utils/logger';
 import { Op } from 'sequelize';
 
+// دالة لحساب الـ badge للمنتج
+const calculateBadgeForProduct = (product: any): string => {
+  const views = product.views || 0;
+  const likes = product.likes || 0;
+  const orders = product.orders || 0;
+  const quantity = product.quantity || 0;
+  const originalPrice = product.originalPrice || product.price || 0;
+  const price = product.price || 0;
+
+  // 1. أولوية أولى: المنتجات غير المتوفرة
+  if (quantity <= 0) {
+    return 'غير متوفر';
+  }
+
+  // 2. ثانيوية ثانية: المنتجات المخفضة (تخفيض أكثر من 10%)
+  if (originalPrice > price && ((originalPrice - price) / originalPrice) >= 0.1) {
+    return 'تخفيضات';
+  }
+
+  // 3. ثالثوية ثالثة: المنتجات المميزة (طلبات عالية + إعجابات عالية)
+  if (orders > 100 && likes > 200) {
+    return 'مميزة';
+  }
+
+  // 4. رابعوية رابعة: أكثر مبيعاً (طلبات عالية)
+  if (orders > 100) {
+    return 'أكثر مبيعاً';
+  }
+
+  // 5. خامسة خامسة: أكثر إعجاباً (إعجابات عالية)
+  if (likes > 200) {
+    return 'أكثر إعجاباً';
+  }
+
+  // 6. سادسة سادسة: أكثر مشاهدة (مشاهدات عالية)
+  if (views > 400) {
+    return 'أكثر مشاهدة';
+  }
+
+  // 7. سابعة سابعة: أكثر طلباً (طلبات متوسطة)
+  if (orders > 50) {
+    return 'أكثر طلباً';
+  }
+
+  // 8. أخيراً: المنتجات الجديدة
+  return 'جديد';
+};
+
+// دالة لتحديث الـ badge للمنتج
+const updateProductBadge = async (product: Product): Promise<void> => {
+  const calculatedBadge = calculateBadgeForProduct(product.toJSON());
+  
+  if (product.badge !== calculatedBadge) {
+    await product.update({
+      badge: calculatedBadge,
+      lastBadgeUpdate: new Date()
+    });
+  }
+};
+
 export const createProduct = async (
   req: AuthRequest,
   res: Response,
@@ -128,9 +188,28 @@ export const getProducts = async (
       include: [{ model: ProductImage, as: 'images' }],
     });
 
-    logger.info(`Fetched ${products.length} products`);
+    // تحديث الـ badges للمنتجات من قاعدة البيانات (إنديش)
+    const productsWithUpdatedBadges = await Promise.all(
+      products.map(async (product) => {
+        const productData = product.toJSON();
+        
+        // تحديث الـ badge إذا لزم الأمر
+        await updateProductBadge(product);
+        
+        // إضافة tags بناءً على الـ badge
+        const updatedProduct = product.toJSON();
+        updatedProduct.tags = updatedProduct.tags || [];
+        if (updatedProduct.badge && !updatedProduct.tags.includes(updatedProduct.badge)) {
+          updatedProduct.tags.push(updatedProduct.badge);
+        }
+        
+        return updatedProduct;
+      })
+    );
 
-    sendPaginated(res, products, validPage, validLimit, count);
+    logger.info(`Fetched ${products.length} products with updated badges`);
+
+    sendPaginated(res, productsWithUpdatedBadges, validPage, validLimit, count);
   } catch (error) {
     logger.error('Get products error:', error);
     next(error);

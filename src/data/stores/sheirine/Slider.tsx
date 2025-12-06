@@ -1,8 +1,22 @@
 import React, { useEffect, useRef, useState } from 'react';
-
-
 import { ArrowLeft, ArrowRight, Sparkles } from 'lucide-react';
 import type { Product } from '../../storeProducts';
+
+const getBackendUrl = () => {
+  const apiUrl = import.meta.env.VITE_API_URL;
+  if (apiUrl) return apiUrl;
+  return typeof window !== 'undefined' && window.location.hostname === 'localhost'
+    ? 'http://localhost:5000'
+    : 'https://eishro-backend.onrender.com';
+};
+
+const getImageUrl = (assetPath: string) => {
+  const backendUrl = getBackendUrl();
+  return {
+    primary: `${backendUrl}${assetPath}`,
+    fallback: assetPath,
+  };
+};
 
 interface SheirineSliderProps {
   products: Product[];
@@ -32,22 +46,26 @@ const SheirineSlider: React.FC<SheirineSliderProps> = ({
   const defaultBanners = [
     {
       id: 'banner1',
-      image: '/assets/sheirine/slider1.jpg',
+      image: getImageUrl('/assets/sherine/sliders/slider1.webp').primary,
+      fallbackImage: getImageUrl('/assets/sherine/sliders/slider1.webp').fallback,
       title: 'مجموعة العطور الفاخرة في شيرين'
     },
     {
       id: 'banner2',
-      image: '/assets/sheirine/slider2.jpg',
+      image: getImageUrl('/assets/sherine/sliders/slider3.webp').primary,
+      fallbackImage: getImageUrl('/assets/sherine/sliders/slider3.webp').fallback,
       title: 'عطور نسائية أنيقة'
     },
     {
       id: 'banner3',
-      image: '/assets/sheirine/slider3.jpg',
+      image: getImageUrl('/assets/sherine/sliders/slider4.webp').primary,
+      fallbackImage: getImageUrl('/assets/sherine/sliders/slider4.webp').fallback,
       title: 'عطور رجالية مميزة'
     },
     {
       id: 'banner4',
-      image: '/assets/sheirine/slider4.jpg',
+      image: getImageUrl('/assets/sherine/sliders/slider1.webp').primary,
+      fallbackImage: getImageUrl('/assets/sherine/sliders/slider1.webp').fallback,
       title: 'مجموعات عطور خاصة'
     },
   ];
@@ -171,7 +189,11 @@ const SheirineSlider: React.FC<SheirineSliderProps> = ({
                 className="w-full h-full object-cover object-center"
                 onError={(e) => {
                   const target = e.target as HTMLImageElement;
-                  target.style.display = 'none';
+                  if (slide.fallbackImage && target.src !== slide.fallbackImage) {
+                    target.src = slide.fallbackImage;
+                  } else {
+                    target.style.display = 'none';
+                  }
                 }}
               />
             </div>

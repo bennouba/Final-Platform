@@ -1,10 +1,13 @@
 // بيانات شاملة لجميع المنتجات في جميع المتاجر
 import type { Product } from './storeProducts';
 import { type RealProduct, allRealStoreProducts } from './realStoreProducts';
-import { nawaemProducts, nawaemStoreConfig } from './stores/nawaem/nawamProducts';
+import { nawaemProducts } from './stores/nawaem/products';
+import { nawaemStoreConfig } from './stores/nawaem/config';
 import { deltaProducts } from './stores/delta-store/products';
 import { deltaStoreConfig } from './stores/delta-store/config';
+import { magnaBeautyProducts as importedMagnaBeautyProducts } from './stores/magna-beauty/products';
 import { indeeshProducts } from './stores/indeesh/products';
+import { calculateBadge } from '@/utils/badgeCalculator';
 
 // أيقونات المتاجر والفئات
 export const storeIcons = {
@@ -34,6 +37,9 @@ export const storeColors = {
 };
 
 const MAGNA_BEAUTY_STORE_ID = 5;
+
+// استخدام magnaBeautyProducts المستورد بدلاً من تعريفه محلياً
+const magnaBeautyProducts = importedMagnaBeautyProducts;
 
 // منتجات شيرين (sheirine.ly) - storeId: 2
 // منتجات متنوعة تشمل: مجوهرات، ملابس أحجام كبيرة، أحذية نسائية، وحقائب
@@ -332,114 +338,6 @@ const sheirineProducts: Product[] = [
     sizes: ["متوسط"], availableSizes: ["متوسط"],
     colors: [{name: "بني", value: "#b69665ff"}],
     rating: 4.0, reviews: 33, views: 55, likes: 80, orders: 23, category: "حقائب",
-    quantity: 10, inStock: true, isAvailable: true, tags: []
-  }
-];
-
-// منتجات ماجنا بيوتي (magna-beauty.com) - storeId: 5
-const magnaBeautyProducts: Product[] = [
-  {
-    id: 4001, storeId: MAGNA_BEAUTY_STORE_ID, name: "PINK PUFF", description: "PINK PUFF",
-    price: 10, originalPrice: 12, images: ["public/assets/magna-beauty/pink-puff.webp","public/assets/magna-beauty/pink-puff1.webp","public/assets/magna-beauty/pink-puff2.webp"],
-    sizes: ["واحد"], availableSizes: ["واحد"],
-    colors: [{name: "وردي", value: "#e2ababff"}, {name: "بيج", value: "#DEB887"}, {name: "أسود", value: "#0e0d0dff"}],
-    rating: 4.9, reviews: 70, views: 298, likes: 300, orders: 200, category: "مكياج",
-    quantity: 10, inStock: true, isAvailable: true, tags: []
-  },
-  {
-    id: 4002, storeId: MAGNA_BEAUTY_STORE_ID, name: "blush-brush", description: "blush-brush",
-    price: 25, originalPrice: 45, images: ["public/assets/magna-beauty/blush-brush1.webp","public/assets/magna-beauty/blush-brush2.webp"],
-    sizes: ["واحد"], availableSizes: ["واحد"],
-    colors: [{name: "وردي", value: "#ffc6c6ff"}],
-    rating: 4.9, reviews: 88, views: 456, likes: 500, orders: 300, category: "مكياج",
-    quantity: 10, inStock: true, isAvailable: true, tags: []
-  },
-  {
-    id: 4003, storeId: MAGNA_BEAUTY_STORE_ID, name: "shader-brush", description: "shader-brush",
-    price: 15, originalPrice: 30, images: ["/assets/magna-beauty/shader-brush.webp"],
-    sizes: ["واحد"], availableSizes: ["واحد"],
-    colors: [{name: "بني", value: "#8B4513"}],
-    rating: 4.8, reviews: 70, views: 312, likes: 460, orders: 214, category: "مكياج",
-    quantity: 10, inStock: true, isAvailable: true, tags: []
-  },
-  {
-    id: 4004, storeId: MAGNA_BEAUTY_STORE_ID, name: "foundation-brush", description: "foundation-brush",
-    price: 25, originalPrice: 40, images: ["/assets/magna-beauty/foundation-brush.webp"],
-    sizes: ["واحد"], availableSizes: ["واحد"],
-    colors: [{name: "ألوان دافئة", value: "#e6cab6ff"}],
-    rating: 4.9, reviews: 44, views: 240, likes: 260, orders: 180, category: "مكياج",
-    quantity: 10, inStock: true, isAvailable: true, tags: []
-  },
-  {
-    id: 4005, storeId: MAGNA_BEAUTY_STORE_ID, name: "fan-brush", description: "fan-brush",
-    price: 25, originalPrice: 40, images: ["/assets/magna-beauty/fan-brush.webp"],
-    sizes: ["واحد"], availableSizes: ["واحد"],
-    colors: [{name: "طبيعي", value: "#F5F5DC"}],
-    rating: 4.7, reviews: 52, views: 367, likes: 145, orders: 38, category: "عناية بالبشرة",
-    quantity: 10, inStock: true, isAvailable: true, tags: []
-  },
-  {
-    id: 4006, storeId: MAGNA_BEAUTY_STORE_ID, name: "eye-contour", description: "eye-contour",
-    price: 15, originalPrice: 25, images: ["/assets/magna-beauty/eye-contour.webp"],
-    sizes: ["واحد"], availableSizes: ["واحد"],
-    colors: [{name: "طبيعي", value: "#FFF8DC"}],
-    rating: 4.8, reviews: 28, views: 234, likes: 98, orders: 21, category: "عناية بالبشرة",
-    quantity: 10, inStock: true, isAvailable: true, tags: []
-  },
-  {
-    id: 4007, storeId: MAGNA_BEAUTY_STORE_ID, name: "eyebrow-brush", description: "eyebrow-brush",
-    price: 25, originalPrice: 40, images: ["public/assets/magna-beauty/eyebrow-brush.webp"],
-    sizes: ["واحد"], availableSizes: ["واحد"],
-    colors: [{name: "طبيعي", value: "#F0F8FF"}],
-    rating: 4.5, reviews: 39, views: 287, likes: 112, orders: 70, category: "عناية بالبشرة",
-    quantity: 10, inStock: true, isAvailable: true, tags: []
-  },
-  {
-    id: 4008, storeId: MAGNA_BEAUTY_STORE_ID, name: "eyeliner-brush", description: "eyeliner-brush",
-    price: 25, originalPrice: 40, images: ["public/assets/magna-beauty/eyeliner-brush.webp"],
-    sizes: ["واحدة"], availableSizes: ["واحدة"],
-    colors: [{name: "طبيعي", value: "#F0F8FF"}],
-    rating: 4.9, reviews: 19, views: 167, likes: 89, orders: 44, category: "عطور",
-    quantity: 10, inStock: true, isAvailable: true, tags: []
-  },
-  {
-    id: 4009, storeId: MAGNA_BEAUTY_STORE_ID, name: "POSE", description: "POSE",
-    price: 25, originalPrice: 40, images: ["public/assets/magna-beauty/pose.webp"],
-    sizes: ["واحدة"], availableSizes: ["واحدة"],
-    colors: [{name: "طبيعي", value: "#F5E6D3"}],
-    rating: 4.6, reviews: 33, views: 245, likes: 87, orders: 45, category: "عناية بالبشرة",
-    quantity: 10, inStock: true, isAvailable: true, tags: []
-  },
-  {
-    id: 4010, storeId: MAGNA_BEAUTY_STORE_ID, name: "ANGEL", description: "ANGEL",
-    price: 25, originalPrice: 40, images: ["public/assets/magna-beauty/angel.webp"],
-    sizes: ["واحد"], availableSizes: ["واحد"],
-    colors: [{name: "فاتح", value: "#FFEAA7"}],
-    rating: 4.7, reviews: 26, views: 198, likes: 76, orders: 54, category: "مكياج",
-    quantity: 10, inStock: true, isAvailable: true, tags: []
-  },
-  {
-    id: 4011, storeId: MAGNA_BEAUTY_STORE_ID, name: "GEM", description: "GEM",
-    price: 25, originalPrice: 40, images: ["public/assets/magna-beauty/gem.JPEG"],
-    sizes: ["واحدة"], availableSizes: ["واحدة"],
-    colors: [{name: "طبيعي", value: "#F5E6D3"}],
-    rating: 4.9, reviews: 37, views: 245, likes: 67, orders: 69, category: "عناية بالبشرة",
-    quantity: 10, inStock: true, isAvailable: true, tags: []
-  },
-  {
-    id: 4012, storeId: MAGNA_BEAUTY_STORE_ID, name: "ICY1", description: "ICY1",
-    price: 75, originalPrice: 95, images: ["public/assets/magna-beauty/icy1.JPEG"],
-    sizes: ["واحدة"], availableSizes: ["واحدة"],
-    colors: [{name: "طبيعي", value: "#F5E6D3"}],
-    rating: 4.9, reviews: 12, views: 130, likes: 55, orders: 102, category: "عناية بالبشرة",
-    quantity: 10, inStock: true, isAvailable: true, tags: []
-  },
-  {
-    id: 4013, storeId: MAGNA_BEAUTY_STORE_ID, name: "TOPAZ", description: "TOPAZ",
-    price: 75, originalPrice: 95, images: ["public/assets/magna-beauty/topaz1.JPEG","public/assets/magna-beauty/topaz2.WEBP"],
-    sizes: ["واحدة"], availableSizes: ["واحدة"],
-    colors: [{name: "طبيعي", value: "#F5E6D3"}],
-    rating: 4.7, reviews: 48, views: 600, likes: 355, orders: 250, category: "عناية بالبشرة",
     quantity: 10, inStock: true, isAvailable: true, tags: []
   }
 ];
@@ -965,8 +863,19 @@ const alwardaalbaydaProducts: Product[] = [
 ];
 
 
+const applyAutoBadges = (products: Product[]): Product[] => {
+  return products.map(product => {
+    const badge = calculateBadge(product);
+    return {
+      ...product,
+      badge,
+      tags: product.tags ? [...new Set([...product.tags, badge])] : [badge]
+    };
+  });
+};
+
 // تصدير المنتجات الشاملة - استخدام المنتجات الحقيقية للمتاجر الخمسة
-export const allStoreProducts: Product[] = [
+export const allStoreProducts: Product[] = applyAutoBadges([
   ...indeeshProducts, // منتجات انديش - المتجر الآلي الجديد
   ...nawaemProducts, // منتجات نواعم الفريدة والحصرية
   ...sheirineProducts, // منتجات شيرين الفريدة والحصرية
@@ -983,7 +892,7 @@ export const allStoreProducts: Product[] = [
   ...eylulProducts,
   ...cozetboutiqueProducts,
   ...alwardaalbaydaProducts
-];
+]);
 
 // دالة للحصول على منتجات متجر معين
 export const getStoreProducts = (storeId: number): Product[] => {

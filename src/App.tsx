@@ -1467,11 +1467,17 @@ export default function Home() {
 
     const syncPermanentStores = async () => {
       try {
-        let indexResponse = await fetch('/assets/stores/index.json', { cache: 'no-store' });
-        if (!indexResponse.ok) {
-          indexResponse = await fetch('/index.json', { cache: 'no-store' });
+        const apiUrl = import.meta.env.VITE_API_URL || '/api';
+        const backendUrl = apiUrl.replace('/api', '');
+        
+        let indexResponse = await fetch(`${backendUrl}/assets/stores/index.json`, { cache: 'no-store' }).catch(() => null);
+        if (!indexResponse?.ok) {
+          indexResponse = await fetch('/assets/stores/index.json', { cache: 'no-store' }).catch(() => null);
         }
-        if (!indexResponse.ok) {
+        if (!indexResponse?.ok) {
+          indexResponse = await fetch('/index.json', { cache: 'no-store' }).catch(() => null);
+        }
+        if (!indexResponse?.ok) {
           return;
         }
         const payload = await indexResponse.json().catch(() => ([]));
@@ -1512,8 +1518,11 @@ export default function Home() {
 
           let storeDetail: any = null;
           try {
-            const detailResponse = await fetch(`/assets/${slug}/store.json`, { cache: 'no-store' });
-            if (detailResponse.ok) {
+            let detailResponse = await fetch(`${backendUrl}/assets/${slug}/store.json`, { cache: 'no-store' }).catch(() => null);
+            if (!detailResponse?.ok) {
+              detailResponse = await fetch(`/assets/${slug}/store.json`, { cache: 'no-store' }).catch(() => null);
+            }
+            if (detailResponse?.ok) {
               storeDetail = await detailResponse.json();
             }
           } catch (error) {

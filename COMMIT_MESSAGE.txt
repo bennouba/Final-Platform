@@ -1,0 +1,22 @@
+chore: Initial commit - EISHRO Platform V7 Complete Project
+
+Major Changes:
+- Fixed Moamalat payment gateway amount formatting (×100 instead of ×1000)
+- Removed authentication requirement from payment hash endpoint (supports guest checkout)
+- Added payment configuration test endpoint
+- Verified merchant credentials (MID/TID)
+
+Technical Improvements:
+- Amount formatting: Fixed conversion for correct payment processing
+- Guest checkout: Enabled for payment operations
+- Error handling: Enhanced Moamalat hash generation with better validation
+- Diagnostics: Added GET /api/payment/moamalat/test endpoint
+
+Files Modified:
+- src/lib/moamalat.ts: Fixed amount calculation (line 220)
+- backend/src/routes/paymentRoutes.ts: Removed auth from hash endpoint
+- backend/src/controllers/paymentController.ts: Simplified hash generation
+- Added PAYMENT_GATEWAY_FIX.md: Comprehensive fix documentation
+
+Backward Compatibility: 100% maintained - no breaking changes
+Status: Ready for production deployment

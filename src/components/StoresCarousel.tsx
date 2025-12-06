@@ -118,10 +118,16 @@ function getLocalDynamicStores() {
 
 async function fetchJsonStores(): Promise<any[]> {
   try {
-    let idxRes = await fetch('/assets/stores/index.json', { cache: 'no-store' });
-    if (!idxRes.ok) {
-      idxRes = await fetch('/index.json', { cache: 'no-store' });
-      if (!idxRes.ok) return [];
+    const apiUrl = typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_URL ? import.meta.env.VITE_API_URL : '/api';
+    const backendUrl = apiUrl.replace('/api', '');
+    
+    let idxRes = await fetch(`${backendUrl}/assets/stores/index.json`, { cache: 'no-store' }).catch(() => null);
+    if (!idxRes?.ok) {
+      idxRes = await fetch('/assets/stores/index.json', { cache: 'no-store' }).catch(() => null);
+    }
+    if (!idxRes?.ok) {
+      idxRes = await fetch('/index.json', { cache: 'no-store' }).catch(() => null);
+      if (!idxRes?.ok) return [];
     }
 
     const jsonData = await idxRes.json().catch(() => ({ stores: [] }));
@@ -138,8 +144,11 @@ async function fetchJsonStores(): Promise<any[]> {
       const rawSlug = item.slug || (item as any).subdomain || item.name?.toLowerCase().replace(/\s+/g, '-');
       const slug = canonicalSlug(rawSlug);
       if (!slug) continue;
-      const sRes = await fetch(`/assets/${slug}/store.json`, { cache: 'no-store' });
-      if (!sRes.ok) {
+      let sRes = await fetch(`${backendUrl}/assets/${slug}/store.json`, { cache: 'no-store' }).catch(() => null);
+      if (!sRes?.ok) {
+        sRes = await fetch(`/assets/${slug}/store.json`, { cache: 'no-store' }).catch(() => null);
+      }
+      if (!sRes?.ok) {
         const logo = item.logo || getStoreLogoFromStatic(slug);
         jsonStores.push({
           id: item.id || slug,

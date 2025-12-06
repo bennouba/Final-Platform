@@ -40,7 +40,7 @@ const VISITOR_FLAG_KEY = 'eshro_logged_in_as_visitor';
 const VISITOR_DATA_KEY = 'eshro_visitor_user';
 const CUSTOMER_KEY = 'eshro_unavailable';
 const MERCHANT_KEY = 'eshro_unavailable_orders';
-const API_BASE_URL = import.meta.env?.VITE_APP_API_URL || '/api';
+const API_BASE_URL = import.meta.env?.VITE_API_URL || '/api';
 
 const getInitialFormState = () => ({
   customerName: '',

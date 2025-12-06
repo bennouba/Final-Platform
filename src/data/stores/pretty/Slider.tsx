@@ -13,6 +13,22 @@ import {
 } from 'lucide-react';
 import type { Product } from '../../storeProducts';
 
+const getBackendUrl = () => {
+  const apiUrl = import.meta.env.VITE_API_URL;
+  if (apiUrl) return apiUrl;
+  return typeof window !== 'undefined' && window.location.hostname === 'localhost'
+    ? 'http://localhost:5000'
+    : 'https://eishro-backend.onrender.com';
+};
+
+const getImageUrl = (assetPath: string) => {
+  const backendUrl = getBackendUrl();
+  return {
+    primary: `${backendUrl}${assetPath}`,
+    fallback: assetPath,
+  };
+};
+
 interface PrettySliderProps {
   products: Product[];
   sliderImages?: Array<{ id: string | number; image: string; title?: string; subtitle?: string; buttonText?: string }>;
@@ -41,32 +57,38 @@ const PrettySlider: React.FC<PrettySliderProps> = ({
   const defaultBanners = [
     {
       id: 'banner1',
-      image: '/assets/real-stores/pretty/slider10.webp',
+      image: getImageUrl('/assets/pretty/sliders/slider10.webp').primary,
+      fallbackImage: getImageUrl('/assets/pretty/sliders/slider10.webp').fallback,
       title: 'مجموعة العطور الفاخرة في بريتي'
     },
     {
       id: 'banner2',
-      image: '/assets/real-stores/pretty/slider11.webp',
+      image: getImageUrl('/assets/pretty/sliders/slider11.webp').primary,
+      fallbackImage: getImageUrl('/assets/pretty/sliders/slider11.webp').fallback,
       title: 'عطور نسائية أنيقة'
     },
     {
       id: 'banner3',
-      image: '/assets/real-stores/pretty/slider12.webp',
+      image: getImageUrl('/assets/pretty/sliders/slider12.webp').primary,
+      fallbackImage: getImageUrl('/assets/pretty/sliders/slider12.webp').fallback,
       title: 'عطور رجالية مميزة'
     },
     {
       id: 'banner4',
-      image: '/assets/real-stores/pretty/slider13.webp',
+      image: getImageUrl('/assets/pretty/sliders/slider13.webp').primary,
+      fallbackImage: getImageUrl('/assets/pretty/sliders/slider13.webp').fallback,
       title: 'مجموعات عطور خاصة'
     },
     {
       id: 'banner5',
-      image: '/assets/real-stores/pretty/slider14.webp',
+      image: getImageUrl('/assets/pretty/sliders/slider14.webp').primary,
+      fallbackImage: getImageUrl('/assets/pretty/sliders/slider14.webp').fallback,
       title: 'مجموعات عطور فاخرة'
     },
     {
       id: 'banner6',
-      image: '/assets/real-stores/pretty/slider15.webp',
+      image: getImageUrl('/assets/pretty/sliders/slider15.webp').primary,
+      fallbackImage: getImageUrl('/assets/pretty/sliders/slider15.webp').fallback,
       title: 'مجموعات عطور جديدة'
     }
   ];
@@ -190,7 +212,11 @@ const PrettySlider: React.FC<PrettySliderProps> = ({
                 className="w-full h-full object-cover object-center"
                 onError={(e) => {
                   const target = e.target as HTMLImageElement;
-                  target.style.display = 'none';
+                  if (slide.fallbackImage && target.src !== slide.fallbackImage) {
+                    target.src = slide.fallbackImage;
+                  } else {
+                    target.style.display = 'none';
+                  }
                 }}
               />
             </div>

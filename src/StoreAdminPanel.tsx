@@ -30,8 +30,14 @@ const fallbackLogo = '/default-store.png';
 
 async function fetchPermanentIndex(): Promise<AnyStore[]> {
   try {
-    const res = await fetch('/assets/stores/index.json', { cache: 'no-store' });
-    if (!res.ok) return [];
+    const apiUrl = typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_URL ? import.meta.env.VITE_API_URL : '/api';
+    const backendUrl = apiUrl.replace('/api', '');
+    
+    let res = await fetch(`${backendUrl}/assets/stores/index.json`, { cache: 'no-store' }).catch(() => null);
+    if (!res?.ok) {
+      res = await fetch('/assets/stores/index.json', { cache: 'no-store' }).catch(() => null);
+    }
+    if (!res?.ok) return [];
     const json: any = await res.json().catch(() => ([]));
     const list = Array.isArray(json) ? json : (Array.isArray(json?.stores) ? json.stores : []);
     if (!Array.isArray(list)) return [];

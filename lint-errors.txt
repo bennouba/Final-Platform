@@ -1,0 +1,91 @@
+
+> vite-template@0.0.0 lint
+> eslint .
+
+
+c:\Users\dataf\Downloads\Eishro-Platform_V7\backend\cypress\e2e\security.cy.ts
+   15:9   error  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  113:9   error  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  155:11  error  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  156:11  error  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  157:11  error  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  315:3   error  ES2015 module syntax is preferred over namespaces                      @typescript-eslint/no-namespace
+
+c:\Users\dataf\Downloads\Eishro-Platform_V7\backend\src\controllers\loyaltyController.ts
+  79:30  error  React Hook "LoyaltyService.useRedemption" cannot be called in an async function                                                                  react-hooks/rules-of-hooks
+  79:30  error  React Hook "LoyaltyService.useRedemption" is called conditionally. React Hooks must be called in the exact same order in every component render  react-hooks/rules-of-hooks
+
+c:\Users\dataf\Downloads\Eishro-Platform_V7\backend\src\middleware\advancedSecurityMiddleware.ts
+  197:22  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+
+c:\Users\dataf\Downloads\Eishro-Platform_V7\backend\src\middleware\cacheMiddleware.ts
+  176:12  warning  'cacheStats' is never reassigned. Use 'const' instead  prefer-const
+
+c:\Users\dataf\Downloads\Eishro-Platform_V7\backend\src\models\LoyaltyRedemption.ts
+  22:11  error  An interface declaring no members is equivalent to its supertype  @typescript-eslint/no-empty-object-type
+
+c:\Users\dataf\Downloads\Eishro-Platform_V7\backend\src\models\LoyaltyTransaction.ts
+  19:11  error  An interface declaring no members is equivalent to its supertype  @typescript-eslint/no-empty-object-type
+
+c:\Users\dataf\Downloads\Eishro-Platform_V7\backend\src\models\UserLoyaltyAccount.ts
+  21:11  error  An interface declaring no members is equivalent to its supertype  @typescript-eslint/no-empty-object-type
+
+c:\Users\dataf\Downloads\Eishro-Platform_V7\backend\src\services\marketingCampaignService.ts
+  101:9  error  Unexpected lexical declaration in case block  no-case-declarations
+  121:9  error  Unexpected lexical declaration in case block  no-case-declarations
+
+c:\Users\dataf\Downloads\Eishro-Platform_V7\backend\src\utils\file-security.ts
+  14:16  error  Unexpected control character(s) in regular expression: \x00        no-control-regex
+  15:16  error  Unexpected control character(s) in regular expression: \x00, \x1f  no-control-regex
+
+c:\Users\dataf\Downloads\Eishro-Platform_V7\backend\src\validators\advancedValidation.ts
+   21:47   error  Unnecessary escape character: \+                             no-useless-escape
+   21:100  error  Unnecessary escape character: \+                             no-useless-escape
+  112:39   error  Unexpected control character(s) in regular expression: \x00  no-control-regex
+
+c:\Users\dataf\Downloads\Eishro-Platform_V7\backend\tests\phase6\advancedFeaturesIntegration.test.ts
+   98:9  error  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  137:9  error  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  326:9  error  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  368:9  error  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  477:9  error  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+
+c:\Users\dataf\Downloads\Eishro-Platform_V7\backend\tests\phase6\aiRecommendations.test.ts
+  107:11  error  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  508:9   error  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+
+c:\Users\dataf\Downloads\Eishro-Platform_V7\backend\tests\phase6\loyaltyProgram.test.ts
+   27:9  error  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  202:9  error  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  650:9  error  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  717:9  error  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  731:9  error  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+
+c:\Users\dataf\Downloads\Eishro-Platform_V7\backend\tests\phase6\marketingCampaigns.test.ts
+  414:9  error  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+
+c:\Users\dataf\Downloads\Eishro-Platform_V7\cleanup-db.js
+  7:7  error  Parsing error: Identifier '__dirname' has already been declared
+
+c:\Users\dataf\Downloads\Eishro-Platform_V7\src\components\AdsManagementView.tsx
+  64:7  error  Unexpected console statement  no-console
+
+c:\Users\dataf\Downloads\Eishro-Platform_V7\src\components\InventoryNotificationsView.tsx
+  98:7  error  Unexpected console statement  no-console
+
+c:\Users\dataf\Downloads\Eishro-Platform_V7\src\components\MerchantSliderManagement.tsx
+  105:9   error  Unexpected console statement  no-console
+  113:7   error  Unexpected console statement  no-console
+  181:11  error  Unexpected console statement  no-console
+  274:7   error  Unexpected console statement  no-console
+
+c:\Users\dataf\Downloads\Eishro-Platform_V7\src\components\StoreAds.tsx
+  57:7  error  Unexpected console statement  no-console
+  70:9  error  Unexpected console statement  no-console
+
+c:\Users\dataf\Downloads\Eishro-Platform_V7\src\components\UnifiedStoreSlider.tsx
+  83:7  error  Unexpected console statement  no-console
+
+✖ 43 problems (42 errors, 1 warning)
+  0 errors and 1 warning potentially fixable with the `--fix` option.
+

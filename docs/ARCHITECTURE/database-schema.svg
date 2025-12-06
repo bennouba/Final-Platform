@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg viewBox="0 0 1400 900" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .title { font-size: 28px; font-weight: bold; text-anchor: middle; fill: #1f2937; }
+      .table-name { font-size: 13px; font-weight: bold; fill: white; }
+      .column { font-size: 11px; fill: #1f2937; }
+      .pk { fill: #dc2626; font-weight: bold; }
+      .fk { fill: #2563eb; font-weight: bold; }
+      .relation-line { stroke: #6366f1; stroke-width: 2; }
+    </style>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="#6366f1" />
+    </marker>
+  </defs>
+
+  <rect width="1400" height="900" fill="#f9fafb"/>
+
+  <text x="700" y="40" class="title">EISHRO V7 - Database Schema (11 Tables)</text>
+
+  <!-- USERS Table -->
+  <g>
+    <rect x="20" y="80" width="180" height="160" rx="5" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+    <rect x="20" y="80" width="180" height="25" fill="#2563eb"/>
+    <text x="110" y="98" class="table-name">USERS</text>
+    
+    <text x="30" y="120" class="column pk">🔑 user_id</text>
+    <text x="30" y="135" class="column">email (unique)</text>
+    <text x="30" y="150" class="column">password</text>
+    <text x="30" y="165" class="column">name</text>
+    <text x="30" y="180" class="column">phone</text>
+    <text x="30" y="195" class="column">created_at</text>
+    <text x="30" y="210" class="column">status</text>
+    <text x="30" y="225" class="column">role</text>
+  </g>
+
+  <!-- STORES Table -->
+  <g>
+    <rect x="240" y="80" width="180" height="160" rx="5" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+    <rect x="240" y="80" width="180" height="25" fill="#2563eb"/>
+    <text x="330" y="98" class="table-name">STORES</text>
+    
+    <text x="250" y="120" class="column pk">🔑 store_id</text>
+    <text x="250" y="135" class="column fk">👤 owner_id (FK)</text>
+    <text x="250" y="150" class="column">store_name</text>
+    <text x="250" y="165" class="column">slug</text>
+    <text x="250" y="180" class="column">description</text>
+    <text x="250" y="195" class="column">logo</text>
+    <text x="250" y="210" class="column">status</text>
+    <text x="250" y="225" class="column">created_at</text>
+  </g>
+
+  <!-- PRODUCTS Table -->
+  <g>
+    <rect x="460" y="80" width="180" height="180" rx="5" fill="#ede9fe" stroke="#8b5cf6" stroke-width="2"/>
+    <rect x="460" y="80" width="180" height="25" fill="#8b5cf6"/>
+    <text x="550" y="98" class="table-name">PRODUCTS</text>
+    
+    <text x="470" y="120" class="column pk">🔑 product_id</text>
+    <text x="470" y="135" class="column fk">🏪 store_id (FK)</text>
+    <text x="470" y="150" class="column">name</text>
+    <text x="470" y="165" class="column">description</text>
+    <text x="470" y="180" class="column">price</text>
+    <text x="470" y="195" class="column">stock_qty</text>
+    <text x="470" y="210" class="column">category</text>
+    <text x="470" y="225" class="column">status</text>
+    <text x="470" y="240" class="column">created_at</text>
+  </g>
+
+  <!-- PRODUCT_BADGES Table -->
+  <g>
+    <rect x="680" y="80" width="180" height="160" rx="5" fill="#fef3c7" stroke="#f59e0b" stroke-width="2"/>
+    <rect x="680" y="80" width="180" height="25" fill="#f59e0b"/>
+    <text x="770" y="98" class="table-name">PRODUCT_BADGES</text>
+    
+    <text x="690" y="120" class="column pk">🔑 badge_id</text>
+    <text x="690" y="135" class="column fk">📦 product_id (FK)</text>
+    <text x="690" y="150" class="column">badge_type</text>
+    <text x="690" y="165" class="column">(Hot, Flash, New...)</text>
+    <text x="690" y="180" class="column">expires_at</text>
+    <text x="690" y="195" class="column">created_at</text>
+    <text x="690" y="210" class="column">status</text>
+  </g>
+
+  <!-- CARTS Table -->
+  <g>
+    <rect x="900" y="80" width="180" height="160" rx="5" fill="#d1fae5" stroke="#10b981" stroke-width="2"/>
+    <rect x="900" y="80" width="180" height="25" fill="#10b981"/>
+    <text x="990" y="98" class="table-name">CARTS</text>
+    
+    <text x="910" y="120" class="column pk">🔑 cart_id</text>
+    <text x="910" y="135" class="column fk">👤 user_id (FK)</text>
+    <text x="910" y="150" class="column">total_price</text>
+    <text x="910" y="165" class="column">item_count</text>
+    <text x="910" y="180" class="column">coupon_code</text>
+    <text x="910" y="195" class="column">created_at</text>
+    <text x="910" y="210" class="column">updated_at</text>
+  </g>
+
+  <!-- CART_ITEMS Table -->
+  <g>
+    <rect x="1120" y="80" width="180" height="160" rx="5" fill="#fecaca" stroke="#ef4444" stroke-width="2"/>
+    <rect x="1120" y="80" width="180" height="25" fill="#ef4444"/>
+    <text x="1210" y="98" class="table-name">CART_ITEMS</text>
+    
+    <text x="1130" y="120" class="column pk">🔑 item_id</text>
+    <text x="1130" y="135" class="column fk">🛒 cart_id (FK)</text>
+    <text x="1130" y="150" class="column fk">📦 product_id (FK)</text>
+    <text x="1130" y="165" class="column">quantity</text>
+    <text x="1130" y="180" class="column">price</text>
+    <text x="1130" y="195" class="column">total</text>
+    <text x="1130" y="210" class="column">added_at</text>
+  </g>
+
+  <!-- ORDERS Table -->
+  <g>
+    <rect x="20" y="300" width="180" height="180" rx="5" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+    <rect x="20" y="300" width="180" height="25" fill="#2563eb"/>
+    <text x="110" y="318" class="table-name">ORDERS</text>
+    
+    <text x="30" y="340" class="column pk">🔑 order_id</text>
+    <text x="30" y="355" class="column fk">👤 user_id (FK)</text>
+    <text x="30" y="370" class="column fk">🏪 store_id (FK)</text>
+    <text x="30" y="385" class="column">total_amount</text>
+    <text x="30" y="400" class="column">status</text>
+    <text x="30" y="415" class="column">shipping_addr</text>
+    <text x="30" y="430" class="column">created_at</text>
+    <text x="30" y="445" class="column">updated_at</text>
+  </g>
+
+  <!-- ORDER_ITEMS Table -->
+  <g>
+    <rect x="240" y="300" width="180" height="180" rx="5" fill="#ede9fe" stroke="#8b5cf6" stroke-width="2"/>
+    <rect x="240" y="300" width="180" height="25" fill="#8b5cf6"/>
+    <text x="330" y="318" class="table-name">ORDER_ITEMS</text>
+    
+    <text x="250" y="340" class="column pk">🔑 order_item_id</text>
+    <text x="250" y="355" class="column fk">📋 order_id (FK)</text>
+    <text x="250" y="370" class="column fk">📦 product_id (FK)</text>
+    <text x="250" y="385" class="column">quantity</text>
+    <text x="250" y="400" class="column">unit_price</text>
+    <text x="250" y="415" class="column">total_price</text>
+    <text x="250" y="430" class="column">status</text>
+    <text x="250" y="445" class="column">created_at</text>
+  </g>
+
+  <!-- PAYMENTS Table -->
+  <g>
+    <rect x="460" y="300" width="180" height="180" rx="5" fill="#fef3c7" stroke="#f59e0b" stroke-width="2"/>
+    <rect x="460" y="300" width="180" height="25" fill="#f59e0b"/>
+    <text x="550" y="318" class="table-name">PAYMENTS</text>
+    
+    <text x="470" y="340" class="column pk">🔑 payment_id</text>
+    <text x="470" y="355" class="column fk">📋 order_id (FK)</text>
+    <text x="470" y="370" class="column">amount</text>
+    <text x="470" y="385" class="column">method</text>
+    <text x="470" y="400" class="column">gateway_ref</text>
+    <text x="470" y="415" class="column">status</text>
+    <text x="470" y="430" class="column">transaction_id</text>
+    <text x="470" y="445" class="column">paid_at</text>
+  </g>
+
+  <!-- SHIPPING Table -->
+  <g>
+    <rect x="680" y="300" width="180" height="180" rx="5" fill="#d1fae5" stroke="#10b981" stroke-width="2"/>
+    <rect x="680" y="300" width="180" height="25" fill="#10b981"/>
+    <text x="770" y="318" class="table-name">SHIPPING</text>
+    
+    <text x="690" y="340" class="column pk">🔑 shipping_id</text>
+    <text x="690" y="355" class="column fk">📋 order_id (FK)</text>
+    <text x="690" y="370" class="column">tracking_num</text>
+    <text x="690" y="385" class="column">carrier</text>
+    <text x="690" y="400" class="column">status</text>
+    <text x="690" y="415" class="column">shipped_at</text>
+    <text x="690" y="430" class="column">delivered_at</text>
+    <text x="690" y="445" class="column">updated_at</text>
+  </g>
+
+  <!-- Key Relationships -->
+  <text x="700" y="550" class="title" font-size="16">Table Relationships &amp; Constraints</text>
+
+  <!-- Relationship descriptions -->
+  <rect x="20" y="580" width="1360" height="280" rx="8" fill="#f3f4f6" stroke="#d1d5db" stroke-width="1"/>
+
+  <text x="40" y="605" class="column" font-weight="bold">Primary Relationships:</text>
+  <text x="40" y="630" class="column">1️⃣  USERS → STORES (One-to-Many): One user can own multiple stores</text>
+  <text x="40" y="655" class="column">2️⃣  STORES → PRODUCTS (One-to-Many): One store has many products</text>
+  <text x="40" y="680" class="column">3️⃣  PRODUCTS → PRODUCT_BADGES (One-to-Many): Dynamic badges with auto-expiry (Hot, Flash, New, Special Offer, etc.)</text>
+  <text x="40" y="705" class="column">4️⃣  USERS → CARTS (One-to-One): One active cart per user</text>
+  <text x="40" y="730" class="column">5️⃣  CARTS → CART_ITEMS (One-to-Many): Multiple items in cart</text>
+  <text x="40" y="755" class="column">6️⃣  USERS → ORDERS (One-to-Many): Customer places multiple orders</text>
+  <text x="40" y="780" class="column">7️⃣  ORDERS → ORDER_ITEMS (One-to-Many): Order contains multiple items</text>
+  <text x="40" y="805" class="column">8️⃣  ORDERS → PAYMENTS (One-to-One): Transaction tracking with Moamalat gateway</text>
+  <text x="40" y="830" class="column">9️⃣  ORDERS → SHIPPING (One-to-One): Delivery tracking and logistics</text>
+
+  <text x="40" y="860" class="column" font-weight="bold">Indexes: ON (user_id, store_id, order_id, product_id) - Optimized for queries | Constraints: CASCADE DELETE, UNIQUE keys, NOT NULL validations</text>
+</svg>

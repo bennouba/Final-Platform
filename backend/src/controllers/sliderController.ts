@@ -28,7 +28,7 @@ export const getStoreSliders = async (req: Request, res: Response): Promise<void
       order: [['sortOrder', 'ASC']],
     });
 
-    res.json({ success: true, data: sliders });
+    res.json({ success: true, data: sliders.map(s => s.toJSON()) });
   } catch (error) {
     logger.error('Error fetching store sliders:', error);
     res.status(500).json({ success: false, error: 'Failed to fetch sliders' });

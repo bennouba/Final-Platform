@@ -1,1 +1,0 @@
-cd 'c:\Users\dataf\Downloads\Eishro-Platform_V7'; npm run build

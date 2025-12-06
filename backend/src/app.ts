@@ -4,10 +4,18 @@ import helmet from 'helmet';
 import bodyParser from 'body-parser';
 import rateLimit from 'express-rate-limit';
 import path from 'path';
+import session from 'express-session';
 
 import config, { isProduction } from '@config/environment';
 import { API_PREFIX } from '@config/constants';
 import { errorHandler, notFoundHandler } from '@middleware/errorHandler';
+import {
+  comprehensiveSecurityMiddleware,
+  sanitizeResponse,
+  rateLimiters,
+  csrfProtection,
+  securityHeaders,
+} from '@middleware/securityMiddleware';
 import logger from '@utils/logger';
 import routes from '@routes/index';
 
@@ -19,35 +27,74 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use(helmet());
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", 'data:', 'https:'],
+    },
+  },
+  hsts: {
+    maxAge: 31536000,
+    includeSubDomains: true,
+    preload: true,
+  },
+}));
+
+const corsOptions = {
+  origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+    const allowedOrigins = [
+      config.frontend.production,
+      config.frontend.development,
+      'http://localhost:5173',
+      'http://localhost:5174',
+    ];
+
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(null, false);
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token', 'X-Session-Id'],
+  optionsSuccessStatus: 200,
+};
+
+app.use(cors(corsOptions));
+
+app.options('*', cors(corsOptions));
 
 app.use(
-  cors({
-    origin: isProduction
-      ? config.frontend.production
-      : (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
-          if (!origin || origin.startsWith('http://localhost:')) {
-            callback(null, true);
-          } else {
-            callback(new Error('Not allowed by CORS'));
-          }
-        },
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+  session({
+    secret: process.env.SESSION_SECRET || 'your-secret-key-change-in-production',
+    resave: false,
+    saveUninitialized: true,
+    cookie: {
+      secure: isProduction,
+      httpOnly: true,
+      sameSite: 'strict',
+      maxAge: 24 * 60 * 60 * 1000,
+    },
   })
 );
 
-app.options('*', cors());
-
 app.use((req: Request, res: Response, next: NextFunction) => {
   res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
-  res.setHeader('Access-Control-Allow-Origin', '*');
   next();
 });
 
 app.use(bodyParser.json({ limit: '50mb' }));
 app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
+
+app.use(securityHeaders);
+
+app.use(comprehensiveSecurityMiddleware);
+
+app.use(sanitizeResponse);
 
 const limiter = rateLimit({
   windowMs: config.security.rateLimitWindowMs,

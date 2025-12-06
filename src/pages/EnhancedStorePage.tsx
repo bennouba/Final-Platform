@@ -37,6 +37,7 @@ import type { Product } from '@/data/storeProducts';
 import NotifyWhenAvailable from '@/components/NotifyWhenAvailable';
 import StoreFrontSlider from '@/components/StoreFrontSlider';
 import StoreAds from '@/components/StoreAds';
+import { getTagColor, calculateBadge } from '@/utils/badgeCalculator';
 
 interface EnhancedStorePageProps {
   storeSlug: string;
@@ -165,20 +166,9 @@ const EnhancedStorePage: React.FC<EnhancedStorePageProps> = ({
     return storeSlug === 'sheirine' ? sheirineJewelryCategories : productCategories;
   };
 
-  // دالة للحصول على لون البadge بالألوان المطلوبة
-  const getBadgeColor = (badge: string) => {
-    switch (badge) {
-      case 'جديد': return 'bg-green-800'; // الأخضر الداكن
-      case 'اكثر طلبا': return 'bg-blue-800'; // الأزرق الملكي
-      case 'اكثر مبيعا': return 'bg-purple-600'; // البنفسجي
-      case 'اكثر مشاهدة': return 'bg-yellow-500'; // الأصفر
-      case 'اكثر إعجاب': return 'bg-red-500'; // الأحمر للإعجاب
-      case 'مميز': return 'bg-red-600'; // الأحمر
-      case 'تخفيضات': return 'bg-pink-600'; // الوردي
-      case 'حصري': return 'bg-gray-400'; // الفضي اللامع
-      case 'غير متوفر': return 'bg-orange-800'; // البرتقالي الداكن
-      default: return 'bg-gray-500';
-    }
+  // دالة للحصول على لون البadge باستخدام badgeCalculator
+  const getBadgeColorObj = (badge: string) => {
+    return getTagColor(badge);
   };
 
   // دالة للحصول على البadge من الـ tags بالأسماء العربية المطلوبة
@@ -259,13 +249,13 @@ const EnhancedStorePage: React.FC<EnhancedStorePageProps> = ({
 
       <div className="mb-6">
         <div className="container mx-auto px-4">
-          <StoreFrontSlider storeSlug={storeSlug} storeId={store.slug} />
+          <StoreFrontSlider storeSlug={storeSlug} storeId={store.id} />
         </div>
       </div>
 
       <div className="mb-6">
         <div className="container mx-auto px-4">
-          <StoreAds storeId={store.slug} />
+          <StoreAds storeId={store.id} />
         </div>
       </div>
 
@@ -439,20 +429,9 @@ const ProductCard: React.FC<{
     }
   };
 
-  // دالة للحصول على لون البadge بالألوان المطلوبة
-  const getBadgeColor = (badge: string) => {
-    switch (badge) {
-      case 'جديد': return 'bg-green-800'; // الأخضر الداكن
-      case 'اكثر طلبا': return 'bg-blue-800'; // الأزرق الملكي
-      case 'اكثر مبيعا': return 'bg-purple-600'; // البنفسجي
-      case 'اكثر مشاهدة': return 'bg-yellow-500'; // الأصفر
-      case 'اكثر إعجاب': return 'bg-red-500'; // الأحمر للإعجاب
-      case 'مميز': return 'bg-red-600'; // الأحمر
-      case 'تخفيضات': return 'bg-pink-600'; // الوردي
-      case 'حصري': return 'bg-gray-400'; // الفضي اللامع
-      case 'غير متوفر': return 'bg-orange-800'; // البرتقالي الداكن
-      default: return 'bg-gray-500';
-    }
+  // دالة للحصول على لون البadge باستخدام badgeCalculator
+  const getBadgeColorObj = (badge: string) => {
+    return getTagColor(badge);
   };
 
   // دالة للحصول على البadge من الـ tags بالأسماء العربية المطلوبة
@@ -614,11 +593,18 @@ const ProductCard: React.FC<{
             {/* عرض badge بناءً على الـ tags */}
             {(() => {
               const badge = getBadgeFromTags(product.tags);
-              return badge ? (
-                <Badge className={`text-xs text-white font-bold ${getBadgeColor(badge)}`}>
-                  {badge}
-                </Badge>
-              ) : null;
+              if (badge) {
+                const badgeColor = getBadgeColorObj(badge);
+                return (
+                  <span 
+                    className={`text-xs font-bold px-2 py-1 ${badgeColor.className}`}
+                    style={badgeColor.style}
+                  >
+                    {badge}
+                  </span>
+                );
+              }
+              return null;
             })()}
 
             {/* عرض tags كسلاسل نصية */}

@@ -24,6 +24,13 @@ interface ProductAttributes {
   barcode?: string;
   rating?: number;
   reviewCount: number;
+  // حقول الإحصائيات لنظام الـ badges
+  views?: number;
+  likes?: number;
+  orders?: number;
+  badge?: string;
+  tags?: string[];
+  lastBadgeUpdate?: Date;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -56,6 +63,13 @@ class Product extends Model<ProductAttributes, ProductCreationAttributes> implem
   declare barcode?: string;
   declare rating?: number;
   declare reviewCount: number;
+  // حقول الإحصائيات لنظام الـ badges
+  declare views?: number;
+  declare likes?: number;
+  declare orders?: number;
+  declare badge?: string;
+  declare tags?: string[];
+  declare lastBadgeUpdate?: Date;
   declare createdAt: Date;
   declare updatedAt: Date;
 }
@@ -176,6 +190,42 @@ Product.init(
       validate: {
         min: 0,
       },
+    },
+    // حقول الإحصائيات لنظام الـ badges
+    views: {
+      type: DataTypes.INTEGER,
+      defaultValue: 0,
+      validate: {
+        min: 0,
+      },
+    },
+    likes: {
+      type: DataTypes.INTEGER,
+      defaultValue: 0,
+      validate: {
+        min: 0,
+      },
+    },
+    orders: {
+      type: DataTypes.INTEGER,
+      defaultValue: 0,
+      validate: {
+        min: 0,
+      },
+    },
+    badge: {
+      type: DataTypes.STRING(50),
+      allowNull: true,
+      defaultValue: 'جديد',
+    },
+    tags: {
+      type: DataTypes.JSON,
+      allowNull: true,
+      defaultValue: [],
+    },
+    lastBadgeUpdate: {
+      type: DataTypes.DATE,
+      allowNull: true,
     },
   },
   {

@@ -25,7 +25,7 @@ export const config = {
 
   frontend: {
     development: process.env.FRONTEND_URL || 'http://localhost:5173',
-    production: process.env.FRONTEND_PRODUCTION_URL || 'https://platform-eishro.vercel.app',
+    production: process.env.FRONTEND_PRODUCTION_URL || 'https://final-platform-kvbk.vercel.app',
   },
 
   moamalat: {

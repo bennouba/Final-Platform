@@ -1,0 +1,237 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg viewBox="0 0 1400 1000" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .title { font-size: 28px; font-weight: bold; text-anchor: middle; fill: #1f2937; }
+      .category { font-size: 16px; font-weight: bold; fill: #1f2937; }
+      .component { font-size: 12px; text-anchor: middle; fill: #1f2937; }
+      .label { font-size: 11px; text-anchor: middle; fill: #6b7280; }
+    </style>
+  </defs>
+
+  <rect width="1400" height="1000" fill="#f9fafb"/>
+
+  <!-- Title -->
+  <text x="700" y="40" class="title">EISHRO V7 Frontend Architecture - 150+ Components</text>
+
+  <!-- Pages Layer -->
+  <g>
+    <text x="700" y="100" class="category">Main Pages (30+)</text>
+    
+    <rect x="50" y="130" width="120" height="60" rx="5" fill="#ede9fe" stroke="#8b5cf6" stroke-width="2"/>
+    <text x="110" y="155" class="component">AdminPortal</text>
+    <text x="110" y="170" class="label">117 KB</text>
+
+    <rect x="190" y="130" width="120" height="60" rx="5" fill="#ede9fe" stroke="#8b5cf6" stroke-width="2"/>
+    <text x="250" y="155" class="component">Merchant</text>
+    <text x="250" y="170" class="label">Dashboard</text>
+
+    <rect x="330" y="130" width="120" height="60" rx="5" fill="#ede9fe" stroke="#8b5cf6" stroke-width="2"/>
+    <text x="390" y="155" class="component">CreateStore</text>
+    <text x="390" y="170" class="label">103 KB</text>
+
+    <rect x="470" y="130" width="120" height="60" rx="5" fill="#ede9fe" stroke="#8b5cf6" stroke-width="2"/>
+    <text x="530" y="155" class="component">EnhancedCheckout</text>
+    <text x="530" y="170" class="label">51.8 KB</text>
+
+    <rect x="610" y="130" width="120" height="60" rx="5" fill="#ede9fe" stroke="#8b5cf6" stroke-width="2"/>
+    <text x="670" y="155" class="component">CustomerDash</text>
+    <text x="670" y="170" class="label">79.3 KB</text>
+
+    <rect x="750" y="130" width="120" height="60" rx="5" fill="#ede9fe" stroke="#8b5cf6" stroke-width="2"/>
+    <text x="810" y="155" class="component">StorePage</text>
+    <text x="810" y="170" class="label">23.9 KB</text>
+
+    <rect x="890" y="130" width="120" height="60" rx="5" fill="#ede9fe" stroke="#8b5cf6" stroke-width="2"/>
+    <text x="950" y="155" class="component">ProductPage</text>
+    <text x="950" y="170" class="label">18.2 KB</text>
+
+    <rect x="1030" y="130" width="120" height="60" rx="5" fill="#ede9fe" stroke="#8b5cf6" stroke-width="2"/>
+    <text x="1090" y="155" class="component">CartPage</text>
+    <text x="1090" y="170" class="label">44.8 KB</text>
+
+    <rect x="1170" y="130" width="120" height="60" rx="5" fill="#ede9fe" stroke="#8b5cf6" stroke-width="2"/>
+    <text x="1230" y="155" class="component">OrdersPage</text>
+    <text x="1230" y="170" class="label">24.5 KB</text>
+  </g>
+
+  <!-- Business Components Layer -->
+  <g>
+    <text x="700" y="250" class="category">Business Components (60+)</text>
+
+    <!-- Orders Section -->
+    <text x="90" y="290" class="label">Orders Management:</text>
+    <rect x="50" y="305" width="90" height="50" rx="5" fill="#fecaca" stroke="#ef4444" stroke-width="1.5"/>
+    <text x="95" y="325" class="component">ManualOrders</text>
+    <text x="95" y="338" class="label">40.4 KB</text>
+
+    <rect x="150" y="305" width="90" height="50" rx="5" fill="#fecaca" stroke="#ef4444" stroke-width="1.5"/>
+    <text x="195" y="325" class="component">CompleteOrders</text>
+    <text x="195" y="338" class="label">42.9 KB</text>
+
+    <rect x="250" y="305" width="90" height="50" rx="5" fill="#fecaca" stroke="#ef4444" stroke-width="1.5"/>
+    <text x="295" y="325" class="component">OrderTracking</text>
+    <text x="295" y="338" class="label">19.4 KB</text>
+
+    <!-- Catalog Section -->
+    <text x="450" y="290" class="label">Catalog Management:</text>
+    <rect x="410" y="305" width="90" height="50" rx="5" fill="#fed7aa" stroke="#f97316" stroke-width="1.5"/>
+    <text x="455" y="325" class="component">ProductsView</text>
+    <text x="455" y="338" class="label">45.4 KB</text>
+
+    <rect x="510" y="305" width="90" height="50" rx="5" fill="#fed7aa" stroke="#f97316" stroke-width="1.5"/>
+    <text x="555" y="325" class="component">CatalogView</text>
+    <text x="555" y="338" class="label">38.1 KB</text>
+
+    <rect x="610" y="305" width="90" height="50" rx="5" fill="#fed7aa" stroke="#f97316" stroke-width="1.5"/>
+    <text x="655" y="325" class="component">CategoryView</text>
+    <text x="655" y="338" class="label">21.8 KB</text>
+
+    <!-- Inventory Section -->
+    <text x="850" y="290" class="label">Inventory Management:</text>
+    <rect x="810" y="305" width="90" height="50" rx="5" fill="#d1fae5" stroke="#10b981" stroke-width="1.5"/>
+    <text x="855" y="325" class="component">InventoryView</text>
+    <text x="855" y="338" class="label">34.3 KB</text>
+
+    <rect x="910" y="305" width="90" height="50" rx="5" fill="#d1fae5" stroke="#10b981" stroke-width="1.5"/>
+    <text x="955" y="325" class="component">AdvancedDash</text>
+    <text x="955" y="338" class="label">44.9 KB</text>
+
+    <rect x="1010" y="305" width="90" height="50" rx="5" fill="#d1fae5" stroke="#10b981" stroke-width="1.5"/>
+    <text x="1055" y="325" class="component">AlertsView</text>
+    <text x="1055" y="338" class="label">24.5 KB</text>
+
+    <!-- Marketing Section -->
+    <text x="1250" y="290" class="label">Marketing:</text>
+    <rect x="1210" y="305" width="90" height="50" rx="5" fill="#dbeafe" stroke="#0ea5e9" stroke-width="1.5"/>
+    <text x="1255" y="320" class="component">Campaigns</text>
+    <text x="1255" y="333" class="label">38.1 KB</text>
+
+    <rect x="1310" y="305" width="90" height="50" rx="5" fill="#dbeafe" stroke="#0ea5e9" stroke-width="1.5"/>
+    <text x="1355" y="320" class="component">Discounts</text>
+    <text x="1355" y="333" class="label">37.4 KB</text>
+  </g>
+
+  <!-- UI Components Layer -->
+  <g>
+    <text x="700" y="430" class="category">UI Components &amp; Services (40+)</text>
+
+    <rect x="50" y="460" width="110" height="60" rx="5" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.5"/>
+    <text x="105" y="485" class="component">Modal Dialogs</text>
+    <text x="105" y="500" class="label">15+ Types</text>
+
+    <rect x="170" y="460" width="110" height="60" rx="5" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.5"/>
+    <text x="225" y="485" class="component">Forms &amp; Inputs</text>
+    <text x="225" y="500" class="label">20+ Variants</text>
+
+    <rect x="290" y="460" width="110" height="60" rx="5" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.5"/>
+    <text x="345" y="485" class="component">Cards &amp; Lists</text>
+    <text x="345" y="500" class="label">UI Elements</text>
+
+    <rect x="410" y="460" width="110" height="60" rx="5" fill="#f3e8ff" stroke="#a78bfa" stroke-width="1.5"/>
+    <text x="465" y="485" class="component">Sliders &amp;</text>
+    <text x="465" y="500" class="label">Carousels</text>
+
+    <rect x="530" y="460" width="110" height="60" rx="5" fill="#e0e7ff" stroke="#4f46e5" stroke-width="1.5"/>
+    <text x="585" y="485" class="component">Charts &amp;</text>
+    <text x="585" y="500" class="label">Analytics</text>
+
+    <rect x="650" y="460" width="110" height="60" rx="5" fill="#ecfdf5" stroke="#059669" stroke-width="1.5"/>
+    <text x="705" y="485" class="component">Maps &amp;</text>
+    <text x="705" y="500" class="label">Geolocation</text>
+
+    <rect x="770" y="460" width="110" height="60" rx="5" fill="#fce7f3" stroke="#ec4899" stroke-width="1.5"/>
+    <text x="825" y="485" class="component">Notifications</text>
+    <text x="825" y="500" class="label">&amp; Alerts</text>
+
+    <rect x="890" y="460" width="110" height="60" rx="5" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.5"/>
+    <text x="945" y="485" class="component">Loading States</text>
+    <text x="945" y="500" class="label">Spinners</text>
+
+    <rect x="1010" y="460" width="110" height="60" rx="5" fill="#fdf2f8" stroke="#db2777" stroke-width="1.5"/>
+    <text x="1065" y="485" class="component">Image Gallery</text>
+    <text x="1065" y="500" class="label">Lightbox</text>
+
+    <rect x="1130" y="460" width="110" height="60" rx="5" fill="#f5f3ff" stroke="#7c3aed" stroke-width="1.5"/>
+    <text x="1185" y="485" class="component">Admin Panels</text>
+    <text x="1185" y="500" class="label">Controls</text>
+  </g>
+
+  <!-- Services Layer -->
+  <g>
+    <text x="700" y="600" class="category">Business Services (10 Unified)</text>
+
+    <rect x="80" y="630" width="110" height="60" rx="5" fill="#ede9fe" stroke="#8b5cf6" stroke-width="2"/>
+    <text x="135" y="655" class="component">Unified API</text>
+    <text x="135" y="670" class="label">373 KB</text>
+
+    <rect x="210" y="630" width="110" height="60" rx="5" fill="#ede9fe" stroke="#8b5cf6" stroke-width="2"/>
+    <text x="265" y="655" class="component">ChatBot</text>
+    <text x="265" y="670" class="label">15.3 KB</text>
+
+    <rect x="340" y="630" width="110" height="60" rx="5" fill="#ede9fe" stroke="#8b5cf6" stroke-width="2"/>
+    <text x="395" y="655" class="component">FuzzySearch</text>
+    <text x="395" y="670" class="label">10.7 KB</text>
+
+    <rect x="470" y="630" width="110" height="60" rx="5" fill="#ede9fe" stroke="#8b5cf6" stroke-width="2"/>
+    <text x="525" y="655" class="component">Inventory</text>
+    <text x="525" y="670" class="label">13.8 KB</text>
+
+    <rect x="600" y="630" width="110" height="60" rx="5" fill="#ede9fe" stroke="#8b5cf6" stroke-width="2"/>
+    <text x="655" y="655" class="component">Notification</text>
+    <text x="655" y="670" class="label">15.1 KB</text>
+
+    <rect x="730" y="630" width="110" height="60" rx="5" fill="#ede9fe" stroke="#8b5cf6" stroke-width="2"/>
+    <text x="785" y="655" class="component">SmartCart</text>
+    <text x="785" y="670" class="label">8 KB</text>
+
+    <rect x="860" y="630" width="110" height="60" rx="5" fill="#ede9fe" stroke="#8b5cf6" stroke-width="2"/>
+    <text x="915" y="655" class="component">localStore</text>
+    <text x="915" y="670" class="label">Gen 11.4 KB</text>
+
+    <rect x="990" y="630" width="110" height="60" rx="5" fill="#ede9fe" stroke="#8b5cf6" stroke-width="2"/>
+    <text x="1045" y="655" class="component">merchant</text>
+    <text x="1045" y="670" class="label">Categories</text>
+
+    <rect x="1120" y="630" width="110" height="60" rx="5" fill="#ede9fe" stroke="#8b5cf6" stroke-width="2"/>
+    <text x="1175" y="655" class="component">Auth</text>
+    <text x="1175" y="670" class="label">Manager</text>
+
+    <rect x="1250" y="630" width="110" height="60" rx="5" fill="#ede9fe" stroke="#8b5cf6" stroke-width="2"/>
+    <text x="1305" y="655" class="component">Store</text>
+    <text x="1305" y="670" class="label">Sync Mgr</text>
+  </g>
+
+  <!-- Statistics -->
+  <g>
+    <text x="700" y="770" class="category">Architecture Statistics</text>
+
+    <rect x="80" y="800" width="280" height="150" rx="8" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+    <text x="220" y="825" class="label" font-weight="bold">Frontend Metrics</text>
+    <text x="95" y="850" class="label">• 150+ Components</text>
+    <text x="95" y="875" class="label">• 30+ Pages</text>
+    <text x="95" y="900" class="label">• 40+ UI Components</text>
+    <text x="95" y="925" class="label">• Total: ~2.5 MB (src)</text>
+
+    <rect x="420" y="800" width="280" height="150" rx="8" fill="#d1fae5" stroke="#10b981" stroke-width="2"/>
+    <text x="560" y="825" class="label" font-weight="bold">Services Status</text>
+    <text x="435" y="850" class="label">✅ 10 Unified Services</text>
+    <text x="435" y="875" class="label">✅ Single API Gateway</text>
+    <text x="435" y="900" class="label">✅ 0 Duplicate Files</text>
+    <text x="435" y="925" class="label">✅ Optimized Code</text>
+
+    <rect x="760" y="800" width="280" height="150" rx="8" fill="#fef3c7" stroke="#f59e0b" stroke-width="2"/>
+    <text x="900" y="825" class="label" font-weight="bold">Improvements Made</text>
+    <text x="775" y="850" class="label">✓ Removed 3 duplicates</text>
+    <text x="775" y="875" class="label">✓ Merged API services</text>
+    <text x="775" y="900" class="label">✓ Enhanced error handling</text>
+    <text x="775" y="925" class="label">✓ Production-ready</text>
+
+    <rect x="1040" y="800" width="280" height="150" rx="8" fill="#fee2e2" stroke="#dc2626" stroke-width="2"/>
+    <text x="1180" y="825" class="label" font-weight="bold">Large Files (To Split)</text>
+    <text x="1055" y="850" class="label">• EnhancedMerchant: 816KB</text>
+    <text x="1055" y="875" class="label">• App.tsx: 124.9KB</text>
+    <text x="1055" y="900" class="label">• AdminPortal: 117.7KB</text>
+    <text x="1055" y="925" class="label">• CreateStore: 103.3KB</text>
+  </g>
+</svg>

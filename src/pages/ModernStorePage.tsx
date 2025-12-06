@@ -29,6 +29,7 @@ import EnhancedNotifyModal from '@/components/EnhancedNotifyModal';
 import ShareMenu from '@/components/ShareMenu';
 import UnifiedStoreSlider from '@/components/UnifiedStoreSlider';
 import { getDefaultProductImageSync, handleImageError } from '@/utils/imageUtils';
+import { getTagColor, calculateBadge } from '@/utils/badgeCalculator';
 
 const getDynamicStores = () => {
   try {
@@ -798,40 +799,31 @@ const ProductCard: React.FC<{
     setCurrentImageIndex(0);
   }, [product.id, product.images?.length]);
 
-  // دالة للحصول على لون البadge
-  const getTagColor = (badge: string) => {
-    switch (badge) {
-      case 'جديدة':
-      case 'جديد': return 'bg-purple-600 text-white'; // البنفسجي
-      case 'أكثر مبيعاً': return 'bg-red-600 text-white'; // الأحمر
-      case 'أكثر مشاهدة': return 'bg-blue-800 text-white'; // الأزرق الداكن
-      case 'أكثر إعجاباً': return 'bg-yellow-500 text-black'; // الأصفر
-      case 'مميزة': return 'bg-green-600 text-white'; // الأخضر
-      case 'غير متوفرة':
-      case 'غير متوفر': return 'bg-orange-700 text-white'; // البرتقالي الداكن
-      case 'تخفيضات': return 'bg-pink-600 text-white'; // وردي داكن للتخفيضات
-      case 'أكثر طلباً': return 'bg-blue-500 text-white'; // أزرق عادي (للمتوافق مع المنتجات القديمة)
-      default: return 'bg-gray-500 text-white';
-    }
-  };
 
-  // دالة للحصول على البadge من الـ tags
-  const getBadgeFromTags = (tags?: string[]): string | null => {
+
+  // دالة للحصول على البadge - تستخدم الحساب الديناميكي أولاً ثم الـ tags
+  const getProductBadge = (product: Product): string | null => {
+    // أولاً: احسب الـ badge ديناميكياً
+    const calculatedBadge = calculateBadge(product);
+    if (calculatedBadge && calculatedBadge !== 'جديد') {
+      return calculatedBadge;
+    }
+
+    // ثانياً: إذا لم توجد badge محسوبة، ابحث في الـ tags
+    const tags = product.tags;
     if (!tags || !Array.isArray(tags)) {
-      return null;
+      return calculatedBadge || null;
     }
 
     const badgePriority = [
-      'غير متوفرة',
       'غير متوفر',
-      'جديدة',
-      'جديد',
-      'أكثر مبيعاً',
-      'أكثر مشاهدة',
-      'أكثر إعجاباً',
-      'مميزة',
       'تخفيضات',
-      'أكثر طلباً'
+      'مميزة',
+      'أكثر مبيعاً',
+      'أكثر إعجاباً',
+      'أكثر مشاهدة',
+      'أكثر طلباً',
+      'جديد'
     ];
 
     for (const badge of badgePriority) {
@@ -839,7 +831,7 @@ const ProductCard: React.FC<{
         return badge;
       }
     }
-    return null;
+    return calculatedBadge || null;
   };
 
   // دالة للانتقال للصورة التالية
@@ -933,12 +925,19 @@ const ProductCard: React.FC<{
           
           {/* العلامات */}
           {(() => {
-            const badge = getBadgeFromTags(product.tags);
-            return badge ? (
-              <Badge className={`absolute top-2 right-2 ${getTagColor(badge)}`}>
-                {badge}
-              </Badge>
-            ) : null;
+            const badge = getProductBadge(product);
+            if (badge) {
+              const badgeColor = getTagColor(badge);
+              return (
+                <span 
+                  className={`absolute top-2 right-2 ${badgeColor.className}`}
+                  style={badgeColor.style}
+                >
+                  {badge}
+                </span>
+              );
+            }
+            return null;
           })()}
 
           {/* أزرار الإجراءات */}
@@ -1042,32 +1041,42 @@ const ProductCard: React.FC<{
           </div>
 
           {/* الأزرار */}
-          {product.inStock ? (
-            <Button
-              onClick={(e) => {
-                e.stopPropagation();
-                onAddToCart();
-              }}
-              size="sm"
-              className="w-full bg-primary hover:bg-primary/90"
-            >
-              <ShoppingCart className="h-4 w-4 mr-1" />
-              أضف للسلة
-            </Button>
-          ) : (
-            <Button
-              onClick={(e) => {
-                e.stopPropagation();
-                onNotifyWhenAvailable();
-              }}
-              size="sm"
-              variant="outline"
-              className="w-full border-orange-300 text-orange-600 hover:bg-orange-50"
-            >
-              <Bell className="h-4 w-4 mr-1" />
-              نبهني عند التوفر
-            </Button>
-          )}
+          {(() => {
+            const quantity = product.quantity ?? 0;
+            const isOutOfStock = quantity <= 0;
+            const isLowStock = quantity > 0 && quantity < 5;
+            
+            if (isOutOfStock) {
+              return (
+                <Button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onNotifyWhenAvailable();
+                  }}
+                  size="sm"
+                  className="w-full bg-orange-700 hover:bg-orange-800 text-white"
+                >
+                  <Bell className="h-4 w-4 mr-1" />
+                  نبهني عند التوفر
+                </Button>
+              );
+            }
+            
+            return (
+              <Button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onAddToCart();
+                }}
+                size="sm"
+                className="w-full bg-green-600 hover:bg-green-700 text-white"
+              >
+                <ShoppingCart className="h-4 w-4 mr-1" />
+                أضف للسلة
+                {isLowStock && <span className="ml-1 text-xs">({quantity})</span>}
+              </Button>
+            );
+          })()}
         </div>
       </CardContent>
 
@@ -1115,12 +1124,19 @@ const ProductCard: React.FC<{
                 
                 {/* العلامات */}
                 {(() => {
-                  const badge = getBadgeFromTags(product.tags);
-                  return badge ? (
-                    <Badge className={`absolute top-4 right-4 ${getTagColor(badge)}`}>
-                      {badge}
-                    </Badge>
-                  ) : null;
+                  const badge = getProductBadge(product);
+                  if (badge) {
+                    const badgeColor = getTagColor(badge);
+                    return (
+                      <span 
+                        className={`absolute top-4 right-4 ${badgeColor.className}`}
+                        style={badgeColor.style}
+                      >
+                        {badge}
+                      </span>
+                    );
+                  }
+                  return null;
                 })()}
               </div>
 
@@ -1183,44 +1199,52 @@ const ProductCard: React.FC<{
 
                 {/* الأزرار */}
                 <div className="flex gap-3">
-                  {product.inStock ? (
-                    <>
-                      <Button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onAddToCart();
-                          setShowQuickView(false);
-                        }}
-                        className="flex-1 bg-primary hover:bg-primary/90"
-                      >
-                        <ShoppingCart className="h-4 w-4 ml-2" />
-                        أضف للسلة
-                      </Button>
-                      <Button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onProductClick();
-                        }}
-                        variant="outline"
-                        className="flex-1"
-                      >
-                        عرض التفاصيل الكاملة
-                      </Button>
-                    </>
-                  ) : (
-                    <Button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onNotifyWhenAvailable();
-                        setShowQuickView(false);
-                      }}
-                      className="w-full"
-                      variant="outline"
-                    >
-                      <Bell className="h-4 w-4 ml-2" />
-                      نبهني عند التوفر
-                    </Button>
-                  )}
+                  {(() => {
+                    const quantity = product.quantity ?? 0;
+                    const isOutOfStock = quantity <= 0;
+                    
+                    if (isOutOfStock) {
+                      return (
+                        <Button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onNotifyWhenAvailable();
+                            setShowQuickView(false);
+                          }}
+                          className="w-full bg-orange-700 hover:bg-orange-800 text-white"
+                        >
+                          <Bell className="h-4 w-4 ml-2" />
+                          نبهني عند التوفر
+                        </Button>
+                      );
+                    }
+                    
+                    return (
+                      <>
+                        <Button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onAddToCart();
+                            setShowQuickView(false);
+                          }}
+                          className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+                        >
+                          <ShoppingCart className="h-4 w-4 ml-2" />
+                          أضف للسلة
+                        </Button>
+                        <Button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onProductClick();
+                          }}
+                          variant="outline"
+                          className="flex-1"
+                        >
+                          عرض التفاصيل الكاملة
+                        </Button>
+                      </>
+                    );
+                  })()}
                 </div>
 
                 {/* أيقونات الإجراءات */}

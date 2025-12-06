@@ -19,14 +19,16 @@ import {
 } from "lucide-react";
 import { sampleProducts, storesData } from "@/data/ecommerceData";
 import { allStoreProducts } from '@/data/allStoreProducts';
-import { nawaemProducts } from '@/data/stores/nawaem/products';
+import { nawaemProducts } from '@/data/stores/nawaem/nawamProducts';
 import { sheirineProducts } from '@/data/stores/sheirine/products';
 import { prettyProducts } from '@/data/stores/pretty/products';
 import { deltaProducts } from '@/data/stores/delta-store/products';
 import { magnaBeautyProducts } from '@/data/stores/magna-beauty/products';
+import { indeeshProducts } from '@/data/stores/indeesh/products';
 import { nawaemStoreConfig } from '@/data/stores/nawaem/config';
 import { sheirineStoreConfig } from '@/data/stores/sheirine/config';
 import { magnaStoreConfig } from '@/data/stores/magna-beauty/config';
+import { getTagColor, calculateBadge, getButtonConfig, applyAutoBadges } from '@/utils/badgeCalculator';
 
 interface StorePageProps {
   storeSlug: string;
@@ -41,10 +43,8 @@ const StorePage: React.FC<StorePageProps> = ({ storeSlug, onBack, onProductClick
   const [storeAds, setStoreAds] = useState<any[]>([]);
   const [liveProducts, setLiveProducts] = useState<any[]>([]);
 
-  // البحث عن بيانات المتجر
   const store = storesData.find(s => s.slug === storeSlug);
 
-  // جلب الإعلانات من الـ API
   const fetchAds = async () => {
     try {
       if (store?.id) {
@@ -55,14 +55,13 @@ const StorePage: React.FC<StorePageProps> = ({ storeSlug, onBack, onProductClick
         }
       }
     } catch (error) {
-      console.log('Failed to fetch ads');
+      // Failed to fetch ads
     }
   };
 
-  // جلب المنتجات من الـ API
   const fetchProducts = async () => {
     try {
-      const apiUrl = import.meta.env.VITE_APP_API_URL || '/api';
+      const apiUrl = import.meta.env.VITE_API_URL || '/api';
       const response = await fetch(`${apiUrl}/products?limit=200`);
       if (response.ok) {
         const result = await response.json();
@@ -70,7 +69,7 @@ const StorePage: React.FC<StorePageProps> = ({ storeSlug, onBack, onProductClick
         setLiveProducts(products);
       }
     } catch (error) {
-      console.log('Failed to fetch products');
+      // Failed to fetch products
     }
   };
 
@@ -79,7 +78,6 @@ const StorePage: React.FC<StorePageProps> = ({ storeSlug, onBack, onProductClick
     fetchProducts();
   }, [store?.id]);
 
-  // الاستماع لتحديثات المنتجات من واجهة التاجر
   useEffect(() => {
     const handleProductUpdate = () => {
       fetchProducts();
@@ -95,7 +93,6 @@ const StorePage: React.FC<StorePageProps> = ({ storeSlug, onBack, onProductClick
     };
   }, []);
 
-  // الحصول على إعدادات المتجر
   const getStoreConfig = (slug: string) => {
     switch (slug) {
       case 'nawaem':
@@ -112,28 +109,32 @@ const StorePage: React.FC<StorePageProps> = ({ storeSlug, onBack, onProductClick
   const storeConfig = getStoreConfig(storeSlug);
   let storeProducts: any[] = [];
   
-  // استخدام المنتجات من الـ API إذا كانت متاحة، وإلا استخدم البيانات المحلية
-  if (liveProducts.length > 0) {
-    storeProducts = liveProducts;
-  } else if (store) {
+  if (store) {
     switch (store.slug) {
       case 'nawaem':
-        storeProducts = nawaemProducts;
+        storeProducts = applyAutoBadges(nawaemProducts);
         break;
       case 'sheirine':
-        storeProducts = sheirineProducts;
+        storeProducts = applyAutoBadges(sheirineProducts);
         break;
       case 'pretty':
-        storeProducts = allStoreProducts.filter(p => p.storeId === store.id);
+        storeProducts = applyAutoBadges(prettyProducts);
         break;
       case 'delta-store':
-        storeProducts = deltaProducts;
+        storeProducts = applyAutoBadges(deltaProducts);
         break;
       case 'magna-beauty':
-        storeProducts = magnaBeautyProducts;
+        storeProducts = applyAutoBadges(magnaBeautyProducts);
+        break;
+      case 'indeesh':
+        storeProducts = applyAutoBadges(indeeshProducts);
         break;
       default:
-        storeProducts = sampleProducts.filter(p => p.storeId === store.id);
+        if (liveProducts.length > 0) {
+          storeProducts = applyAutoBadges(liveProducts.filter(p => p.storeId === store.id));
+        } else {
+          storeProducts = applyAutoBadges(sampleProducts.filter(p => p.storeId === store.id));
+        }
     }
   }
   
@@ -141,7 +142,6 @@ const StorePage: React.FC<StorePageProps> = ({ storeSlug, onBack, onProductClick
     return <div>المتجر غير موجود</div>;
   }
 
-  // تصفية المنتجات
   const filteredProducts = storeProducts.filter(product => {
     const matchesSearch = (product.name || product.nameAr).toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = selectedCategory === 'الكل' || product.category === selectedCategory;
@@ -150,7 +150,6 @@ const StorePage: React.FC<StorePageProps> = ({ storeSlug, onBack, onProductClick
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* الهيدر */}
       <header className="bg-white shadow-sm border-b sticky top-0 z-40">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
@@ -168,7 +167,6 @@ const StorePage: React.FC<StorePageProps> = ({ storeSlug, onBack, onProductClick
                       alt={`${store.name} logo`}
                       className="w-full h-full object-cover"
                       onError={(e) => {
-                        // Fallback to icon if image fails to load
                         const target = e.target as HTMLImageElement;
                         target.style.display = 'none';
                         target.parentElement!.innerHTML = `<div class="h-6 w-6 text-primary">${storeConfig.icon}</div>`;
@@ -185,7 +183,6 @@ const StorePage: React.FC<StorePageProps> = ({ storeSlug, onBack, onProductClick
               </div>
             </div>
             
-            {/* أيقونات التواصل الاجتماعي */}
             <div className="flex items-center gap-2">
               <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center cursor-pointer hover:scale-110 transition-transform">
                 <Facebook className="h-5 w-5 text-white" />
@@ -201,11 +198,9 @@ const StorePage: React.FC<StorePageProps> = ({ storeSlug, onBack, onProductClick
         </div>
       </header>
 
-      {/* شريط البحث والتصفية */}
       <div className="bg-white border-b">
         <div className="container mx-auto px-4 py-4">
           <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-            {/* البحث */}
             <div className="relative flex-1 max-w-md">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
               <Input
@@ -217,7 +212,6 @@ const StorePage: React.FC<StorePageProps> = ({ storeSlug, onBack, onProductClick
               />
             </div>
 
-            {/* الفئات */}
             <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0">
               {['الكل', ...store.categories].map((category) => (
                 <Button
@@ -232,7 +226,6 @@ const StorePage: React.FC<StorePageProps> = ({ storeSlug, onBack, onProductClick
               ))}
             </div>
 
-            {/* أوضاع العرض */}
             <div className="flex items-center gap-2">
               <Button
                 variant={viewMode === 'grid' ? 'default' : 'ghost'}
@@ -253,7 +246,6 @@ const StorePage: React.FC<StorePageProps> = ({ storeSlug, onBack, onProductClick
         </div>
       </div>
 
-      {/* الإعلانات العائمة */}
       {storeAds.filter(ad => ad.placement === 'floating').length > 0 && (
         <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b">
           <div className="container mx-auto px-4 py-4">
@@ -288,7 +280,6 @@ const StorePage: React.FC<StorePageProps> = ({ storeSlug, onBack, onProductClick
         </div>
       )}
 
-      {/* المنتجات */}
       <div className="container mx-auto px-4 py-6">
         {filteredProducts.length === 0 ? (
           <div className="text-center py-12">
@@ -347,7 +338,6 @@ const StorePage: React.FC<StorePageProps> = ({ storeSlug, onBack, onProductClick
         )}
       </div>
 
-      {/* إحصائيات المتجر */}
       <div className="bg-white border-t">
         <div className="container mx-auto px-4 py-6">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -383,24 +373,42 @@ interface ProductCardProps {
 const ProductCard: React.FC<ProductCardProps> = ({ product, viewMode, onClick }) => {
   const [isLiked, setIsLiked] = useState(false);
   
+  // Ensure product has a badge, if not calculate it
+  const getBadge = (product: any): string | null => {
+    const badge = product.badge || calculateBadge(product);
+    return badge || null;
+  };
+  
   if (viewMode === 'list') {
     return (
       <Card className="overflow-hidden hover:shadow-lg transition-all duration-300 cursor-pointer group" onClick={onClick}>
         <CardContent className="p-0">
           <div className="flex">
-            {/* الصورة */}
             <div className="w-32 h-32 relative bg-gray-100 flex-shrink-0 rounded-lg overflow-hidden">
               <img
                 src={product.images[0]}
                 alt={product.name}
                 className="w-full h-full object-cover"
               />
-              {/* Discount Badge for list view */}
-              {product.originalPrice > product.price && (
-                <div className="absolute top-2 left-2 bg-red-500 text-white px-2 py-1 rounded-lg text-xs font-semibold">
-                  -{Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}%
-                </div>
-              )}
+              {(() => {
+                const badge = getBadge(product);
+                if (badge) {
+                  const { className, style } = getTagColor(badge);
+                  return (
+                    <div className={`absolute top-2 left-2 z-10 ${className}`} style={style}>
+                      {badge}
+                    </div>
+                  );
+                }
+                if (product.originalPrice > product.price) {
+                  return (
+                    <div className="absolute top-2 left-2 bg-red-500 text-white px-2 py-1 rounded-lg text-xs font-semibold z-10">
+                      -{Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}%
+                    </div>
+                  );
+                }
+                return null;
+              })()}
               <Button
                 variant="ghost"
                 size="sm"
@@ -414,7 +422,6 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, viewMode, onClick })
               </Button>
             </div>
             
-            {/* المعلومات */}
             <div className="flex-1 p-4">
               <div className="flex justify-between items-start">
                 <div className="flex-1">
@@ -423,7 +430,6 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, viewMode, onClick })
                   </h3>
                   <p className="text-sm text-gray-600 mb-2">{product.description}</p>
                   
-                  {/* التقييم */}
                   <div className="flex items-center gap-1 mb-2">
                     {[...Array(5)].map((_, i) => (
                       <Star 
@@ -434,7 +440,6 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, viewMode, onClick })
                     <span className="text-xs text-gray-500 mr-2">({product.reviews})</span>
                   </div>
                   
-                  {/* المقاسات المتوفرة */}
                   <div className="flex gap-1 mb-2">
                     {product.availableSizes.map((size: string) => (
                       <Badge key={size} variant="outline" className="text-xs">
@@ -444,7 +449,6 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, viewMode, onClick })
                   </div>
                 </div>
                 
-                {/* السعر والأزرار */}
                 <div className="text-right">
                   <div className="flex items-center gap-2 mb-3">
                     <span className="text-lg font-bold text-primary">{product.price} د.ل</span>
@@ -457,10 +461,23 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, viewMode, onClick })
                       </>
                     )}
                   </div>
-                  <Button size="sm" className="bg-primary hover:bg-primary/90">
-                    <ShoppingCart className="h-4 w-4 mr-1" />
-                    أضف للسلة
-                  </Button>
+                  {(() => {
+                    const config = getButtonConfig(product.quantity || 0);
+                    return (
+                      <Button 
+                        size="sm" 
+                        className={config.buttonClassName}
+                        disabled={config.isDisabled}
+                      >
+                        {config.status === 'unavailable' ? '🔔 نبهني عند التوفر' : (
+                          <>
+                            <ShoppingCart className="h-4 w-4 mr-1" />
+                            أضف للسلة
+                          </>
+                        )}
+                      </Button>
+                    );
+                  })()}
                 </div>
               </div>
             </div>
@@ -470,11 +487,9 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, viewMode, onClick })
     );
   }
 
-  // عرض الشبكة
   return (
     <Card className="overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer group" onClick={onClick}>
       <CardContent className="p-0">
-        {/* الصورة */}
         <div className="relative aspect-square bg-gray-100">
           <img 
             src={product.images[0]} 
@@ -482,14 +497,17 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, viewMode, onClick })
             className="w-full h-full object-cover"
           />
           
-          {/* علامة التخفيض */}
-          {product.originalPrice > product.price && (
-            <div className="absolute top-2 left-2 bg-red-500 text-white px-2 py-1 rounded-lg text-xs font-semibold">
-              -{Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}%
-            </div>
-          )}
+          {(() => {
+            const badge = getBadge(product);
+            if (!badge) return null;
+            const { className, style } = getTagColor(badge);
+            return (
+              <div className={`absolute top-2 left-2 z-10 ${className}`} style={style}>
+                {badge}
+              </div>
+            );
+          })()}
           
-          {/* زر الإعجاب */}
           <Button
             variant="ghost"
             size="sm"
@@ -502,7 +520,6 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, viewMode, onClick })
             <Heart className={`h-4 w-4 ${isLiked ? 'fill-red-500 text-red-500' : 'text-gray-500'}`} />
           </Button>
           
-          {/* أزرار الإجراءات عند التمرير */}
           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
             <Button className="bg-white text-black hover:bg-gray-100">
               عرض سريع
@@ -510,13 +527,11 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, viewMode, onClick })
           </div>
         </div>
         
-        {/* معلومات المنتج */}
         <div className="p-4">
           <h3 className="font-semibold text-gray-900 group-hover:text-primary transition-colors mb-2">
             {product.name}
           </h3>
           
-          {/* التقييم */}
           <div className="flex items-center gap-1 mb-2">
             {[...Array(5)].map((_, i) => (
               <Star 
@@ -527,7 +542,6 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, viewMode, onClick })
             <span className="text-xs text-gray-500 mr-2">({product.reviews})</span>
           </div>
           
-          {/* الألوان */}
           <div className="flex gap-1 mb-3">
             {product.colors.slice(0, 3).map((color: any, index: number) => (
               <div 
@@ -544,7 +558,6 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, viewMode, onClick })
             )}
           </div>
           
-          {/* السعر */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="text-lg font-bold text-primary">{product.price} د.ل</span>
@@ -558,9 +571,23 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, viewMode, onClick })
               )}
             </div>
             
-            <Button size="sm" className="bg-primary hover:bg-primary/90">
-              <ShoppingCart className="h-4 w-4" />
-            </Button>
+            {(() => {
+              const config = getButtonConfig(product.quantity || 0);
+              return (
+                <Button 
+                  size="sm" 
+                  className={config.buttonClassName}
+                  disabled={config.isDisabled}
+                >
+                  {config.status === 'unavailable' ? '🔔 نبهني عند التوفر' : (
+                    <>
+                      <ShoppingCart className="h-4 w-4 mr-1" />
+                      أضف للسلة
+                    </>
+                  )}
+                </Button>
+              );
+            })()}
           </div>
         </div>
       </CardContent>

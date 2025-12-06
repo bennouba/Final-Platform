@@ -25,6 +25,7 @@ import { allStoreProducts } from '@/data/allStoreProducts';
 import type { Product } from '@/data/storeProducts';
 import NotifyWhenAvailable from '@/components/NotifyWhenAvailable';
 import { getStoresData } from '@/data/ecommerceData';
+import { getTagColor, getButtonConfig } from '@/utils/badgeCalculator';
 
 interface Color {
   name: string;
@@ -81,8 +82,12 @@ const EnhancedProductPage: React.FC<EnhancedProductPageProps> = ({
   }, [storeSlug, product.storeId, storesCatalog]);
   const notifyStoreSlug = resolvedStoreInfo?.slug || storeSlug;
   const notifyStoreName = resolvedStoreInfo?.name;
+  const safeProduct = {
+    ...product,
+    availableSizes: product.availableSizes || product.sizes || []
+  };
 
-  
+ 
   // عدادات live (محاكاة) - تعيين القيم المحددة للمنتجات غير المتوفرة
   const [liveViews, setLiveViews] = useState(3);
   const [liveLikes, setLiveLikes] = useState(0);
@@ -215,9 +220,31 @@ const EnhancedProductPage: React.FC<EnhancedProductPageProps> = ({
 
   // دالة للحصول على منتجات مشابهة
   const getSimilarProducts = (currentProduct: Product) => {
-    return allStoreProducts
-      .filter(p => p.id !== currentProduct.id && p.category === currentProduct.category)
-      .slice(0, 8);
+    // البحث عن منتجات من نفس الفئة
+    let similar = allStoreProducts.filter(p => 
+      p.id !== currentProduct.id && 
+      p.category === currentProduct.category
+    );
+
+    // إذا لم نجد منتجات كافية، نبحث عن منتجات من نفس المتجر
+    if (similar.length < 4) {
+      const sameStore = allStoreProducts.filter(p => 
+        p.id !== currentProduct.id && 
+        p.storeId === currentProduct.storeId
+      );
+      similar = [...similar, ...sameStore].slice(0, 8);
+    }
+
+    // إذا لم نجد منتجات كافية، نعود للمنتجات الأخرى العشوائية
+    if (similar.length < 4) {
+      const others = allStoreProducts.filter(p => 
+        p.id !== currentProduct.id && 
+        !similar.find(s => s.id === p.id)
+      );
+      similar = [...similar, ...others].slice(0, 8);
+    }
+
+    return similar.slice(0, 4);
   };
 
   const renderStarRating = (rating: number): JSX.Element[] => {
@@ -247,36 +274,26 @@ const EnhancedProductPage: React.FC<EnhancedProductPageProps> = ({
     return stars;
   };
 
-  // دالة للحصول على لون العلامة
-  const getBadgeColor = (badge: string) => {
-    switch (badge) {
-      case 'جديدة':
-      case 'جديد': return 'bg-purple-600'; // البنفسجي
-      case 'أكثر مبيعاً': return 'bg-red-600'; // الأحمر
-      case 'أكثر مشاهدة': return 'bg-blue-800'; // الأزرق الداكن
-      case 'أكثر إعجاباً': return 'bg-yellow-500'; // الأصفر
-      case 'مميزة': return 'bg-green-600'; // الأخضر
-      case 'غير متوفرة':
-      case 'غير متوفر': return 'bg-orange-700'; // البرتقالي الداكن
-      case 'تخفيضات': return 'bg-pink-600'; // وردي داكن للتخفيضات
-      case 'أكثر طلباً': return 'bg-blue-500'; // أزرق عادي (للمتوافق مع المنتجات القديمة)
-      default: return 'bg-gray-500';
-    }
-  };
+  const getBadgeColor = getTagColor;
 
   // دالة للحصول على البadge من الـ tags
   const getBadgeFromTags = (tags: string[]): string | null => {
+    if (!tags || tags.length === 0) {
+      return null;
+    }
+    
     const badgePriority = [
-      'غير متوفرة',
       'غير متوفر',
-      'جديدة',
-      'جديد',
-      'أكثر مبيعاً',
-      'أكثر مشاهدة',
-      'أكثر إعجاباً',
-      'مميزة',
+      'غير متوفرة',
+      'متوفر',
       'تخفيضات',
-      'أكثر طلباً'
+      'مميزة',
+      'أكثر مبيعاً',
+      'أكثر إعجاباً',
+      'أكثر طلباً',
+      'أكثر مشاهدة',
+      'جديد',
+      'جديدة'
     ];
 
     for (const badge of badgePriority) {
@@ -328,13 +345,18 @@ const EnhancedProductPage: React.FC<EnhancedProductPageProps> = ({
             <div className="relative aspect-square bg-white rounded-2xl overflow-hidden shadow-lg border border-gray-200">
               {(() => {
                 const badge = getBadgeFromTags(product.tags);
-                return badge ? (
-                  <Badge
-                    className={`absolute top-4 right-4 z-10 text-white font-bold px-3 py-1 ${getBadgeColor(badge)}`}
-                  >
-                    {badge}
-                  </Badge>
-                ) : null;
+                if (badge) {
+                  const badgeColor = getBadgeColor(badge);
+                  return (
+                    <span
+                      className={`absolute top-4 right-4 z-10 font-bold px-3 py-1 ${badgeColor.className}`}
+                      style={badgeColor.style}
+                    >
+                      {badge}
+                    </span>
+                  );
+                }
+                return null;
               })()}
               
               <img
@@ -561,38 +583,45 @@ const EnhancedProductPage: React.FC<EnhancedProductPageProps> = ({
 
             {/* أزرار الإضافة للسلة والشراء */}
             <div className="space-y-3">
-              {product.inStock && product.isAvailable ? (
-                <>
-                  <Button
-                    onClick={handleAddToCart}
-                    className="w-full bg-primary hover:bg-primary/90 text-white py-3 text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
-                  >
-                    <ShoppingCart className="h-5 w-5 mr-2" />
-                    أضف للسلة
-                  </Button>
-                  
-                  <Button
-                    onClick={handleBuyNow}
-                    variant="outline"
-                    className="w-full border-2 border-primary text-primary hover:bg-primary hover:text-white py-3 text-lg font-semibold rounded-xl transition-all duration-300"
-                  >
-                    <Zap className="h-5 w-5 mr-2" />
-                    اشتري الآن
-                  </Button>
-                </>
-              ) : (
-                <Button
-                  onClick={() => {
-
-                    handleNotifyWhenAvailable();
-                  }}
-                  variant="outline"
-                  className="w-full border-2 border-orange-500 text-orange-600 hover:bg-orange-50 py-3 text-lg font-semibold rounded-xl"
-                >
-                  <Bell className="h-5 w-5 mr-2" />
-                  نبهني عند التوفر
-                </Button>
-              )}
+              {(() => {
+                const quantity = product.quantity ?? 0;
+                const isOutOfStock = quantity <= 0;
+                const isLowStock = quantity > 0 && quantity < 5;
+                
+                if (isOutOfStock) {
+                  return (
+                    <Button
+                      onClick={handleNotifyWhenAvailable}
+                      className="w-full bg-orange-700 hover:bg-orange-800 text-white py-3 text-lg font-semibold rounded-xl"
+                    >
+                      <Bell className="h-5 w-5 mr-2" />
+                      نبهني عند التوفر
+                    </Button>
+                  );
+                }
+                
+                return (
+                  <>
+                    <Button
+                      onClick={handleAddToCart}
+                      className="w-full bg-green-600 hover:bg-green-700 text-white py-3 text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
+                    >
+                      <ShoppingCart className="h-5 w-5 mr-2" />
+                      أضف للسلة
+                      {isLowStock && <span className="ml-2 text-xs">(متبقي: {quantity})</span>}
+                    </Button>
+                    
+                    <Button
+                      onClick={handleBuyNow}
+                      variant="outline"
+                      className="w-full border-2 border-green-600 text-green-600 hover:bg-green-600 hover:text-white py-3 text-lg font-semibold rounded-xl transition-all duration-300"
+                    >
+                      <Zap className="h-5 w-5 mr-2" />
+                      اشتري الآن
+                    </Button>
+                  </>
+                );
+              })()}
             </div>
 
             {/* العدادات المباشرة */}
@@ -709,11 +738,18 @@ const EnhancedProductPage: React.FC<EnhancedProductPageProps> = ({
                     />
                     {(() => {
                       const badge = getBadgeFromTags(similarProduct.tags);
-                      return badge ? (
-                        <Badge className={`absolute top-2 right-2 text-white text-xs px-2 py-1 ${getBadgeColor(badge)}`}>
-                          {badge}
-                        </Badge>
-                      ) : null;
+                      if (badge) {
+                        const badgeColor = getBadgeColor(badge);
+                        return (
+                          <span 
+                            className={`absolute top-2 right-2 text-xs ${badgeColor.className}`}
+                            style={badgeColor.style}
+                          >
+                            {badge}
+                          </span>
+                        );
+                      }
+                      return null;
                     })()}
                   </div>
                   <h3 className="font-medium text-gray-900 text-sm mb-2 line-clamp-2">{similarProduct.name}</h3>

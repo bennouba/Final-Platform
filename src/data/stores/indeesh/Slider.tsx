@@ -12,6 +12,22 @@ import {
 import type { Product } from '../../storeProducts';
 import { indeeshSliderData } from './sliderData';
 
+const getBackendUrl = () => {
+  const apiUrl = import.meta.env.VITE_API_URL;
+  if (apiUrl) return apiUrl;
+  return typeof window !== 'undefined' && window.location.hostname === 'localhost'
+    ? 'http://localhost:5000'
+    : 'https://eishro-backend.onrender.com';
+};
+
+const getImageUrl = (assetPath: string) => {
+  const backendUrl = getBackendUrl();
+  return {
+    primary: `${backendUrl}${assetPath}`,
+    fallback: assetPath,
+  };
+};
+
 interface SliderImage {
   id: string;
   image: string;
@@ -45,8 +61,16 @@ const IndeeshSlider: React.FC<IndeeshSliderProps> = ({
   const sliderRef = useRef<HTMLDivElement>(null);
   const startX = useRef(0);
   
+  const processSliderData = (slides: any[]) => {
+    return slides.map(slide => ({
+      ...slide,
+      image: getImageUrl(slide.image).primary,
+      fallbackImage: getImageUrl(slide.image).fallback,
+    }));
+  };
+
   const sliderBanners = sliderImages && sliderImages.length > 0 ? sliderImages : indeeshSliderData;
-  const allSlides = sliderBanners;
+  const allSlides = processSliderData(sliderBanners);
 
   useEffect(() => {
     if (!isAutoPlaying || allSlides.length <= 1 || isDragging) return;
@@ -156,12 +180,12 @@ const IndeeshSlider: React.FC<IndeeshSliderProps> = ({
                 alt={slide.title}
                 className="w-full h-full object-cover object-center"
                 onError={(e) => {
-
                   const target = e.target as HTMLImageElement;
-                  target.style.display = 'none';
-                }}
-                onLoad={() => {
-
+                  if (slide.fallbackImage && target.src !== slide.fallbackImage) {
+                    target.src = slide.fallbackImage;
+                  } else {
+                    target.style.display = 'none';
+                  }
                 }}
               />
               

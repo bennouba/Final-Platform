@@ -4,6 +4,23 @@ import {
   ArrowRight,
   Sparkles
 } from 'lucide-react';
+
+const getBackendUrl = () => {
+  const apiUrl = import.meta.env.VITE_API_URL;
+  if (apiUrl) return apiUrl;
+  return typeof window !== 'undefined' && window.location.hostname === 'localhost'
+    ? 'http://localhost:5000'
+    : 'https://eishro-backend.onrender.com';
+};
+
+const getImageUrl = (assetPath: string) => {
+  const backendUrl = getBackendUrl();
+  return {
+    primary: `${backendUrl}${assetPath}`,
+    fallback: assetPath,
+  };
+};
+
 interface MagnaBeautySliderProps {
   products?: any[];
   sliderImages?: Array<{ id: string | number; image: string; title?: string; subtitle?: string; buttonText?: string }>;
@@ -32,27 +49,32 @@ const MagnaBeautySlider: React.FC<MagnaBeautySliderProps> = ({
   const defaultBanners = [
     {
       id: 'magna-beauty-banner1',
-      image: '/assets/magna-beauty/slide1.webp',
+      image: getImageUrl('/assets/magna-beauty/sliders/slide1.webp').primary,
+      fallbackImage: getImageUrl('/assets/magna-beauty/sliders/slide1.webp').fallback,
       title: 'مكياج عصري أنيق'
     },
     {
       id: 'magna-beauty-banner2',
-      image: '/assets/magna-beauty/slide2.webp',
+      image: getImageUrl('/assets/magna-beauty/sliders/slide2.webp').primary,
+      fallbackImage: getImageUrl('/assets/magna-beauty/sliders/slide2.webp').fallback,
       title: 'رموش أنيقة وعصرية'
     },
     {
       id: 'magna-beauty-banner3',
-      image: '/assets/magna-beauty/slide3.webp',
+      image: getImageUrl('/assets/magna-beauty/sliders/slide3.webp').primary,
+      fallbackImage: getImageUrl('/assets/magna-beauty/sliders/slide3.webp').fallback,
       title: 'إكسسوارات مميزة'
     },
     {
       id: 'magna-beauty-banner4',
-      image: '/assets/magna-beauty/slide4.webp',
+      image: getImageUrl('/assets/magna-beauty/sliders/slide4.webp').primary,
+      fallbackImage: getImageUrl('/assets/magna-beauty/sliders/slide4.webp').fallback,
       title: 'مكياج عصري أنيق'
     },
     {
       id: 'magna-beauty-banner5',
-      image: '/assets/magna-beauty/slide5.webp',
+      image: getImageUrl('/assets/magna-beauty/sliders/slide5.webp').primary,
+      fallbackImage: getImageUrl('/assets/magna-beauty/sliders/slide5.webp').fallback,
       title: 'تشكيلة عصرية مميزة'
     },
   ];
@@ -184,7 +206,11 @@ const MagnaBeautySlider: React.FC<MagnaBeautySliderProps> = ({
                 className="w-full h-full object-cover object-center"
                 onError={(e) => {
                   const target = e.target as HTMLImageElement;
-                  target.style.display = 'none';
+                  if (slide.fallbackImage && target.src !== slide.fallbackImage) {
+                    target.src = slide.fallbackImage;
+                  } else {
+                    target.style.display = 'none';
+                  }
                 }}
               />
             </div>

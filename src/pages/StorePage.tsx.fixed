@@ -1,0 +1,28 @@
+  const storeConfig = getStoreConfig(storeSlug);
+  let storeProducts: any[] = [];
+  
+  if (store) {
+    switch (store.slug) {
+      case 'nawaem':
+        storeProducts = nawaemProducts;
+        break;
+      case 'sheirine':
+        storeProducts = sheirineProducts;
+        break;
+      case 'pretty':
+        storeProducts = allStoreProducts.filter(p => p.storeId === store.id);
+        break;
+      case 'delta-store':
+        storeProducts = deltaProducts;
+        break;
+      case 'magna-beauty':
+        storeProducts = magnaBeautyProducts;
+        break;
+      default:
+        if (liveProducts.length > 0) {
+          storeProducts = liveProducts.filter(p => p.storeId === store.id);
+        } else {
+          storeProducts = sampleProducts.filter(p => p.storeId === store.id);
+        }
+    }
+  }

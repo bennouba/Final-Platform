@@ -217,7 +217,7 @@ export async function openMoamalatLightbox(options: OpenMoamalatOptions): Promis
   const { MID, TID, ENV } = await resolveMerchantCredentials();
   await ensureScriptLoaded(ENV);
 
-  const amountMinorUnits = String(Math.round(Number(options.amountLYD) * 1000));
+  const amountMinorUnits = String(Math.round(Number(options.amountLYD) * 100));
   const trxDateTime = formatTrxDateTime(new Date());
   const merchantReference = `${options.referencePrefix ?? "ESH"}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
 

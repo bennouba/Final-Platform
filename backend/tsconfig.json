@@ -27,6 +27,7 @@
       "@validators/*": ["validators/*"],
       "@utils/*": ["utils/*"],
       "@migrations/*": ["migrations/*"],
+      "@security/*": ["security/*"],
       "@shared-types/*": ["types/*"]
     }
   },

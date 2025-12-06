@@ -1,0 +1,225 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg viewBox="0 0 1400 1100" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .title { font-size: 26px; font-weight: bold; text-anchor: middle; fill: #1f2937; }
+      .subtitle { font-size: 14px; text-anchor: middle; fill: #6b7280; }
+      .step-title { font-size: 14px; font-weight: bold; fill: #1f2937; }
+      .step-text { font-size: 12px; fill: #4b5563; }
+      .arrow { stroke: #3b82f6; stroke-width: 2; marker-end: url(#arrowhead); }
+      .label { font-size: 11px; text-anchor: middle; fill: #1f2937; }
+    </style>
+    <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="#3b82f6" />
+    </marker>
+    <marker id="arrowhead-green" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="#10b981" />
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1400" height="1100" fill="#f9fafb"/>
+
+  <!-- Title -->
+  <text x="700" y="40" class="title">EISHRO V7 - Data Flow & Request Processing</text>
+
+  <!-- Customer Request Flow -->
+  <g>
+    <!-- Step 1: User Action -->
+    <rect x="50" y="100" width="140" height="80" rx="8" fill="#dbeafe" stroke="#0ea5e9" stroke-width="2"/>
+    <text x="120" y="125" class="step-title">1. User Action</text>
+    <text x="120" y="145" class="step-text">Browse/Select</text>
+    <text x="120" y="160" class="step-text">Products</text>
+
+    <!-- Arrow -->
+    <path d="M 190 140 L 240 140" class="arrow"/>
+
+    <!-- Step 2: Frontend Processing -->
+    <rect x="240" y="100" width="140" height="80" rx="8" fill="#ede9fe" stroke="#8b5cf6" stroke-width="2"/>
+    <text x="310" y="125" class="step-title">2. Frontend</text>
+    <text x="310" y="145" class="step-text">React Component</text>
+    <text x="310" y="160" class="step-text">Validation</text>
+
+    <!-- Arrow -->
+    <path d="M 380 140 L 430 140" class="arrow"/>
+
+    <!-- Step 3: Smart Cart Service -->
+    <rect x="430" y="100" width="140" height="80" rx="8" fill="#fef3c7" stroke="#f59e0b" stroke-width="2"/>
+    <text x="500" y="125" class="step-title">3. SmartCart</text>
+    <text x="500" y="145" class="step-text">Add to Cart</text>
+    <text x="500" y="160" class="step-text">Service</text>
+
+    <!-- Arrow -->
+    <path d="M 570 140 L 620 140" class="arrow"/>
+
+    <!-- Step 4: API Call -->
+    <rect x="620" y="100" width="140" height="80" rx="8" fill="#fecaca" stroke="#ef4444" stroke-width="2"/>
+    <text x="690" y="125" class="step-title">4. Unified API</text>
+    <text x="690" y="145" class="step-text">REST Request</text>
+    <text x="690" y="160" class="step-text">/cart/add</text>
+
+    <!-- Arrow -->
+    <path d="M 760 140 L 810 140" class="arrow"/>
+
+    <!-- Step 5: Backend Validation -->
+    <rect x="810" y="100" width="140" height="80" rx="8" fill="#fee2e2" stroke="#dc2626" stroke-width="2"/>
+    <text x="880" y="125" class="step-title">5. Backend</text>
+    <text x="880" y="145" class="step-text">Auth & Validate</text>
+    <text x="880" y="160" class="step-text">Request</text>
+
+    <!-- Arrow -->
+    <path d="M 950 140 L 1000 140" class="arrow"/>
+
+    <!-- Step 6: Database -->
+    <rect x="1000" y="100" width="140" height="80" rx="8" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+    <text x="1070" y="125" class="step-title">6. Database</text>
+    <text x="1070" y="145" class="step-text">Transaction</text>
+    <text x="1070" y="160" class="step-text">INSERT/UPDATE</text>
+
+    <!-- Arrow -->
+    <path d="M 1140 140 L 1190 140" class="arrow"/>
+
+    <!-- Step 7: Response -->
+    <rect x="1190" y="100" width="140" height="80" rx="8" fill="#d1fae5" stroke="#10b981" stroke-width="2"/>
+    <text x="1260" y="125" class="step-title">7. Response</text>
+    <text x="1260" y="145" class="step-text">Success JSON</text>
+    <text x="1260" y="160" class="step-text">w/ Updated Data</text>
+  </g>
+
+  <!-- Checkout Flow -->
+  <g>
+    <text x="700" y="260" class="title" font-size="18">Checkout &amp; Payment Flow</text>
+
+    <!-- Checkout Steps -->
+    <rect x="50" y="300" width="120" height="70" rx="8" fill="#e0e7ff" stroke="#4f46e5" stroke-width="2"/>
+    <text x="110" y="325" class="step-title">Cart Review</text>
+    <text x="110" y="345" class="step-text">Validate Items</text>
+
+    <path d="M 170 335 L 210 335" class="arrow"/>
+
+    <rect x="210" y="300" width="120" height="70" rx="8" fill="#e0e7ff" stroke="#4f46e5" stroke-width="2"/>
+    <text x="270" y="325" class="step-title">Shipping</text>
+    <text x="270" y="345" class="step-text">Address &amp; Method</text>
+
+    <path d="M 330 335 L 370 335" class="arrow"/>
+
+    <rect x="370" y="300" width="120" height="70" rx="8" fill="#e0e7ff" stroke="#4f46e5" stroke-width="2"/>
+    <text x="430" y="325" class="step-title">Payment</text>
+    <text x="430" y="345" class="step-text">Method Select</text>
+
+    <path d="M 490 335 L 530 335" class="arrow"/>
+
+    <rect x="530" y="300" width="120" height="70" rx="8" fill="#fecaca" stroke="#ef4444" stroke-width="2"/>
+    <text x="590" y="325" class="step-title">Moamalat</text>
+    <text x="590" y="345" class="step-text">Process Payment</text>
+
+    <path d="M 650 335 L 690 335" class="arrow"/>
+
+    <rect x="690" y="300" width="120" height="70" rx="8" fill="#d1fae5" stroke="#10b981" stroke-width="2"/>
+    <text x="750" y="325" class="step-title">Create Order</text>
+    <text x="750" y="345" class="step-text">Transaction</text>
+
+    <path d="M 810 335 L 850 335" class="arrow"/>
+
+    <rect x="850" y="300" width="120" height="70" rx="8" fill="#e0e7ff" stroke="#4f46e5" stroke-width="2"/>
+    <text x="910" y="325" class="step-title">Notification</text>
+    <text x="910" y="345" class="step-text">Send Alerts</text>
+
+    <path d="M 970 335 L 1010 335" class="arrow"/>
+
+    <rect x="1010" y="300" width="120" height="70" rx="8" fill="#d1fae5" stroke="#10b981" stroke-width="2"/>
+    <text x="1070" y="325" class="step-title">Fulfillment</text>
+    <text x="1070" y="345" class="step-text">Start Processing</text>
+  </g>
+
+  <!-- Database Transaction -->
+  <g>
+    <text x="700" y="450" class="title" font-size="18">Database Transaction Structure</text>
+
+    <rect x="80" y="490" width="280" height="100" rx="8" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+    <text x="220" y="510" class="step-title">ORDERS Table</text>
+    <text x="95" y="530" class="step-text">• order_id (PK)</text>
+    <text x="95" y="550" class="step-text">• user_id (FK)</text>
+    <text x="95" y="570" class="step-text">• total_amount, status</text>
+
+    <rect x="420" y="490" width="280" height="100" rx="8" fill="#d1fae5" stroke="#10b981" stroke-width="2"/>
+    <text x="560" y="510" class="step-title">ORDER_ITEMS Table</text>
+    <text x="435" y="530" class="step-text">• order_item_id (PK)</text>
+    <text x="435" y="550" class="step-text">• order_id (FK)</text>
+    <text x="435" y="570" class="step-text">• product_id, quantity</text>
+
+    <rect x="760" y="490" width="280" height="100" rx="8" fill="#fed7aa" stroke="#f97316" stroke-width="2"/>
+    <text x="900" y="510" class="step-title">PAYMENTS Table</text>
+    <text x="775" y="530" class="step-text">• payment_id (PK)</text>
+    <text x="775" y="550" class="step-text">• order_id (FK)</text>
+    <text x="775" y="570" class="step-text">• amount, method, status</text>
+
+    <path d="M 360 540 L 420 540" stroke="#4f46e5" stroke-width="2" marker-end="url(#arrowhead)"/>
+    <path d="M 700 540 L 760 540" stroke="#4f46e5" stroke-width="2" marker-end="url(#arrowhead)"/>
+  </g>
+
+  <!-- Services Interaction -->
+  <g>
+    <text x="700" y="670" class="title" font-size="18">Service Interactions</text>
+
+    <circle cx="150" cy="750" r="50" fill="#ede9fe" stroke="#8b5cf6" stroke-width="2"/>
+    <text x="150" y="740" class="label" font-weight="bold">ChatBot</text>
+    <text x="150" y="758" class="label">AI Chat</text>
+
+    <circle cx="350" cy="750" r="50" fill="#fef3c7" stroke="#f59e0b" stroke-width="2"/>
+    <text x="350" y="740" class="label" font-weight="bold">Inventory</text>
+    <text x="350" y="758" class="label">Stock Mgmt</text>
+
+    <circle cx="550" cy="750" r="50" fill="#fecaca" stroke="#ef4444" stroke-width="2"/>
+    <text x="550" y="740" class="label" font-weight="bold">Notifications</text>
+    <text x="550" y="758" class="label">Alerts</text>
+
+    <circle cx="750" cy="750" r="50" fill="#dbeafe" stroke="#0ea5e9" stroke-width="2"/>
+    <text x="750" y="740" class="label" font-weight="bold">SmartCart</text>
+    <text x="750" y="758" class="label">Cart Mgmt</text>
+
+    <circle cx="950" cy="750" r="50" fill="#d1fae5" stroke="#10b981" stroke-width="2"/>
+    <text x="950" y="740" class="label" font-weight="bold">FuzzySearch</text>
+    <text x="950" y="758" class="label">Smart Search</text>
+
+    <circle cx="1150" cy="750" r="50" fill="#e0e7ff" stroke="#4f46e5" stroke-width="2"/>
+    <text x="1150" y="740" class="label" font-weight="bold">Unified API</text>
+    <text x="1150" y="758" class="label">Backend</text>
+
+    <!-- Connections -->
+    <path d="M 200 750 L 300 750" stroke="#6366f1" stroke-width="1.5" stroke-dasharray="5,5"/>
+    <path d="M 400 750 L 500 750" stroke="#6366f1" stroke-width="1.5" stroke-dasharray="5,5"/>
+    <path d="M 600 750 L 700 750" stroke="#6366f1" stroke-width="1.5" stroke-dasharray="5,5"/>
+    <path d="M 800 750 L 900 750" stroke="#6366f1" stroke-width="1.5" stroke-dasharray="5,5"/>
+    <path d="M 1000 750 L 1100 750" stroke="#6366f1" stroke-width="1.5" stroke-dasharray="5,5"/>
+  </g>
+
+  <!-- Performance Metrics -->
+  <g>
+    <text x="700" y="900" class="title" font-size="18">Performance &amp; Optimization Status</text>
+
+    <rect x="50" y="940" width="280" height="120" rx="8" fill="#fee2e2" stroke="#dc2626" stroke-width="2"/>
+    <text x="190" y="965" class="step-title">⚠️ Issues Identified</text>
+    <text x="60" y="990" class="step-text">• Large files: 816KB+</text>
+    <text x="60" y="1010" class="step-text">• Memory leaks in services</text>
+    <text x="60" y="1030" class="step-text">• Race conditions possible</text>
+
+    <rect x="380" y="940" width="280" height="120" rx="8" fill="#d1fae5" stroke="#10b981" stroke-width="2"/>
+    <text x="520" y="965" class="step-title">✅ Improvements Done</text>
+    <text x="390" y="990" class="step-text">• Removed duplicate files</text>
+    <text x="390" y="1010" class="step-text">• Unified API service</text>
+    <text x="390" y="1030" class="step-text">• Better error handling</text>
+
+    <rect x="710" y="940" width="280" height="120" rx="8" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+    <text x="850" y="965" class="step-title">📊 Metrics</text>
+    <text x="720" y="990" class="step-text">• 373 KB unified API service</text>
+    <text x="720" y="1010" class="step-text">• 3 duplicate files removed</text>
+    <text x="720" y="1030" class="step-text">• Zero critical errors</text>
+
+    <rect x="1040" y="940" width="310" height="120" rx="8" fill="#fef3c7" stroke="#f59e0b" stroke-width="2"/>
+    <text x="1195" y="965" class="step-title">🎯 Next Steps</text>
+    <text x="1055" y="990" class="step-text">• Split large components</text>
+    <text x="1055" y="1010" class="step-text">• Performance profiling</text>
+    <text x="1055" y="1030" class="step-text">• Bundle size optimization</text>
+  </g>
+</svg>

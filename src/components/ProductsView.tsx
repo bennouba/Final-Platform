@@ -54,7 +54,7 @@ import { Checkbox } from './ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { libyanCities } from '@/data/libya/cities/cities';
 
-const API_BASE_URL = import.meta.env.VITE_APP_API_URL || '/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
 interface Product {
   id: string;

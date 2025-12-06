@@ -13,7 +13,6 @@ const router = Router();
 
 router.post(
   '/moamalat/hash',
-  authenticate,
   (req: Request, res: Response, next: NextFunction) => validate(generateMoamalatHashSchema)(req, res, next),
   paymentController.generateMoamalatHash
 );
@@ -32,5 +31,7 @@ router.post(
 );
 
 router.post('/webhook/moamalat', paymentController.handleMoamalatWebhook);
+
+router.get('/moamalat/test', paymentController.testMoamalatConfig);
 
 export default router;

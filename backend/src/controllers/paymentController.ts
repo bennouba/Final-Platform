@@ -20,26 +20,10 @@ export const generateMoamalatHash = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    if (!req.user) {
-      sendUnauthorized(res, 'User not authenticated');
-      return;
-    }
-
     const { orderId, amount, currency = 'LYD' } = req.body;
 
-    const order = await Order.findByPk(orderId);
-    if (!order) {
-      sendNotFound(res, 'Order not found');
-      return;
-    }
-
-    if (order.customerId && order.customerId !== req.user.id) {
-      sendError(res, 'You do not have permission to access this order', 403, 'FORBIDDEN');
-      return;
-    }
-
-    if (order.paymentStatus !== PaymentStatus.PENDING) {
-      sendError(res, 'Order payment is not in pending status', 400, 'INVALID_PAYMENT_STATUS');
+    if (!orderId || !amount) {
+      sendBadRequest(res, 'Missing orderId or amount');
       return;
     }
 
@@ -61,30 +45,6 @@ export const generateMoamalatHash = async (
     }
 
     const { secureHash } = moamalatHashUtil(hashRequest);
-
-    let payment = await Payment.findOne({ where: { orderId } });
-
-    if (!payment) {
-      const paymentId = generateUUID();
-      payment = await Payment.create({
-        id: paymentId,
-        orderId,
-        amount,
-        currency,
-        gateway: PaymentGateway.MOAMALAT,
-        status: PaymentStatus.PENDING,
-        secureHash,
-        merchantReference,
-      });
-    } else {
-      await payment.update({
-        amount,
-        currency,
-        secureHash,
-        merchantReference,
-        status: PaymentStatus.PENDING,
-      });
-    }
 
     logger.info(`Moamalat hash generated for order: ${orderId}, reference: ${merchantReference}`);
 
@@ -263,5 +223,50 @@ export const refundPayment = async (
   } catch (error) {
     logger.error('Refund payment error:', error);
     next(error);
+  }
+};
+
+export const testMoamalatConfig = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const testAmount = 100;
+    const testDateTime = formatDateTimeForMoamalat(new Date());
+    const testReference = generateMerchantReference('TEST-ORDER');
+
+    const testPayload = {
+      Amount: formatAmountForMoamalat(testAmount),
+      DateTimeLocalTrxn: testDateTime,
+      MerchantId: config.moamalat.mid,
+      MerchantReference: testReference,
+      TerminalId: config.moamalat.tid,
+    };
+
+    const isValid = validateMoamalatHashRequest(testPayload);
+    const { secureHash } = isValid ? moamalatHashUtil(testPayload) : { secureHash: 'VALIDATION_FAILED' };
+
+    sendSuccess(res, {
+      status: 'OK',
+      message: 'Moamalat configuration test',
+      config: {
+        merchantId: config.moamalat.mid,
+        terminalId: config.moamalat.tid,
+        environment: config.moamalat.env,
+      },
+      testData: {
+        orderId: 'TEST-ORDER',
+        amount: testAmount,
+        formattedAmount: testPayload.Amount,
+        dateTime: testDateTime,
+        merchantReference: testReference,
+        secureHash: secureHash,
+        hashValid: isValid,
+      },
+    });
+  } catch (error) {
+    logger.error('Test Moamalat config error:', error);
+    sendError(res, 'Configuration test failed', 500, 'TEST_FAILED');
   }
 };

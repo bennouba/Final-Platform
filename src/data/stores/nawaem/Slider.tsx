@@ -14,6 +14,22 @@ import {
 } from 'lucide-react';
 import type { Product } from '../../storeProducts';
 
+const getBackendUrl = () => {
+  const apiUrl = import.meta.env.VITE_API_URL;
+  if (apiUrl) return apiUrl;
+  return typeof window !== 'undefined' && window.location.hostname === 'localhost'
+    ? 'http://localhost:5000'
+    : 'https://eishro-backend.onrender.com';
+};
+
+const getImageUrl = (assetPath: string) => {
+  const backendUrl = getBackendUrl();
+  return {
+    primary: `${backendUrl}${assetPath}`,
+    fallback: assetPath,
+  };
+};
+
 interface NawaemSliderProps {
   products: Product[];
   sliderImages?: Array<{ id: string | number; image: string; title?: string; subtitle?: string; buttonText?: string }>;
@@ -45,35 +61,40 @@ const NawaemSlider: React.FC<NawaemSliderProps> = ({
       return [
         {
           id: 'banner1',
-          image: '/assets/sheirine/slider1.jpg',
+          image: getImageUrl('/assets/sherine/sliders/slider1.webp').primary,
+          fallbackImage: getImageUrl('/assets/sherine/sliders/slider1.webp').fallback,
           title: 'ملابس للمناسبات أحجام كبيرة',
           subtitle: 'اكتشفي مجموعتنا الجديدة من الملابس المناسباتية بأحجام كبيرة لكل المناسبات',
           buttonText: 'تسوقي الآن'
         },
         {
           id: 'banner2',
-          image: '/assets/sheirine/slider2.jpg',
+          image: getImageUrl('/assets/sherine/sliders/slider3.webp').primary,
+          fallbackImage: getImageUrl('/assets/sherine/sliders/slider3.webp').fallback,
           title: 'أحذية نسائية أنيقة',
           subtitle: 'مجموعة مميزة من الأحذية النسائية لإطلالات استثنائية في كل خطوة',
           buttonText: 'استكشفي الأحذية'
         },
         {
           id: 'banner3',
-          image: '/assets/sheirine/slider3.jpg',
+          image: getImageUrl('/assets/sherine/sliders/slider4.webp').primary,
+          fallbackImage: getImageUrl('/assets/sherine/sliders/slider4.webp').fallback,
           title: 'ملابس للمناسبات أحجام كبيرة',
           subtitle: 'تصاميم فريدة من الملابس المناسباتية بأحجام كبيرة لإطلالة مميزة',
           buttonText: 'اطلعي على المجموعة'
         },
         {
           id: 'banner4',
-          image: '/assets/sheirine/slider4.jpg',
+          image: getImageUrl('/assets/sherine/sliders/slider1.webp').primary,
+          fallbackImage: getImageUrl('/assets/sherine/sliders/slider1.webp').fallback,
           title: 'أحذية نسائية راقية',
           subtitle: 'أحذية نسائية بأحدث الصيحات لكل المناسبات والأيام',
           buttonText: 'تسوقي الأحذية'
         },
         {
           id: 'banner5',
-          image: '/assets/sheirine/slider1.jpg',
+          image: getImageUrl('/assets/sherine/sliders/slider3.webp').primary,
+          fallbackImage: getImageUrl('/assets/sherine/sliders/slider3.webp').fallback,
           title: 'ملابس مناسبات أحجام كبيرة',
           subtitle: 'مجموعة متنوعة من الملابس المناسباتية بأحجام كبيرة لكل الأذواق',
           buttonText: 'اكتشفي الملابس'
@@ -85,52 +106,62 @@ const NawaemSlider: React.FC<NawaemSliderProps> = ({
     return [
       {
         id: 'banner1',
-        image: '/assets/nawaem/bag2.jpg',
+        image: getImageUrl('/assets/nawaem/bag2.jpg').primary,
+        fallbackImage: getImageUrl('/assets/nawaem/bag2.jpg').fallback,
         title: 'حقائب نواعم الأنيقة'
       },
       {
         id: 'banner2',
-        image: '/assets/nawaem/bag3-black.jpg',
+        image: getImageUrl('/assets/nawaem/bag3-black.jpg').primary,
+        fallbackImage: getImageUrl('/assets/nawaem/bag3-black.jpg').fallback,
         title: 'حقائب سوداء فاخرة'
       },
       {
         id: 'banner3',
-        image: '/assets/nawaem/bag3-green.jpg',
+        image: getImageUrl('/assets/nawaem/bag3-green.jpg').primary,
+        fallbackImage: getImageUrl('/assets/nawaem/bag3-green.jpg').fallback,
         title: 'حقائب خضراء عصرية'
       },
       {
         id: 'banner4',
-        image: '/assets/nawaem/dress3.jpg',
+        image: getImageUrl('/assets/nawaem/dress3.jpg').primary,
+        fallbackImage: getImageUrl('/assets/nawaem/dress3.jpg').fallback,
         title: 'فساتين نواعم الراقية'
       },
       {
         id: 'banner5',
-        image: '/assets/nawaem/dress4.jpg',
+        image: getImageUrl('/assets/nawaem/dress4.jpg').primary,
+        fallbackImage: getImageUrl('/assets/nawaem/dress4.jpg').fallback,
         title: 'فساتين مناسبات مميزة'
       },
       {
         id: 'banner6',
-        image: '/assets/nawaem/dress5.jpg',
+        image: getImageUrl('/assets/nawaem/dress5.jpg').primary,
+        fallbackImage: getImageUrl('/assets/nawaem/dress5.jpg').fallback,
         title: 'فساتين صيفية أنيقة'
       },
       {
         id: 'banner7',
-        image: '/assets/nawaem/gold-jewelry-set-1.jpg',
+        image: getImageUrl('/assets/nawaem/gold-jewelry-set-1.jpg').primary,
+        fallbackImage: getImageUrl('/assets/nawaem/gold-jewelry-set-1.jpg').fallback,
         title: 'مجوهرات ذهبية فاخرة'
       },
       {
         id: 'banner8',
-        image: '/assets/nawaem/handbag-beige-1.jpg',
+        image: getImageUrl('/assets/nawaem/handbag-beige-1.jpg').primary,
+        fallbackImage: getImageUrl('/assets/nawaem/handbag-beige-1.jpg').fallback,
         title: 'حقائب بيج راقية'
       },
       {
         id: 'banner9',
-        image: '/assets/nawaem/handbag-black-1.jpg',
+        image: getImageUrl('/assets/nawaem/handbag-black-1.jpg').primary,
+        fallbackImage: getImageUrl('/assets/nawaem/handbag-black-1.jpg').fallback,
         title: 'حقائب سوداء أنيقة'
       },
       {
         id: 'banner10',
-        image: '/assets/nawaem/handbags-luxury-1.jpg',
+        image: getImageUrl('/assets/nawaem/handbags-luxury-1.jpg').primary,
+        fallbackImage: getImageUrl('/assets/nawaem/handbags-luxury-1.jpg').fallback,
         title: 'حقائب فاخرة'
       }
     ];
@@ -272,7 +303,11 @@ const NawaemSlider: React.FC<NawaemSliderProps> = ({
                 className="w-full h-full object-cover object-center"
                 onError={(e) => {
                   const target = e.target as HTMLImageElement;
-                  target.style.display = 'none';
+                  if (slide.fallbackImage && target.src !== slide.fallbackImage) {
+                    target.src = slide.fallbackImage;
+                  } else {
+                    target.style.display = 'none';
+                  }
                 }}
               />
             </div>

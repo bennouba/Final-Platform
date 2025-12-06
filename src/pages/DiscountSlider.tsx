@@ -43,6 +43,22 @@ const AnimatedBackground = () => {
   );
 };
 
+const getBackendUrl = () => {
+  const apiUrl = import.meta.env.VITE_API_URL;
+  if (apiUrl) return apiUrl;
+  return typeof window !== 'undefined' && window.location.hostname === 'localhost'
+    ? 'http://localhost:5000'
+    : 'https://eishro-backend.onrender.com';
+};
+
+const getImageUrl = (assetPath: string) => {
+  const backendUrl = getBackendUrl();
+  return {
+    primary: `${backendUrl}${assetPath}`,
+    fallback: assetPath,
+  };
+};
+
 // بيانات السلايدر الأفقي العلوي (يتغير تلقائياً كل 5 ثواني)
 const topHorizontalSlides = [
   { id: 1, image: '/assets/DiscountSlider/GS-WM.jpg', alt: 'غسالة General Supreme', title: 'عرض خاص على الغسالات' },
@@ -122,12 +138,16 @@ export default function DiscountSlider() {
                   }`}
                 >
                   <img
-                    src={slide.image}
+                    src={getImageUrl(slide.image).primary}
                     alt={slide.alt}
                     className="w-full h-full object-contain"
                     onError={(e) => {
                       const target = e.target as HTMLImageElement;
-                      target.style.display = 'none';
+                      if (target.src !== getImageUrl(slide.image).fallback) {
+                        target.src = getImageUrl(slide.image).fallback;
+                      } else {
+                        target.style.display = 'none';
+                      }
                     }}
                   />
                   {/* Overlay Gradient */}
@@ -196,12 +216,16 @@ export default function DiscountSlider() {
                     }`}
                   >
                     <img
-                      src={slide.image}
+                      src={getImageUrl(slide.image).primary}
                       alt={slide.alt}
                       className="w-full h-full object-contain"
                       onError={(e) => {
                         const target = e.target as HTMLImageElement;
-                        target.style.display = 'none';
+                        if (target.src !== getImageUrl(slide.image).fallback) {
+                          target.src = getImageUrl(slide.image).fallback;
+                        } else {
+                          target.style.display = 'none';
+                        }
                       }}
                     />
                     {/* Badge */}
@@ -241,12 +265,16 @@ export default function DiscountSlider() {
                 >
                   {/* الصورة */}
                   <img
-                    src={slide.image}
+                    src={getImageUrl(slide.image).primary}
                     alt={slide.alt}
                     className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-700 ease-out"
                     onError={(e) => {
                       const target = e.target as HTMLImageElement;
-                      target.style.display = 'none';
+                      if (target.src !== getImageUrl(slide.image).fallback) {
+                        target.src = getImageUrl(slide.image).fallback;
+                      } else {
+                        target.style.display = 'none';
+                      }
                     }}
                   />
 
